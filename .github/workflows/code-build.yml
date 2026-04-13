@@ -40,23 +40,31 @@ jobs:
       - name: Build Release APK
         run: flutter build apk --release --target-platform android-arm,android-arm64 --split-per-abi
 
-      # ✅ Telegram uchun APK fayllarni yuborish
-      - name: Send APKs to Telegram
+      # ✅ Telegram uchun APK (armeabi-v7a)
+      - name: Send v7a APK to Telegram
         if: ${{ success() }}
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
-          document: |
-            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          document: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
           message: |
-            ✅ *Pizza Strada Build Successful*
-            
+            ✅ *Pizza Strada (armeabi-v7a) Build Successful*
             👤 User: ${{ github.actor }}
             🌿 Branch: `${{ github.head_ref || github.ref_name }}`
-            📝 Commit: ${{ github.event.head_commit.message || github.event.pull_request.title }}
-            📦 Repo: ${{ github.repository }}
+
+      # ✅ Telegram uchun APK (arm64-v8a)
+      - name: Send v8a APK to Telegram
+        if: ${{ success() }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          document: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          message: |
+            ✅ *Pizza Strada (arm64-v8a) Build Successful*
+            👤 User: ${{ github.actor }}
+            🌿 Branch: `${{ github.head_ref || github.ref_name }}`
 
       # ❌ Failure notification
       - name: Send Error Notification

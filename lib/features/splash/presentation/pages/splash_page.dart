@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pizza_strada/core/storage/secure_storage.dart';
+import 'package:pizza_strada/core/di/injection.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
+import 'package:pizza_strada/features/splash/presentation/bloc/splash_cubit.dart';
+import 'package:pizza_strada/features/splash/presentation/bloc/splash_state.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -21,20 +24,6 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeIn);
     _animController.forward();
-    _checkAuth();
-  }
-
-  Future<void> _checkAuth() async {
-    await Future.delayed(const Duration(milliseconds: 1800));
-    if (mounted) {
-      final token = await SecureStorage.getToken();
-      if (!mounted) return;
-      if (token != null && token.isNotEmpty) {
-        context.go('/home');
-      } else {
-        context.go('/auth/login');
-      }
-    }
   }
 
   @override
@@ -45,28 +34,85 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: FadeTransition(
-        opacity: _fadeAnim,
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Logo — asset yoki icon fallback
-              _buildLogo(),
-              const SizedBox(height: 48),
-              const SizedBox(
-                width: 28,
-                height: 28,
-                child: CircularProgressIndicator(
-                  color: AppColors.primary,
-                  strokeWidth: 2.5,
+    return BlocProvider(
+      create: (context) => getIt<SplashCubit>()..init(),
+      child: BlocListener<SplashCubit, SplashState>(
+        listener: (context, state) {
+          if (state is SplashAuthenticated) {
+            context.go('/home');
+          } else if (state is SplashUnauthenticated) {
+            context.go('/auth/login');
+          } else if (state is SplashFailure) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.error)),
+            );
+          }
+        },
+        child: Scaffold(
+          backgroundColor: Colors.white,
+          body: BlocBuilder<SplashCubit, SplashState>(
+            builder: (context, state) {
+              if (state is SplashMaintenance) {
+                return _buildMaintenanceUI(state.message);
+              }
+
+              return FadeTransition(
+                opacity: _fadeAnim,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLogo(),
+                      const SizedBox(height: 48),
+                      const SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                          strokeWidth: 2.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              );
+            },
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildMaintenanceUI(String message) {
+    return Center(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.do_not_disturb_on_outlined, color: AppColors.error, size: 80),
+          const SizedBox(height: 24),
+          Text(
+            'Hozirda yopiqmiz',
+            style: AppTextStyles.h2.copyWith(color: AppColors.neutral900),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: () => context.read<SplashCubit>().init(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Qayta urinish'),
+          ),
+        ],
       ),
     );
   }

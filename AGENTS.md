@@ -159,6 +159,8 @@ Localizatsiya uchun `easy_localization` paketidan va `.json` fayllardan foydalan
     - Tugmalar va inputlar uchun `active`/`disabled` holatlarini inobatga ol.
 6.  **Security:** `secretKey` (Header-Sign uchun) `--dart-define` yoki `.env` orqali berilishi kerak.
 7.  **State Management:** Feature-based BLoC pattern. Logic UI dan to'liq ajratilgan bo'lishi kerak.
+8.  **Testing (Dev Mode):** Hozirda test yozish majburiy emas (Dev Mode). Lekin har bir yangi qo'shilgan metod yoki mantiq qanday ishlashi haqida kodda sharhlar (documentation) yozib ketilishi shart. Kelajakda testlar qo'shiladi.
+9.  **App Initialization (Splash):** Ilova ishga tushayotganda `settings` query orqali tizim holati tekshirilishi shart. Agar `can_order` false bo'lsa yoki boshqa texnik cheklov bo'lsa, foydalanuvchiga tegishli xabar ko'rsatilishi kerak.
 
 ---
 
