@@ -36,33 +36,22 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # ✅ Build Release APK (Build for both v7a and v8a)
+      # ✅ Build Release APK (Faqat arm64-v8a — Buildni tezlashtirish uchun)
       - name: Build Release APK
-        run: flutter build apk --release --target-platform android-arm,android-arm64 --split-per-abi
+        run: flutter build apk --release --target-platform android-arm64 --no-pub
 
-      # ✅ Telegram uchun APK (armeabi-v7a)
-      - name: Send v7a APK to Telegram
+      # ✅ Telegram uchun APK (High-speed build)
+      - name: Send APK to Telegram
         if: ${{ success() }}
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
-          document: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+          format: markdown
+          document: build/app/outputs/flutter-apk/app-release.apk
           message: |
-            ✅ *Pizza Strada (armeabi-v7a) Build Successful*
-            👤 User: ${{ github.actor }}
-            🌿 Branch: `${{ github.head_ref || github.ref_name }}`
-
-      # ✅ Telegram uchun APK (arm64-v8a)
-      - name: Send v8a APK to Telegram
-        if: ${{ success() }}
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          document: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-          message: |
-            ✅ *Pizza Strada (arm64-v8a) Build Successful*
+            ✅ *Pizza Strada Build Successful*
+            📲 Version: `arm64-v8a` (Dev Mode)
             👤 User: ${{ github.actor }}
             🌿 Branch: `${{ github.head_ref || github.ref_name }}`
 
@@ -73,6 +62,7 @@ jobs:
         with:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
           message: |
             ❌ *Pizza Strada Build Failed*
             
