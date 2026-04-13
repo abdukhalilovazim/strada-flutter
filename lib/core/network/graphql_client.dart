@@ -26,6 +26,8 @@ GraphQLClient buildGraphQLClient({String? token}) {
         ...(h?.headers ?? {}),
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        // Security360 firewall bypass — real brauzer User-Agent kerak
+        'User-Agent': 'PizzaStrada/${Platform.isIOS ? "iOS" : "Android"} Mobile App',
         if (token != null) 'Authorization': 'Bearer $token',
         'language': languageCode ?? 'uz',
         'device-id': DeviceInfoHelper.deviceId,

@@ -174,6 +174,7 @@ Localizatsiya uchun `easy_localization` paketidan va `.json` fayllardan foydalan
 
 - Dizayn uslubi: Dark/Light mode qo'llab-quvvatlanishi kerak (Premium look).
 - API bilan ishlashda N+1 muammosidan qochish uchun fragmentlardan foydalan.
+- **APK hajmi cheklovi (Telegram):** Telegram Bot orqali faqat 50MB gacha bo'lgan fayllarni yuborish mumkin. Agar APK hajmi 50MB dan oshishi taxmin qilinsa (masalan: `yandex_mapkit`, xarita kutubxonalari ishlatilganda), APK ni GitHub Releases yoki boshqa xizmat (masalan: Firebase App Distribution) orqali tarqatish kerak. CI/CD workflow'da hajm avtomatik tekshiriladi va 50MB dan katta bo'lsa GitHub Release'ga yuklanadi.
 
 ---
 

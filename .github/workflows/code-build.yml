@@ -44,9 +44,23 @@ jobs:
       - name: Build Release APK
         run: flutter build apk --release --target-platform android-arm64 --split-per-abi --obfuscate --split-debug-info=build/app/outputs/symbols --no-pub
 
-      # ✅ Telegram uchun APK (High-speed build)
+      # ✅ APK hajmini tekshirish
+      - name: Check APK Size
+        id: apk_size
+        run: |
+          APK_PATH="build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
+          if [ ! -f "$APK_PATH" ]; then
+            echo "APK topilmadi!"
+            exit 1
+          fi
+          SIZE_BYTES=$(stat -c%s "$APK_PATH")
+          SIZE_MB=$((SIZE_BYTES / 1024 / 1024))
+          echo "apk_size_mb=$SIZE_MB" >> $GITHUB_OUTPUT
+          echo "📦 APK hajmi: ${SIZE_MB}MB"
+
+      # ✅ 50MB dan kichik bo'lsa — Telegram'ga yuborish
       - name: Send APK to Telegram
-        if: ${{ success() }}
+        if: ${{ success() && steps.apk_size.outputs.apk_size_mb < 50 }}
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO }}
@@ -56,6 +70,35 @@ jobs:
           message: |
             ✅ *Pizza Strada Build Successful*
             📲 Version: `arm64-v8a` (Dev Mode)
+            📦 Hajmi: `${{ steps.apk_size.outputs.apk_size_mb }}MB`
+            👤 User: ${{ github.actor }}
+            🌿 Branch: `${{ github.head_ref || github.ref_name }}`
+
+      # ✅ 50MB dan katta bo'lsa — GitHub Release'ga yuklash
+      - name: Upload APK to GitHub Release
+        if: ${{ success() && steps.apk_size.outputs.apk_size_mb >= 50 }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dev-build-${{ github.run_number }}
+          name: "Dev Build #${{ github.run_number }}"
+          files: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ✅ 50MB dan katta bo'lsa — Telegram'ga link yuborish
+      - name: Send Download Link to Telegram
+        if: ${{ success() && steps.apk_size.outputs.apk_size_mb >= 50 }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            ✅ *Pizza Strada Build Successful*
+            📲 Version: `arm64-v8a` (Dev Mode)
+            📦 Hajmi: `${{ steps.apk_size.outputs.apk_size_mb }}MB` (Telegram limiti oshdi)
+            🔗 [APK yuklab olish](https://github.com/${{ github.repository }}/releases/tag/dev-build-${{ github.run_number }})
             👤 User: ${{ github.actor }}
             🌿 Branch: `${{ github.head_ref || github.ref_name }}`
 
@@ -69,8 +112,6 @@ jobs:
           format: markdown
           message: |
             ❌ *Pizza Strada Build Failed*
-            
             👤 User: ${{ github.actor }}
             🌿 Branch: `${{ github.head_ref || github.ref_name }}`
             📝 Commit: ${{ github.event.head_commit.message || github.event.pull_request.title }}
-            📦 Repo: ${{ github.repository }}

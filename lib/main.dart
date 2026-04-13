@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pizza_strada/core/di/injection.dart';
 import 'package:pizza_strada/core/router/app_router.dart';
 import 'package:pizza_strada/core/theme/app_theme.dart';
@@ -13,6 +14,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Ekran faqat portrait (tik) holatda ishlaydi
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await DeviceInfoHelper.init();
   await SharedPrefs.init();

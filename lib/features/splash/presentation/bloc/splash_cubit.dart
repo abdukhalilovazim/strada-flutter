@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:pizza_strada/core/storage/secure_storage.dart';
@@ -23,8 +24,10 @@ class SplashCubit extends Cubit<SplashState> {
 
     settingsResult.fold(
       (failure) {
-        // Tarmoq xatosi yoki server xatosi bo'lganda
-        emit(SplashFailure('Xizmatga bog\'lanib bo\'lmadi. Internetni tekshiring.'));
+        // API'dan kelgan aniq xato xabarini ko'rsatish
+        final errorMessage = failure.message ?? 'Noma\'lum xato yuz berdi';
+        debugPrint('❌ [SplashCubit] Settings xatosi: $errorMessage');
+        emit(SplashFailure(errorMessage));
       },
       (settings) async {
         // Ilova ish vaqtini (can_order) tekshirish
