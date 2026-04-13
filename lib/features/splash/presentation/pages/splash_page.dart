@@ -115,7 +115,8 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
           ),
         ],
       ),
-    );
+    ),
+   );
   }
 
   Widget _buildLogo() {
