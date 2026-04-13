@@ -84,11 +84,12 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
   }
 
   Widget _buildMaintenanceUI(String message) {
-    return Center(
+    return Padding(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
           const Icon(Icons.do_not_disturb_on_outlined, color: AppColors.error, size: 80),
           const SizedBox(height: 24),
           Text(
