@@ -11,20 +11,39 @@ GraphQLClient buildGraphQLClient({String? token}) {
   // ORDER API ga yuborilishi kerak bo'lgan operatsiya nomlari
   const orderOperations = {'orders', 'order', 'createOrder', 'checkPromoCode'};
 
-  final splitLink = Link.split(
+  final httpLink = Link.split(
     (request) => orderOperations.contains(request.operation.operationName),
-    _buildHttpLink(ApiConstants.orderEndpoint,  token: token),
-    _buildHttpLink(ApiConstants.commonEndpoint, token: token),
+    HttpLink(ApiConstants.orderEndpoint),
+    HttpLink(ApiConstants.commonEndpoint),
   );
+
+  final authLink = Link.function((request, [forward]) {
+    final context = AppConstants.navigatorKey.currentContext;
+    final languageCode = context != null ? EasyLocalization.of(context)?.locale.languageCode : 'uz';
+
+    final updatedReq = request.updateContextEntry<HttpLinkHeaders>(
+      (h) => HttpLinkHeaders(headers: {
+        ...(h?.headers ?? {}),
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+        'language': languageCode ?? 'uz',
+        'device-id': DeviceInfoHelper.deviceId,
+        'device-name': DeviceInfoHelper.deviceName,
+        'device': Platform.isIOS ? 'ios' : 'android',
+      }),
+    );
+    return forward!(updatedReq);
+  });
 
   final loggingLink = Link.function((request, [forward]) {
     debugPrint('🚀 [GraphQL Request] ${request.operation.operationName}');
     debugPrint('   Variables: ${request.variables}');
     return forward!(request).map((response) {
-      debugPrint('✅ [GraphQL Response] ${request.operation.operationName}');
-      debugPrint('   Data: ${response.data}');
       if (response.errors != null) {
-        debugPrint('❌ [GraphQL Errors] ${response.errors}');
+        debugPrint('❌ [GraphQL Errors] ${request.operation.operationName}: ${response.errors}');
+      } else {
+        debugPrint('✅ [GraphQL Response] ${request.operation.operationName}');
       }
       return response;
     });
@@ -32,23 +51,6 @@ GraphQLClient buildGraphQLClient({String? token}) {
 
   return GraphQLClient(
     cache: GraphQLCache(store: InMemoryStore()),
-    link: Link.from([loggingLink, SignatureLink(), splitLink]),
-  );
-}
-
-HttpLink _buildHttpLink(String url, {String? token}) {
-  final context = AppConstants.navigatorKey.currentContext;
-  final languageCode = context != null ? EasyLocalization.of(context)?.locale.languageCode : 'uz';
-
-  return HttpLink(
-    url,
-    defaultHeaders: {
-      if (token != null) 'Authorization': 'Bearer $token',
-      'Language': languageCode ?? 'uz',
-      'device_id': DeviceInfoHelper.deviceId,
-      'device_name': DeviceInfoHelper.deviceName,
-      'Source': Platform.isIOS ? 'ios' : 'android',
-      'device': Platform.isIOS ? 'ios' : 'android',
-    },
+    link: Link.from([loggingLink, authLink, SignatureLink(), httpLink]),
   );
 }

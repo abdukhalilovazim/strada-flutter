@@ -1,0 +1,183 @@
+# Strada Pizza — Flutter Mobile App Development Guide
+
+Ushbu qo'llanma Strada Pizza loyihasi uchun Flutter mobil ilovasini ishlab chiqishda Claude (yoki boshqa AI) uchun asosiy qoidalar va GraphQL API bilan ishlash bo'yicha to'liq ko'rsatmalarni o'z ichiga oladi.
+
+---
+
+## 🏗 Texnologiyalar
+
+- **Framework:** Flutter
+- **State Management:** BLoC (flutter_bloc)
+- **API Client:** `graphql_flutter`
+- **Dependency Injection:** `get_it`
+- **Local Storage:** `hive` yoki `shared_preferences`
+- **Design System:** Maxsus dizayn (Vanilla styling), `flutter_screenutil` (responsiveness)
+
+---
+
+## 📡 GraphQL API Konfiguratsiyasi
+
+Loyiha ikkita asosiy schema'dan foydalanadi:
+
+1.  **Common Schema:** `/graphql?schema=common` (Auth, mahsulotlar, filiallar)
+2.  **Order Schema:** `/graphql?schema=order` (Savat, buyurtma yaratish)
+
+### 1. Environments & Base URLs
+
+| **Production**  | `https://pizzastada.uz/graphql?schema=` |
+| **Development** | `https://food.khalilovdev.uz/graphql?schema=` |
+
+_Eslatma: GraphQL so'rovlarida schema nomini query string sifatida berish kerak (`?schema=common` yoki `?schema=order`)._
+
+### 2. Authentication
+
+Barcha so'rovlarda `Authorization: Bearer <token>` headeri yuborilishi kerak (Auth talab qilinadigan endpointlar uchun). Token `login` va `confirmOtp` mutationlari orqali olinadi.
+
+### 3. Header Signature (Mutations uchun majburiy)
+
+Barcha **Mutation** so'rovlari uchun (Production muhitida) maxsus xavfsizlik headerlari talab qilinadi:
+
+- `Header-Random-Str`: Noyob ixtiyoriy satr (Random string).
+- `Header-Timestamp`: Millisekunddagi joriy vaqt (Timestamp).
+- `Header-Sign`: HMAC SHA256 orqali hisoblangan imzo.
+
+**Imzo hisoblash algoritmi:**
+
+```dart
+String stringToHash = jsonEncode(variables) + randomStr + timestamp;
+String signature = hmacSha256(secretKey, stringToHash);
+```
+
+_Eslatma: `variables` JSON formatida, unicode va slashlar escape qilinmagan bo'lishi kerak._
+
+---
+
+## 📂 Loyiha Tuzilmasi (Feature-driven)
+
+Ilovani quyidagi papkalar strukturasida tashkil qil:
+
+```
+lib/
+  core/                # Shared logic, networks, themes, constants
+    network/           # GraphQL client config, interceptors
+    theme/             # Color scheme, Typography
+    utils/             # Helpers, Validators
+  features/            # Barcha modullar
+    auth/
+      data/            # Datasources, Repositories
+      domain/          # Models, Entities
+      presentation/    # Bloc, Screens, Widgets
+    home/
+    orders/
+    profile/
+  main.dart
+```
+
+---
+
+## 🛠 GraphQL So'rovlari bo'yicha Ko'rsatmalar
+
+### Queries
+
+- `categories`: Barcha kategoriyalar va ularning mahsulotlari.
+- `products`: Mahsulotlar ro'yxati (filterlar bilan).
+- `product`: Bitta mahsulot tafsilotlari.
+- `branches`: Filiallar ro'yxati.
+- `settings`: Ilova sozalamalari (tel raqam, ish vaqti va h.k).
+
+### Mutations
+
+- `login(phone, full_name)`: OTP yuborish.
+- `confirmOtp(phone, code)`: Token olish.
+- `createOrder(...)`: Buyurtma yaratish.
+- `checkPromoCode(code)`: Promo kodni tekshirish.
+
+#### `createOrder` argumentlari va validatsiya:
+
+| Argument         | Turi      | Tavsif                                                       |
+| ---------------- | --------- | ------------------------------------------------------------ |
+| `type`           | `int`     | `0` - Yetkazib berish (Delivery), `1` - Olib ketish (Pickup) |
+| `branch_id`      | `int?`    | `type=1` bo'lsa majburiy                                     |
+| `latitude`       | `float?`  | `type=0` bo'lsa majburiy                                     |
+| `longitude`      | `float?`  | `type=0` bo'lsa majburiy                                     |
+| `payment_method` | `int`     | `0` - Naqd, `1` - Payme, `2` - Click                         |
+| `products`       | `List`    | `OrderProductInput` listi (id, quantity, variants)           |
+| `promo_code`     | `string?` | Ixtiyoriy promo kod                                          |
+
+---
+
+## 🌍 Localization (Ko'p tillilik)
+
+Ilova 3 ta tilda to'liq ishlashi kerak:
+
+- **O'zbekcha (`uz`)** — Asosiy til.
+- **Ruscha (`ru`)**
+- **Inglizcha (`en`)**
+
+### 1. Language Header
+
+Barcha API so'rovlarida tanlangan tilni serverga bildirish uchun quyidagi header yuborilishi shart:
+
+- `language`: `uz`, `ru` yoki `en`
+
+### 2. Flutter Localization
+
+Localizatsiya uchun `easy_localization` paketidan va `.json` fayllardan foydalaniladi (`lib/l10n/` papkasida).
+
+- Har bir label uchun kalit so'zlar (keys) barcha 3 ta tilda mavjud bo'lishi shart.
+- Generatsiya qilingan `locale_keys.g.dart` faylidan foydalaniladi.
+
+---
+
+## 🛑 Kod Qoidalari va Validatsiya
+
+1.  **DTO va Modellar:** GraphQL'dan kelgan ma'lumotlar uchun har doim `fromJson` va `toJson` metodlariga ega modellar yaratilishi shart.
+2.  **Majburiy Headerlar:** Barcha so'rovlarda quyidagi headerlar yuborilishi shart:
+
+| Header          | Qiymat / Tavsif                                |
+| --------------- | ---------------------------------------------- |
+| `Accept`        | `application/json`                             |
+| `Content-Type`  | `application/json`                             |
+| `device`        | `android` yoki `ios`                           |
+| `device-id`     | Qurilmaning noyob ID raqami (Unique ID)        |
+| `device-name`   | Qurilma modeli nomi (masalan: `iPhone 15 Pro`) |
+| `language`      | `uz`, `ru` yoki `en`                           |
+| `Authorization` | `Bearer <token>` (agar login qilingan bo'lsa)  |
+
+3.  **Security Headers (Mutations uchun):**
+    Mutatsiyalar uchun qo'shimcha ravishda quyidagilar majburiy:
+    - `Header-Random-Str`
+    - `Header-Timestamp`
+    - `Header-Sign` (Algoritm yuqorida keltirilgan)
+
+4.  **Error Handling (Xatolarni boshqarish):**
+    - GraphQL xatolarini (`GraphQLError`) tahlil qil va foydalanuvchiga tushunarli tilda ko'rsat.
+    - Tarmoq xatolarini (Connectivity) alohida ushla.
+5.  **UI/UX:**
+    - Placeholders o'rniga haqiqiy rasmlardan foydalaniladi (API orqali).
+    - Yuklanish holatlari (Shimmer effect) bo'lishi shart.
+    - Tugmalar va inputlar uchun `active`/`disabled` holatlarini inobatga ol.
+6.  **Security:** `secretKey` (Header-Sign uchun) `--dart-define` yoki `.env` orqali berilishi kerak.
+7.  **State Management:** Feature-based BLoC pattern. Logic UI dan to'liq ajratilgan bo'lishi kerak.
+
+---
+
+## 📝 Claude uchun Task Berish Namuna
+
+> "Ushbu `order` schema'dan foydalanib, buyurtma yaratish (`createOrder`) mutation'ini amalga oshir. Header signaturani hisoblashni unutma. Header'da `language: uz` yuborilishini ta'minla."
+
+---
+
+## ⚠️ Muhim Cheklovlar
+
+- Dizayn uslubi: Dark/Light mode qo'llab-quvvatlanishi kerak (Premium look).
+- API bilan ishlashda N+1 muammosidan qochish uchun fragmentlardan foydalan.
+
+---
+
+## 🔄 Avtomatik Yangilanish Qoidasi
+
+Agent (Claude yoki boshqa AI) har safar foydalanuvchi tomonidan yangi texnik talab, cheklov yoki qoida berilganda, ushbu `AGENTS.md` faylini quyidagi tartibda yangilashi shart:
+1. Yangi qoidani tegishli bo'limga qo'shish.
+2. Agar yangi bo'lim kerak bo'lsa, uni yaratish.
+3. Ushbu faylning oxirgi holatini doimo dolzarb saqlash.

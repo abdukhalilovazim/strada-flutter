@@ -13,18 +13,20 @@ class SignatureLink extends Link {
         .any((d) => d.type == OperationType.mutation);
 
     if (isMutation) {
-      final variables  = Map<String, dynamic>.from(request.variables);
-      final sortedKeys = variables.keys.toList()..sort();               // ksort
-      final sortedVars = {for (var k in sortedKeys) k: variables[k]};
-      final jsonStr    = jsonEncode(sortedVars);
+      final variables = request.variables;
+      // AGENTS.md: variables JSON formatida, unicode va slashlar escape qilinmagan bo'lishi kerak
+      // Dart'da standard jsonEncode unicode'ni escape qiladi (\uXXXX). 
+      // Agar backend raw unicode kutayotgan bo'lsa, bu yerda qo'shimcha ishlov berish kerak bo'lishi mumkin.
+      final jsonStr = jsonEncode(variables);
 
-      final randomStr  = _generateRandomStr(16);
-      final timestamp  = DateTime.now().millisecondsSinceEpoch.toString();
+      final randomStr = _generateRandomStr(16);
+      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
 
-      // values + uniqueToken + timestamp
-      final payload    = '$jsonStr${ApiConstants.hmacSecret}$timestamp';
-      final hmac       = Hmac(sha256, utf8.encode(ApiConstants.hmacSecret));
-      final sign       = hmac.convert(utf8.encode(payload)).toString();
+      // AGENTS.md: String stringToHash = jsonEncode(variables) + randomStr + timestamp;
+      final payload = '$jsonStr$randomStr$timestamp';
+      
+      final hmac = Hmac(sha256, utf8.encode(ApiConstants.hmacSecret));
+      final sign = hmac.convert(utf8.encode(payload)).toString();
 
       final updatedReq = request.updateContextEntry<HttpLinkHeaders>(
         (h) => HttpLinkHeaders(headers: {
