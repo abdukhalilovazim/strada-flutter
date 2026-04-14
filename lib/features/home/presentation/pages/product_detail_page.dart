@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,6 +7,7 @@ import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_dimensions.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/widgets/app_button.dart';
+import 'package:pizza_strada/core/theme/app_icons.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 
@@ -25,7 +27,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.product != null && widget.product!.variants.isNotEmpty) {
+    // Point 7: default tanlanmagan bo'lishi kerak.
+    // Point 5: agar option 1 ta bo'lsa uni ko'rsatish shart emas.
+    if (widget.product != null && widget.product!.variants.length == 1) {
       _selectedVariant = widget.product!.variants.first;
     }
   }
@@ -33,10 +37,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   Widget build(BuildContext context) {
     if (widget.product == null) {
-      return const Scaffold(body: Center(child: Text("Product not found")));
+      return Scaffold(body: Center(child: Text('error.not_found'.tr())));
     }
 
     final product = widget.product!;
+    final hasVariants = product.variants.length > 1;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -49,6 +54,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               background: CachedNetworkImage(
                 imageUrl: product.photo,
                 fit: BoxFit.cover,
+                placeholder: (_, __) => Container(color: AppColors.neutral100),
+                errorWidget: (_, __, ___) => const Icon(AppIcons.pizza, size: 64, color: AppColors.neutral200),
               ),
             ),
             backgroundColor: AppColors.primary,
@@ -72,26 +79,46 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     ),
                   const SizedBox(height: 24),
                   
-                  // Variants (Size selection)
-                  if (product.variants.isNotEmpty) ...[
-                    Text("O'lchamni tanlang", style: AppTextStyles.labelLarge),
+                  // Variants (Size selection) - Point 5: 1 tadan ko'p bo'lsa ko'rsatamiz
+                  if (hasVariants) ...[
+                    Text('product.size'.tr(), style: AppTextStyles.labelLarge),
                     const SizedBox(height: 12),
+                    // Point 1 & 7: Scroll bo'lmasligi kerak va kichikroq UI
                     Wrap(
-                      spacing: 12,
+                      spacing: 8,
+                      runSpacing: 8,
                       children: product.variants.map((v) {
                         final isSelected = _selectedVariant?.id == v.id;
-                        return ChoiceChip(
-                          label: Text("${v.title} - ${v.price.toInt()} UZS"),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            if (selected) setState(() => _selectedVariant = v);
-                          },
-                          selectedColor: AppColors.primary,
-                          labelStyle: AppTextStyles.labelMedium.copyWith(
-                            color: isSelected ? Colors.white : AppColors.neutral900,
+                        return InkWell(
+                          onTap: () => setState(() => _selectedVariant = v),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: isSelected ? AppColors.primary : AppColors.neutral100,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected ? AppColors.primary : AppColors.neutral200,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  v.title,
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    color: isSelected ? Colors.white : AppColors.neutral900,
+                                  ),
+                                ),
+                                Text(
+                                  "${v.price.toInt()} ${'product.price_suffix'.tr()}",
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: isSelected ? Colors.white70 : AppColors.neutral400,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          backgroundColor: AppColors.neutral100,
-                          shape: RoundedRectangleBorder(borderRadius: AppDim.radiusMd),
                         );
                       }).toList(),
                     ),
@@ -100,7 +127,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
                   // Additional info
                   if (product.values.isNotEmpty) ...[
-                    Text("Ma'lumot", style: AppTextStyles.labelLarge),
+                    Text('product.info'.tr(), style: AppTextStyles.labelLarge),
                     const SizedBox(height: 12),
                     ...product.values.map((kv) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
@@ -129,12 +156,25 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ),
         child: SafeArea(
           child: AppButton(
-            text: "Savatga qo'shish - ${(_selectedVariant?.price ?? product.price).toInt()} UZS",
+            text: _selectedVariant != null 
+                ? "${'product.add_to_cart'.tr()} - ${_selectedVariant!.price.toInt()} UZS"
+                : 'product.add_to_cart'.tr(),
             onTap: () {
+              // Point 2 & 7: Savatga qo'shish uchun tanlash shart
+              if (hasVariants && _selectedVariant == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('product.select_variant_error'.tr()),
+                    backgroundColor: AppColors.error,
+                  ),
+                );
+                return;
+              }
+
               context.read<CartCubit>().addToCart(product, variant: _selectedVariant);
               context.pop();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Savatga qo'shildi")),
+                SnackBar(content: Text('product.added'.tr())),
               );
             },
           ),

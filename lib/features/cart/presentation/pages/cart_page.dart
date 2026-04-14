@@ -1,12 +1,11 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
-import 'package:pizza_strada/core/theme/app_dimensions.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
-import 'package:pizza_strada/core/widgets/app_button.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
@@ -14,11 +13,12 @@ class CartPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.neutral50,
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: Text("Savatcha", style: AppTextStyles.h2),
+        title: Text("cart.title".tr()),
         backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
       ),
       body: BlocBuilder<CartCubit, CartState>(
         builder: (context, state) {
@@ -29,13 +29,13 @@ class CartPage extends StatelessWidget {
                 children: [
                   const Icon(Icons.shopping_cart_outlined, size: 80, color: AppColors.neutral200),
                   const SizedBox(height: 16),
-                  Text("Savatchangiz bo'sh", style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400)),
+                  Text("cart.empty".tr(), style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400)),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: 200,
-                    child: AppButton(
-                      text: "Xarid qilish",
-                      onTap: () => context.go('/home'),
+                    child: ElevatedButton(
+                      onPressed: () => context.go('/home'),
+                      child: Text("auth.continue".tr()),
                     ),
                   ),
                 ],
@@ -47,29 +47,34 @@ class CartPage extends StatelessWidget {
             children: [
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(AppDim.lg),
+                  padding: const EdgeInsets.all(16),
                   itemCount: state.items.length,
                   itemBuilder: (context, index) {
                     final item = state.items[index];
                     return Container(
-                      margin: const EdgeInsets.only(bottom: 16),
+                      margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: AppDim.radiusLg,
+                        borderRadius: BorderRadius.circular(16),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10),
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
                         ],
                       ),
                       child: Row(
                         children: [
                           ClipRRect(
-                            borderRadius: AppDim.radiusMd,
+                            borderRadius: BorderRadius.circular(12),
                             child: CachedNetworkImage(
                               imageUrl: item.product.thumbnail,
-                              width: 80,
-                              height: 80,
+                              width: 70,
+                              height: 70,
                               fit: BoxFit.cover,
+                              placeholder: (_, __) => Container(color: AppColors.neutral100),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -77,11 +82,11 @@ class CartPage extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(item.product.title, style: AppTextStyles.labelLarge),
+                                Text(item.product.title, style: AppTextStyles.labelMedium.copyWith(fontWeight: FontWeight.w700)),
                                 if (item.variant != null)
                                   Text(item.variant!.title, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400)),
                                 const SizedBox(height: 8),
-                                Text("${item.totalPrice.toInt()} UZS", style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary)),
+                                Text("${item.totalPrice.toInt()} so'm", style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w800)),
                               ],
                             ),
                           ),
@@ -93,7 +98,7 @@ class CartPage extends StatelessWidget {
                               ),
                               Text("${item.quantity}", style: AppTextStyles.labelLarge),
                               IconButton(
-                                icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
+                                icon: const Icon(Icons.add_circle_rounded, color: AppColors.primary),
                                 onPressed: () => context.read<CartCubit>().updateQuantity(item, 1),
                               ),
                             ],
@@ -105,10 +110,13 @@ class CartPage extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.all(AppDim.lg),
+                padding: const EdgeInsets.all(20),
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4)),
+                  ],
                 ),
                 child: SafeArea(
                   child: Column(
@@ -116,14 +124,18 @@ class CartPage extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text("Jami", style: AppTextStyles.labelLarge),
-                          Text("${state.subtotal.toInt()} UZS", style: AppTextStyles.h3.copyWith(color: AppColors.primary)),
+                          Text("cart.total".tr(), style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w700)),
+                          Text("${state.subtotal.toInt()} so'm", style: AppTextStyles.h2.copyWith(color: AppColors.primary)),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      AppButton(
-                        text: "Buyurtma berish",
-                        onTap: () => context.push('/checkout'),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 54,
+                        child: ElevatedButton(
+                          onPressed: () => context.push('/checkout'),
+                          child: Text("cart.checkout".tr()),
+                        ),
                       ),
                     ],
                   ),

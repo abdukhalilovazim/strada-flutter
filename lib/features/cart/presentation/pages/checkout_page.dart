@@ -1,11 +1,9 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
-import 'package:pizza_strada/core/theme/app_dimensions.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
-import 'package:pizza_strada/core/widgets/app_button.dart';
-import 'package:pizza_strada/core/widgets/app_text_field.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 
 class CheckoutPage extends StatefulWidget {
@@ -30,14 +28,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.neutral50,
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: Text("Buyurtma", style: AppTextStyles.h2),
+        title: Text("checkout.title".tr()),
         backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppDim.lg),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -46,41 +45,19 @@ class _CheckoutPageState extends State<CheckoutPage> {
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: AppColors.neutral100,
-                borderRadius: AppDim.radiusMd,
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
                 children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => _isDelivery = true),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: _isDelivery ? Colors.white : Colors.transparent,
-                          borderRadius: AppDim.radiusSm,
-                        ),
-                        alignment: Alignment.center,
-                        child: Text("Yetkazish",
-                            style: AppTextStyles.labelMedium.copyWith(
-                                color: _isDelivery ? AppColors.primary : AppColors.neutral400)),
-                      ),
-                    ),
+                  _buildToggleItem(
+                    title: "checkout.delivery".tr(),
+                    isActive: _isDelivery,
+                    onTap: () => setState(() => _isDelivery = true),
                   ),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => _isDelivery = false),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: !_isDelivery ? Colors.white : Colors.transparent,
-                          borderRadius: AppDim.radiusSm,
-                        ),
-                        alignment: Alignment.center,
-                        child: Text("Olib ketish",
-                            style: AppTextStyles.labelMedium.copyWith(
-                                color: !_isDelivery ? AppColors.primary : AppColors.neutral400)),
-                      ),
-                    ),
+                  _buildToggleItem(
+                    title: "checkout.pickup".tr(),
+                    isActive: !_isDelivery,
+                    onTap: () => setState(() => _isDelivery = false),
                   ),
                 ],
               ),
@@ -89,62 +66,77 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
             // Address Section
             if (_isDelivery) ...[
-              Text("Manzil", style: AppTextStyles.labelLarge),
+              Text("checkout.address".tr(), style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
-              AppTextField(
-                label: "Ko'cha, uy, kvartira",
-                controller: _addressController,
-                hintText: "Masalan: Buyuk Ipak Yo'li, 12, 1",
-                suffix: IconButton(
-                  icon: const Icon(Icons.map_outlined, color: AppColors.primary),
-                  onPressed: () => context.push('/map-picker'),
+              _buildCardField(
+                child: TextField(
+                  controller: _addressController,
+                  decoration: InputDecoration(
+                    hintText: "checkout.select_address".tr(),
+                    hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
+                    border: InputBorder.none,
+                    suffixIcon: const Icon(Icons.map_rounded, color: AppColors.primary),
+                  ),
+                  onTap: () => context.push('/map-picker'),
+                  readOnly: true,
                 ),
               ),
             ] else ...[
-              Text("Filial", style: AppTextStyles.labelLarge),
+              Text("checkout.branch".tr(), style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: AppDim.radiusMd,
-                  border: Border.all(color: AppColors.neutral200),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("Pizza Strada (Asosiy filial)", style: AppTextStyles.bodyMedium),
-                    const Icon(Icons.keyboard_arrow_down, color: AppColors.neutral400),
-                  ],
+              _buildCardField(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text("Pizza Strada (Asosiy filial)", style: AppTextStyles.bodyMedium),
+                      const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.neutral400),
+                    ],
+                  ),
                 ),
               ),
             ],
             const SizedBox(height: 32),
 
             // Comment
-            AppTextField(
-              label: "Izoh",
-              controller: _commentController,
-              hintText: "Kuryer uchun maxsus eslatmalar...",
+            Text("checkout.comment".tr(), style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            _buildCardField(
+              child: TextField(
+                controller: _commentController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: "checkout.comment".tr() + "...",
+                  hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
+                  border: InputBorder.none,
+                ),
+              ),
             ),
             const SizedBox(height: 32),
 
             // Order Summary
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: AppDim.radiusLg,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+                ],
               ),
               child: BlocBuilder<CartCubit, CartState>(
                 builder: (context, state) {
+                  final deliveryFee = _isDelivery ? 15000 : 0;
+                  final total = state.subtotal + deliveryFee;
+                  
                   return Column(
                     children: [
-                      _buildRow("Mahsulotlar", "${state.subtotal.toInt()} UZS"),
+                      _buildRow("cart.subtotal".tr(), "${state.subtotal.toInt()} so'm"),
                       const SizedBox(height: 12),
-                      _buildRow("Yetkazish", _isDelivery ? "15,000 UZS" : "0 UZS"),
-                      const Divider(height: 32),
-                      _buildRow("Jami", "${(state.subtotal + (_isDelivery ? 15000 : 0)).toInt()} UZS", isTotal: true),
+                      _buildRow("cart.delivery".tr(), "$deliveryFee so'm"),
+                      const Divider(height: 32, color: AppColors.neutral100),
+                      _buildRow("cart.total".tr(), "${total.toInt()} so'm", isTotal: true),
                     ],
                   );
                 },
@@ -154,22 +146,70 @@ class _CheckoutPageState extends State<CheckoutPage> {
         ),
       ),
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(AppDim.lg),
-        decoration: const BoxDecoration(color: Colors.white),
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4)),
+          ],
+        ),
         child: SafeArea(
-          child: AppButton(
-            text: "Tasdiqlash",
-            onTap: () {
-              // TODO: Confirm order logic
-              context.go('/orders');
-              context.read<CartCubit>().clear();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Buyurtma qabul qilindi")),
-              );
-            },
+          child: SizedBox(
+            height: 54,
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                context.go('/orders');
+                context.read<CartCubit>().clear();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Buyurtma qabul qilindi".tr()),
+                    backgroundColor: AppColors.success,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              child: Text("checkout.confirm".tr()),
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildToggleItem({required String title, required bool isActive, required VoidCallback onTap}) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isActive ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: isActive ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))] : null,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            title,
+            style: AppTextStyles.labelMedium.copyWith(
+              color: isActive ? AppColors.primary : AppColors.neutral600,
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardField({required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.neutral100, width: 1),
+      ),
+      child: child,
     );
   }
 
@@ -177,8 +217,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: isTotal ? AppTextStyles.labelLarge : AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400)),
-        Text(value, style: isTotal ? AppTextStyles.h3.copyWith(color: AppColors.primary) : AppTextStyles.labelMedium),
+        Text(label, style: isTotal ? AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w700) : AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400)),
+        Text(value, style: isTotal ? AppTextStyles.h2.copyWith(color: AppColors.primary) : AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.w600)),
       ],
     );
   }

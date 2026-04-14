@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
+import 'package:pizza_strada/core/theme/app_icons.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 
 class ProductCard extends StatelessWidget {
@@ -16,126 +17,75 @@ class ProductCard extends StatelessWidget {
     required this.onAddTap,
   });
 
-  String _formatPrice(double price) {
-    final p = price.toInt();
-    final s = p.toString();
-    final buffer = StringBuffer();
-    for (int i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buffer.write(' ');
-      buffer.write(s[i]);
-    }
-    return '${buffer.toString()} so\'m';
-  }
-
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.card,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.neutral200.withOpacity(0.5), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
-            Expanded(
-              flex: 4,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                child: Hero(
-                  tag: 'product_${product.slug}',
-                  child: CachedNetworkImage(
-                    imageUrl: product.thumbnail,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    placeholder: (_, __) => Container(color: AppColors.neutral50),
-                    errorWidget: (_, __, ___) => const Center(child: Icon(Icons.local_pizza_outlined)),
-                  ),
-                ),
+            // Product Image
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              child: CachedNetworkImage(
+                imageUrl: product.photo,
+                height: 140,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => Container(color: AppColors.neutral50),
+                errorWidget: (_, __, ___) => const Icon(AppIcons.pizza, size: 40, color: AppColors.neutral200),
               ),
             ),
-
-            // Content
+            
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   Text(
+                  Text(
                     product.title,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.labelMedium.copyWith(
-                      color: AppColors.neutral900,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
+                    style: AppTextStyles.labelMedium.copyWith(color: AppColors.neutral900, fontWeight: FontWeight.w700),
                   ),
-                  const SizedBox(height: 6),
-
-                  // Variants as labels
-                  if (product.variants.isNotEmpty)
-                    SizedBox(
-                      height: 24,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: product.variants.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 4),
-                        itemBuilder: (_, i) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(
-                              color: AppColors.neutral50,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: AppColors.neutral200),
-                            ),
-                            child: Center(
-                              child: Text(
-                                product.variants[i].title,
-                                style: AppTextStyles.bodySmall.copyWith(fontSize: 10, color: AppColors.neutral600),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                  const SizedBox(height: 4),
+                  if (product.description != null)
+                    Text(
+                      product.description!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral600),
                     ),
-                  
                   const SizedBox(height: 12),
-
-                  // Price and Add button
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: Text(
-                          _formatPrice(product.price),
-                          style: AppTextStyles.labelLarge.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 13,
-                          ),
-                        ),
+                      Text(
+                        "${product.price.toInt()} so'm",
+                        style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w800),
                       ),
                       GestureDetector(
-                        onTap: (product.variants.length > 1) ? onTap : onAddTap,
+                        onTap: onAddTap,
                         child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: AppColors.primaryLight,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.add, color: Colors.white, size: 18),
+                          child: const Icon(Icons.add_rounded, color: AppColors.primary, size: 20),
                         ),
                       ),
                     ],

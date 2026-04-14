@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:http/io_client.dart';
 import 'package:pizza_strada/core/constants/api_constants.dart';
 import 'package:pizza_strada/core/constants/app_constants.dart';
 import 'package:pizza_strada/core/network/signature_link.dart';
@@ -11,10 +12,14 @@ GraphQLClient buildGraphQLClient({String? token}) {
   // ORDER API ga yuborilishi kerak bo'lgan operatsiya nomlari
   const orderOperations = {'orders', 'order', 'createOrder', 'checkPromoCode'};
 
+  final httpClient = HttpClient()
+    ..connectionTimeout = const Duration(seconds: 30);
+  final ioClient = IOClient(httpClient);
+
   final httpLink = Link.split(
     (request) => orderOperations.contains(request.operation.operationName),
-    HttpLink(ApiConstants.orderEndpoint),
-    HttpLink(ApiConstants.commonEndpoint),
+    HttpLink(ApiConstants.orderEndpoint, httpClient: ioClient),
+    HttpLink(ApiConstants.commonEndpoint, httpClient: ioClient),
   );
 
   final authLink = Link.function((request, [forward]) {
@@ -39,8 +44,14 @@ GraphQLClient buildGraphQLClient({String? token}) {
   });
 
   final loggingLink = Link.function((request, [forward]) {
-    debugPrint('🚀 [GraphQL Request] ${request.operation.operationName}');
+    final isOrder = orderOperations.contains(request.operation.operationName);
+    final endpoint = isOrder ? 'ORDER' : 'COMMON';
+    final url = isOrder ? ApiConstants.orderEndpoint : ApiConstants.commonEndpoint;
+
+    debugPrint('🚀 [GraphQL Request] [$endpoint] ${request.operation.operationName}');
+    debugPrint('   URL: $url');
     debugPrint('   Variables: ${request.variables}');
+
     return forward!(request).map((response) {
       if (response.errors != null) {
         debugPrint('❌ [GraphQL Errors] ${request.operation.operationName}: ${response.errors}');

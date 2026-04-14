@@ -4,6 +4,7 @@ import 'package:pizza_strada/features/orders/data/models/order_model.dart';
 
 abstract class OrderRemoteDataSource {
   Future<List<OrderModel>> getOrders();
+  Future<OrderModel> getOrder(int id);
   Future<int> createOrder({
     required String fullName,
     required String phone,
@@ -23,36 +24,84 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
   @override
   Future<List<OrderModel>> getOrders() async {
     const String query = r'''
-      query orders {
+      query Orders {
         orders {
-          number
+          order_id
+          address
+          comment
           status
-          total
-          date
+          status_text
+          payment_url
+          type
+          branch
+          latitude
+          longitude
+          payment_method_text
+          payment_method
+          subtotal_price
+          discount_amount
+          delivery_price
+          total_price
           products {
-            quantity
+            slug
+            title
+            image
+            variant
             price
-            product {
-              slug
-              title
-              thumbnail
-              photo
-            }
-            variant {
-              id
-              title
-              price
-            }
+            quantity
+            total_amount
           }
         }
       }
     ''';
     final result = await _client.query(QueryOptions(
       document: gql(query),
-      operationName: 'orders', // Used by SplitLink for ORDER API
+      operationName: 'Orders',
     ));
     if (result.hasException) throw result.exception!;
     return (result.data?['orders'] as List).map((e) => OrderModel.fromJson(e)).toList();
+  }
+
+  @override
+  Future<OrderModel> getOrder(int id) async {
+    const String query = r'''
+      query Order($id: Int!) {
+        order(id: $id) {
+          order_id
+          address
+          comment
+          status
+          status_text
+          payment_url
+          type
+          branch
+          latitude
+          longitude
+          payment_method_text
+          payment_method
+          subtotal_price
+          discount_amount
+          delivery_price
+          total_price
+          products {
+            slug
+            title
+            image
+            variant
+            price
+            quantity
+            total_amount
+          }
+        }
+      }
+    ''';
+    final result = await _client.query(QueryOptions(
+      document: gql(query),
+      variables: {'id': id},
+      operationName: 'Order',
+    ));
+    if (result.hasException) throw result.exception!;
+    return OrderModel.fromJson(result.data?['order']);
   }
 
   @override

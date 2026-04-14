@@ -25,7 +25,7 @@ void main() async {
   await DeviceInfoHelper.init();
   await SharedPrefs.init();
   await EasyLocalization.ensureInitialized();
-  configureDependencies();
+  await configureDependencies();
 
   runApp(
     EasyLocalization(

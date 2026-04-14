@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -41,7 +42,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: Text("Profil", style: AppTextStyles.h2.copyWith(color: AppColors.neutral900)),
+        title: Text('profile.title'.tr(), style: AppTextStyles.h2.copyWith(color: AppColors.neutral900)),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
@@ -88,13 +89,13 @@ class _ProfilePageState extends State<ProfilePage> {
             // Settings Items
             _buildItem(
               icon: Icons.notifications_none_rounded,
-              title: "Bildirishnomalar",
+              title: 'profile.notifications'.tr(),
               onTap: () {},
             ),
             _buildItem(
               icon: Icons.language_rounded,
-              title: "Tilni o'zgartirish",
-              onTap: () {},
+              title: 'profile.change_language'.tr(),
+              onTap: () => _showLanguagePicker(),
             ),
             
             // Phone call from settings
@@ -106,7 +107,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 }
                 return _buildItem(
                   icon: AppIcons.support,
-                  title: "Telefon qilish",
+                  title: 'profile.call_support'.tr(),
                   subtitle: supportPhone,
                   onTap: () async {
                     if (supportPhone != null) {
@@ -135,12 +136,55 @@ class _ProfilePageState extends State<ProfilePage> {
                   if (mounted) context.go('/auth/login');
                 },
                 leading: const Icon(Icons.logout_rounded, color: AppColors.error, size: 22),
-                title: Text("Chiqish", style: AppTextStyles.labelLarge.copyWith(color: AppColors.error)),
+                title: Text('profile.logout'.tr(), style: AppTextStyles.labelLarge.copyWith(color: AppColors.error)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showLanguagePicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('profile.select_language'.tr(), style: AppTextStyles.h3),
+                const SizedBox(height: 20),
+                _buildLanguageOption("O'zbek tili", const Locale('uz')),
+                _buildLanguageOption("Русский язык", const Locale('ru')),
+                _buildLanguageOption("English", const Locale('en')),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLanguageOption(String title, Locale locale) {
+    final isSelected = context.locale == locale;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: ListTile(
+        title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: isSelected ? AppColors.primary : AppColors.neutral900)),
+        trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
+        onTap: () async {
+          await context.setLocale(locale);
+          if (context.mounted) {
+            context.read<HomeCubit>().init();
+            Navigator.pop(context);
+          }
+        },
       ),
     );
   }
@@ -156,14 +200,27 @@ class _ProfilePageState extends State<ProfilePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.neutral200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: ListTile(
         onTap: onTap,
-        leading: Icon(icon, color: AppColors.neutral700, size: 22),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.neutral50,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: AppColors.neutral700, size: 20),
+        ),
         title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: AppColors.neutral900)),
         subtitle: subtitle != null ? Text(subtitle, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400)) : null,
-        trailing: const Icon(AppIcons.arrowRight, color: AppColors.neutral200, size: 16),
+        trailing: const Icon(AppIcons.arrowRight, color: AppColors.neutral400, size: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );

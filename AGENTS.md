@@ -19,15 +19,15 @@ Ushbu qo'llanma Strada Pizza loyihasi uchun Flutter mobil ilovasini ishlab chiqi
 
 Loyiha ikkita asosiy schema'dan foydalanadi:
 
-1.  **Common Schema:** `/graphql?schema=common` (Auth, mahsulotlar, filiallar)
-2.  **Order Schema:** `/graphql?schema=order` (Savat, buyurtma yaratish)
+1.  **Common Schema:** `/graphql/common` (Auth, mahsulotlar, filiallar)
+2.  **Order Schema:** `/graphql/order` (Savat, buyurtma yaratish)
 
 ### 1. Environments & Base URLs
 
-| **Production**  | `https://pizzastada.uz/graphql?schema=` |
-| **Development** | `https://food.khalilovdev.uz/graphql?schema=` |
+| **Production**  | `https://pizzastada.uz/graphql/` |
+| **Development** | `https://food.khalilovdev.uz/graphql/` |
 
-_Eslatma: GraphQL so'rovlarida schema nomini query string sifatida berish kerak (`?schema=common` yoki `?schema=order`)._
+_Eslatma: GraphQL so'rovlarida schema nomini path segment sifatida berish kerak (`/graphql/common` yoki `/graphql/order`)._
 
 ### 2. Authentication
 
@@ -84,6 +84,8 @@ lib/
 - `product`: Bitta mahsulot tafsilotlari.
 - `branches`: Filiallar ro'yxati.
 - `settings`: Ilova sozalamalari (tel raqam, ish vaqti va h.k).
+- `order(id: Int!)`: Bitta buyurtma tafsilotlari (new schema).
+- `orders`: Buyurtmalar ro'yxati (new schema).
 
 ### Mutations
 
@@ -113,6 +115,11 @@ Ilova 3 ta tilda to'liq ishlashi kerak:
 - **O'zbekcha (`uz`)** — Asosiy til.
 - **Ruscha (`ru`)**
 - **Inglizcha (`en`)**
+
+### 0. Localization Rules (Majburiy)
+- Barcha static textlar (label, button text, error message) `lib/l10n/*.json` fayllarida saqlanishi shart.
+- Kodda textlardan foydalanishda `tr()` funksiyasi yoki `LocaleKeys` dan foydalaniladi.
+- Har bir yangi text qo'shilganda barcha 3 ta tilda (uz, ru, en) tarjimasi berilishi majburiy.
 
 ### 1. Language Header
 
@@ -150,13 +157,17 @@ Localizatsiya uchun `easy_localization` paketidan va `.json` fayllardan foydalan
     - `Header-Timestamp`
     - `Header-Sign` (Algoritm yuqorida keltirilgan)
 
-4.  **Error Handling (Xatolarni boshqarish):**
+4.  **UI/UX Qoidalari:**
+    - **Filtrlash:** Home pageda kategoriyalar bo'yicha filtrlash client-side amalga oshirilishi kerak (barcha mahsulotlar bir marta olinadi).
+    - **O'lchamlar (Variants):** Agar mahsulotda o'lchamlar 1 tadan ko'p bo'lsa, tanlash majburiy (default tanlanmagan bo'lishi kerak). 1 ta bo'lsa UI yashiriladi.
+    - **Slider:** Sliderlarda text va button ko'rsatilishi shart. Width 100% (viewportFraction: 0.92+), radius: 20px, shadow va gradient overlay bo'lishi premium look uchun majburiy.
+    - **Refresh:** Home pageda pull-to-refresh bo'lishi shart.
+    - **Order History:** Buyurtmalar sahifasida barcha fieldlar (subtotal, delivery, total) aniq ko'rsatilishi va kartalar 16px radiusda bo'lishi shart.
+
+5.  **Error Handling (Xatolarni boshqarish):**
     - GraphQL xatolarini (`GraphQLError`) tahlil qil va foydalanuvchiga tushunarli tilda ko'rsat.
+    - Model parsingda `tryParse` va null-safety'dan foydalan (Orders va h.k).
     - Tarmoq xatolarini (Connectivity) alohida ushla.
-5.  **UI/UX:**
-    - Placeholders o'rniga haqiqiy rasmlardan foydalaniladi (API orqali).
-    - Yuklanish holatlari (Shimmer effect) bo'lishi shart.
-    - Tugmalar va inputlar uchun `active`/`disabled` holatlarini inobatga ol.
 6.  **Security:** `secretKey` (Header-Sign uchun) `--dart-define` yoki `.env` orqali berilishi kerak.
 7.  **State Management:** Feature-based BLoC pattern. Logic UI dan to'liq ajratilgan bo'lishi kerak.
 8.  **Testing (Dev Mode):** Hozirda test yozish majburiy emas (Dev Mode). Lekin har bir yangi qo'shilgan metod yoki mantiq qanday ishlashi haqida kodda sharhlar (documentation) yozib ketilishi shart. Kelajakda testlar qo'shiladi.

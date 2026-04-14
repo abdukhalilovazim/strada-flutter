@@ -83,13 +83,13 @@ class _LoginPageState extends State<LoginPage> {
 
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: Text('Вход', style: AppTextStyles.h1.copyWith(color: AppColors.neutral900, fontSize: 32)),
+                      child: Text('auth.login_title'.tr(), style: AppTextStyles.h1.copyWith(color: AppColors.neutral900, fontSize: 32)),
                     ),
                     const SizedBox(height: 8),
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Введите свои данные, чтобы продолжить',
+                        'auth.login_subtitle'.tr(),
                         style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
                       ),
                     ),
@@ -102,7 +102,7 @@ class _LoginPageState extends State<LoginPage> {
                       textInputAction: TextInputAction.next,
                       onSubmitted: (_) => _phoneFocus.requestFocus(),
                       style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral900),
-                      decoration: _inputDecoration('Ваше имя'),
+                      decoration: _inputDecoration('auth.name_hint'.tr()),
                     ),
                     const SizedBox(height: 16),
 
@@ -129,20 +129,13 @@ class _LoginPageState extends State<LoginPage> {
                       height: 52,
                       child: ElevatedButton(
                         onPressed: state is AuthLoading ? null : () => _onContinue(ctx),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: AppColors.primaryLight,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          elevation: 0,
-                        ),
                         child: state is AuthLoading
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                              )
-                            : Text('Отправить SMS', style: AppTextStyles.labelLarge.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                               ? const SizedBox(
+                                   width: 22,
+                                   height: 22,
+                                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                                 )
+                               : Text('auth.send_sms'.tr()),
                       ),
                     ),
                   ],
@@ -163,9 +156,9 @@ class _LoginPageState extends State<LoginPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? AppColors.primary : AppColors.neutral100,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.neutral200),
+          color: active ? AppColors.primary : AppColors.neutral50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: active ? AppColors.primary : AppColors.neutral200),
         ),
         child: Text(
           lang,

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -43,9 +44,9 @@ class _OtpPageState extends State<OtpPage> {
         appBar: AppBar(
           backgroundColor: AppColors.background,
           elevation: 0,
-          leading: GestureDetector(
-            onTap: () => context.pop(),
-            child: const Icon(Icons.arrow_back_ios_new, color: AppColors.neutral900, size: 20),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.neutral900, size: 20),
+            onPressed: () => context.pop(),
           ),
         ),
         body: BlocConsumer<AuthCubit, AuthState>(
@@ -62,41 +63,33 @@ class _OtpPageState extends State<OtpPage> {
           },
           builder: (ctx, state) {
             return SafeArea(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 24),
-                    Text('SMS tasdiqlash', style: AppTextStyles.h1.copyWith(color: AppColors.neutral900)),
+                    Text("auth.otp_title".tr(), style: AppTextStyles.h1.copyWith(color: AppColors.neutral900, fontSize: 32)),
                     const SizedBox(height: 8),
                     Text(
-                      '${widget.phone} raqamiga yuborilgan kodni kiriting',
+                      "auth.otp_subtitle".tr(namedArgs: {"phone": widget.phone}),
                       style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 48),
 
                     // OTP inputs
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: List.generate(4, (i) {
-                        return _OtpBox(
+                        return _buildOtpBox(
+                          ctx,
                           controller: _controllers[i],
                           focusNode: _focusNodes[i],
-                          onChanged: (val) {
-                            if (val.isNotEmpty && i < 3) {
-                              _focusNodes[i + 1].requestFocus();
-                            } else if (val.isEmpty && i > 0) {
-                              _focusNodes[i - 1].requestFocus();
-                            }
-                            if (_controllers.every((c) => c.text.isNotEmpty)) {
-                              _onConfirm(ctx);
-                            }
-                          },
+                          index: i,
                         );
                       }),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 48),
 
                     // Confirm button
                     SizedBox(
@@ -104,18 +97,12 @@ class _OtpPageState extends State<OtpPage> {
                       height: 54,
                       child: ElevatedButton(
                         onPressed: state is AuthLoading ? null : () => _onConfirm(ctx),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          elevation: 0,
-                        ),
                         child: state is AuthLoading
                             ? const SizedBox(
                                 width: 22, height: 22,
                                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                               )
-                            : Text('Tasdiqlash', style: AppTextStyles.labelLarge.copyWith(color: Colors.white)),
+                            : Text("auth.confirm".tr()),
                       ),
                     ),
                   ],
@@ -127,21 +114,8 @@ class _OtpPageState extends State<OtpPage> {
       ),
     );
   }
-}
 
-class _OtpBox extends StatelessWidget {
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final ValueChanged<String> onChanged;
-
-  const _OtpBox({
-    required this.controller,
-    required this.focusNode,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildOtpBox(BuildContext ctx, {required TextEditingController controller, required FocusNode focusNode, required int index}) {
     return SizedBox(
       width: 68,
       height: 68,
@@ -152,19 +126,28 @@ class _OtpBox extends StatelessWidget {
         keyboardType: TextInputType.number,
         maxLength: 1,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        onChanged: onChanged,
-        style: AppTextStyles.h2.copyWith(color: AppColors.neutral900),
+        onChanged: (val) {
+          if (val.isNotEmpty && index < 3) {
+            _focusNodes[index + 1].requestFocus();
+          } else if (val.isEmpty && index > 0) {
+            _focusNodes[index - 1].requestFocus();
+          }
+          if (_controllers.every((c) => c.text.isNotEmpty)) {
+            _onConfirm(ctx);
+          }
+        },
+        style: AppTextStyles.h1.copyWith(color: AppColors.neutral900),
         decoration: InputDecoration(
           counterText: '',
           filled: true,
-          fillColor: AppColors.neutral100,
+          fillColor: AppColors.neutral50,
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(color: AppColors.neutral200, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
           ),
         ),
       ),
