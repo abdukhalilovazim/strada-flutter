@@ -54,6 +54,8 @@
   "checkout.calculating": "Calculating...",
   "checkout.order_placed": "Order placed",
   "orders.title": "My Orders",
+  "orders.items": "Items",
+  "orders.pay_now": "Pay Now",
   "orders.empty": "No orders yet",
   "orders.status_completed": "Completed",
   "orders.status_rejected": "Rejected",

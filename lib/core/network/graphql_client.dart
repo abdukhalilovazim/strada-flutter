@@ -19,7 +19,10 @@ GraphQLClient buildGraphQLClient({String? token}) {
     'order',
     'Order',
     'createOrder',
-    'checkPromoCode'
+    'checkPromoCode',
+    'CheckPromoCode',
+    'calculateDeliveryPrice',
+    'CalculateDeliveryPrice',
   };
 
   final httpClient = HttpClient()

@@ -66,7 +66,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Future<void> _calculateDelivery({double? lat, double? lng}) async {
     setState(() => _loadingDelivery = true);
     const mutation = r'''
-      mutation CalculateDeliveryPrice($latitude: Float, $longitude: Float) {
+      mutation CalculateDeliveryPrice($latitude: Float!, $longitude: Float!) {
         calculateDeliveryPrice(latitude: $latitude, longitude: $longitude)
       }
     ''';
@@ -252,71 +252,114 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 ],
                 const SizedBox(height: 20),
 
-                // ── Payment method: Cash → show change field ──────────────
+                // ── Payment method + Qaytim ───────────────────────────────
                 _sectionLabel('checkout.payment'.tr()),
                 const SizedBox(height: 8),
-                _buildCardField(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.payments_outlined, color: AppColors.primary, size: 20),
-                        const SizedBox(width: 12),
-                        Text('checkout.cash'.tr(), style: AppTextStyles.bodyMedium),
-                      ],
-                    ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.neutral100),
+                  ),
+                  child: Column(
+                    children: [
+                      // Cash row
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.payments_outlined, color: AppColors.primary, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(child: Text('checkout.cash'.tr(), style: AppTextStyles.bodyMedium)),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryLight,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text('checkout.cash'.tr(),
+                                  style: AppTextStyles.bodyExtraSmall.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w700,
+                                  )),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1, color: AppColors.neutral100),
+                      // Qaytim toggle row
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16, right: 8, top: 4, bottom: 4),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.receipt_long_outlined, color: AppColors.primary, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text('checkout.change'.tr(), style: AppTextStyles.bodyMedium),
+                            ),
+                            Switch.adaptive(
+                              value: _showChangeInput,
+                              onChanged: (val) => setState(() {
+                                _showChangeInput = val;
+                                if (!val) _changeController.clear();
+                              }),
+                              activeColor: AppColors.primary,
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Animated input expansion
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeInOut,
+                        child: _showChangeInput
+                            ? Column(
+                                children: [
+                                  const Divider(height: 1, color: AppColors.neutral100),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                    child: TextField(
+                                      controller: _changeController,
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                      autofocus: true,
+                                      onChanged: (_) => setState(() {}),
+                                      decoration: InputDecoration(
+                                        hintText: 'checkout.change_hint'.tr(),
+                                        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
+                                        border: InputBorder.none,
+                                        prefixIcon: const Padding(
+                                          padding: EdgeInsets.only(right: 8),
+                                          child: Icon(Icons.money_rounded, color: AppColors.primary, size: 20),
+                                        ),
+                                        prefixIconConstraints: const BoxConstraints(minWidth: 0),
+                                        suffix: Text("so'm",
+                                            style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
+                                      ),
+                                    ),
+                                  ),
+                                  if (change != null)
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.success),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            '${'checkout.change_info'.tr()}: ${NumberFormatter.formatSum(change)} so\'m',
+                                            style: AppTextStyles.bodySmall.copyWith(
+                                                color: AppColors.success, fontWeight: FontWeight.w600),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
                   ),
                 ),
-                // ── Qaytim (Change) — toggle first, input on demand ──────
-                _buildCardField(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.change_circle_outlined, color: AppColors.primary, size: 20),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text('checkout.change'.tr(), style: AppTextStyles.bodyMedium),
-                        ),
-                        Switch(
-                          value: _showChangeInput,
-                          onChanged: (val) => setState(() {
-                            _showChangeInput = val;
-                            if (!val) _changeController.clear();
-                          }),
-                          activeColor: AppColors.primary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (_showChangeInput) ...[                
-                  const SizedBox(height: 8),
-                  _buildCardField(
-                    child: TextField(
-                      controller: _changeController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      autofocus: true,
-                      onChanged: (_) => setState(() {}),
-                      decoration: InputDecoration(
-                        hintText: 'checkout.change_hint'.tr(),
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
-                        border: InputBorder.none,
-                        prefixIcon: const Icon(Icons.attach_money_rounded, color: AppColors.primary, size: 20),
-                        suffixText: "so'm",
-                      ),
-                    ),
-                  ),
-                  if (change != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8, left: 4),
-                      child: Text(
-                        '${'checkout.change_info'.tr()}: ${NumberFormatter.formatSum(change)} so\'m',
-                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.success, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                ],
                 const SizedBox(height: 20),
 
                 // ── Promo code ────────────────────────────────────────────
