@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
+import 'package:pizza_strada/core/utils/number_formatter.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 
 class CartPage extends StatelessWidget {
@@ -86,7 +87,7 @@ class CartPage extends StatelessWidget {
                                 if (item.variant != null)
                                   Text(item.variant!.title, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400)),
                                 const SizedBox(height: 8),
-                                Text("${item.totalPrice.toInt()} so'm", style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w800)),
+                                Text("${NumberFormatter.formatSum(item.totalPrice)} so'm", style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w800)),
                               ],
                             ),
                           ),
@@ -125,7 +126,7 @@ class CartPage extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text("cart.total".tr(), style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w700)),
-                          Text("${state.subtotal.toInt()} so'm", style: AppTextStyles.h2.copyWith(color: AppColors.primary)),
+                          Text("${NumberFormatter.formatSum(state.subtotal)} so'm", style: AppTextStyles.h2.copyWith(color: AppColors.primary)),
                         ],
                       ),
                       const SizedBox(height: 16),

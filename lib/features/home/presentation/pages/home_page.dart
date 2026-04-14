@@ -256,7 +256,7 @@ class HomePage extends StatelessWidget {
                         crossAxisCount: 2,
                         mainAxisSpacing: 16,
                         crossAxisSpacing: 16,
-                        childAspectRatio: 0.72,
+                        childAspectRatio: 0.68,
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (ctx, i) {
@@ -264,7 +264,7 @@ class HomePage extends StatelessWidget {
                           return ProductCard(
                             product: product,
                             onTap: () => context.push('/product/${product.slug}', extra: product),
-                            onAddTap: () => context.read<CartCubit>().addToCart(product),
+                            onAddTap: (variant) => context.read<CartCubit>().addToCart(product, variant: variant),
                           );
                         },
                         childCount: state.products.length,

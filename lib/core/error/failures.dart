@@ -7,7 +7,7 @@ abstract class Failure extends Equatable {
   @override
   List<Object?> get props => [message];
 
-  String get messageKey => message ?? 'error_server';
+  String get messageKey => message ?? 'error.server';
 }
 
 class ServerFailure extends Failure {
@@ -17,5 +17,5 @@ class ServerFailure extends Failure {
 class NetworkFailure extends Failure {
   const NetworkFailure({super.message});
   @override
-  String get messageKey => message ?? 'error_network';
+  String get messageKey => message ?? 'error.network';
 }

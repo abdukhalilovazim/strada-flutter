@@ -147,7 +147,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ],
       ),
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(AppDim.lg),
+        padding: const EdgeInsets.symmetric(horizontal: AppDim.lg, vertical: 16),
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [

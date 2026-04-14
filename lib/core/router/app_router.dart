@@ -13,13 +13,14 @@ import 'package:pizza_strada/features/cart/presentation/pages/checkout_page.dart
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/pages/home_page.dart';
 import 'package:pizza_strada/features/home/presentation/pages/product_detail_page.dart';
+import 'package:pizza_strada/features/orders/domain/entities/order_entity.dart';
+import 'package:pizza_strada/features/orders/presentation/pages/order_detail_page.dart';
 import 'package:pizza_strada/features/orders/presentation/pages/orders_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/profile_page.dart';
 import 'package:pizza_strada/features/splash/presentation/pages/splash_page.dart';
 
 // Placeholder pages for minor routes
 class MapPickerPage extends StatelessWidget { const MapPickerPage({super.key}); @override Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Map Picker'))); }
-class OrderDetailPage extends StatelessWidget { final int orderId; const OrderDetailPage({super.key, required this.orderId}); @override Widget build(BuildContext context) => Scaffold(body: Center(child: Text('Order: $orderId'))); }
 
 class MainScaffold extends StatelessWidget {
   final Widget child;
@@ -56,22 +57,22 @@ class MainScaffold extends StatelessWidget {
             items: [
               BottomNavigationBarItem(
                 icon: const Icon(AppIcons.home, size: 24),
-                activeIcon: const Icon(AppIcons.home, size: 24),
+                activeIcon: const Icon(AppIcons.homeActive, size: 24),
                 label: 'nav.home'.tr(),
               ),
               BottomNavigationBarItem(
                 icon: const Icon(AppIcons.cart, size: 24),
-                activeIcon: const Icon(AppIcons.cart, size: 24),
+                activeIcon: const Icon(AppIcons.cartActive, size: 24),
                 label: 'nav.cart'.tr(),
               ),
               BottomNavigationBarItem(
                 icon: const Icon(AppIcons.orders, size: 24),
-                activeIcon: const Icon(AppIcons.orders, size: 24),
+                activeIcon: const Icon(AppIcons.ordersActive, size: 24),
                 label: 'nav.orders'.tr(),
               ),
               BottomNavigationBarItem(
                 icon: const Icon(AppIcons.profile, size: 24),
-                activeIcon: const Icon(AppIcons.profile, size: 24),
+                activeIcon: const Icon(AppIcons.profileActive, size: 24),
                 label: 'nav.profile'.tr(),
               ),
             ],
@@ -139,7 +140,10 @@ final appRouter = GoRouter(
     GoRoute(path: '/map-picker', builder: (_, __) => const MapPickerPage()),
     GoRoute(
       path: '/order/:id',
-      builder: (_, s) => OrderDetailPage(orderId: int.parse(s.pathParameters['id']!)),
+      builder: (_, s) => OrderDetailPage(
+        orderId: s.pathParameters['id']!,
+        order: s.extra as OrderEntity?,
+      ),
     ),
   ],
 );
