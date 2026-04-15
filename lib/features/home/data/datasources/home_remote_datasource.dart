@@ -25,7 +25,10 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         }
       }
     ''';
-    final result = await _client.query(QueryOptions(document: gql(query)));
+    final result = await _client.query(QueryOptions(
+      document: gql(query),
+      fetchPolicy: FetchPolicy.networkOnly,
+    ));
     if (result.hasException) throw result.exception!;
     return (result.data?['categories'] as List).map((e) => CategoryModel.fromJson(e)).toList();
   }
@@ -42,7 +45,10 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         }
       }
     ''';
-    final result = await _client.query(QueryOptions(document: gql(query)));
+    final result = await _client.query(QueryOptions(
+      document: gql(query),
+      fetchPolicy: FetchPolicy.networkOnly,
+    ));
     if (result.hasException) throw result.exception!;
     return (result.data?['sliders'] as List).map((e) => SliderModel.fromJson(e)).toList();
   }
@@ -58,6 +64,10 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
           thumbnail
           photo
           price
+          category {
+            slug
+            title
+          }
           variants {
             id
             title
@@ -73,6 +83,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     final result = await _client.query(QueryOptions(
       document: gql(query),
       variables: {'category_slug': categorySlug},
+      fetchPolicy: FetchPolicy.networkOnly,
     ));
     if (result.hasException) throw result.exception!;
     return (result.data?['products'] as List).map((e) => ProductModel.fromJson(e)).toList();
@@ -93,7 +104,10 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         }
       }
     ''';
-    final result = await _client.query(QueryOptions(document: gql(query)));
+    final result = await _client.query(QueryOptions(
+      document: gql(query),
+      fetchPolicy: FetchPolicy.networkOnly,
+    ));
     if (result.hasException) throw result.exception!;
     return SettingsModel.fromJson(result.data?['settings'] as Map<String, dynamic>);
   }

@@ -1,7 +1,9 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/constants/app_constants.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
+import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_icons.dart';
 import 'package:pizza_strada/features/auth/presentation/pages/login_page.dart';
@@ -11,35 +13,71 @@ import 'package:pizza_strada/features/cart/presentation/pages/checkout_page.dart
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/pages/home_page.dart';
 import 'package:pizza_strada/features/home/presentation/pages/product_detail_page.dart';
+import 'package:pizza_strada/features/orders/domain/entities/order_entity.dart';
+import 'package:pizza_strada/features/orders/presentation/pages/order_detail_page.dart';
 import 'package:pizza_strada/features/orders/presentation/pages/orders_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/profile_page.dart';
 import 'package:pizza_strada/features/splash/presentation/pages/splash_page.dart';
 
 // Placeholder pages for minor routes
 class MapPickerPage extends StatelessWidget { const MapPickerPage({super.key}); @override Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Map Picker'))); }
-class OrderDetailPage extends StatelessWidget { final int orderId; const OrderDetailPage({super.key, required this.orderId}); @override Widget build(BuildContext context) => Scaffold(body: Center(child: Text('Order: $orderId'))); }
 
 class MainScaffold extends StatelessWidget {
   final Widget child;
   const MainScaffold({super.key, required this.child});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: child,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _calculateSelectedIndex(context),
-        onTap: (index) => _onItemTapped(index, context),
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.neutral400,
-        selectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-        unselectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(AppIcons.home), label: 'Главная'),
-          BottomNavigationBarItem(icon: Icon(AppIcons.cart), label: 'Корзина'),
-          BottomNavigationBarItem(icon: Icon(AppIcons.orders), label: 'Заказы'),
-          BottomNavigationBarItem(icon: Icon(AppIcons.profile), label: 'Профиль'),
-        ],
+      body: SafeArea(bottom: false, child: child),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: BottomNavigationBar(
+            currentIndex: _calculateSelectedIndex(context),
+            onTap: (index) => _onItemTapped(index, context),
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            selectedItemColor: AppColors.primary,
+            unselectedItemColor: AppColors.neutral400,
+            elevation: 0,
+            showSelectedLabels: true,
+            showUnselectedLabels: true,
+            selectedLabelStyle: AppTextStyles.labelSmall.copyWith(fontSize: 11, fontWeight: FontWeight.w600),
+            unselectedLabelStyle: AppTextStyles.labelSmall.copyWith(fontSize: 11, fontWeight: FontWeight.w500),
+            items: [
+              BottomNavigationBarItem(
+                icon: const Icon(AppIcons.home, size: 24),
+                activeIcon: const Icon(AppIcons.homeActive, size: 24),
+                label: 'nav.home'.tr(),
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(AppIcons.cart, size: 24),
+                activeIcon: const Icon(AppIcons.cartActive, size: 24),
+                label: 'nav.cart'.tr(),
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(AppIcons.orders, size: 24),
+                activeIcon: const Icon(AppIcons.ordersActive, size: 24),
+                label: 'nav.orders'.tr(),
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(AppIcons.profile, size: 24),
+                activeIcon: const Icon(AppIcons.profileActive, size: 24),
+                label: 'nav.profile'.tr(),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -102,7 +140,10 @@ final appRouter = GoRouter(
     GoRoute(path: '/map-picker', builder: (_, __) => const MapPickerPage()),
     GoRoute(
       path: '/order/:id',
-      builder: (_, s) => OrderDetailPage(orderId: int.parse(s.pathParameters['id']!)),
+      builder: (_, s) => OrderDetailPage(
+        orderId: s.pathParameters['id']!,
+        order: s.extra as OrderEntity?,
+      ),
     ),
   ],
 );

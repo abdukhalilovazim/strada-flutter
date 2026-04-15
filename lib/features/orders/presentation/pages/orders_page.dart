@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -5,9 +6,8 @@ import 'package:pizza_strada/core/di/injection.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/theme/app_icons.dart';
-import 'package:pizza_strada/features/orders/presentation/bloc/order_cubit.dart';
 import 'package:pizza_strada/features/orders/domain/entities/order_entity.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:pizza_strada/features/orders/presentation/bloc/order_cubit.dart';
 
 class OrdersPage extends StatelessWidget {
   const OrdersPage({super.key});
@@ -19,7 +19,7 @@ class OrdersPage extends StatelessWidget {
       child: Scaffold(
         backgroundColor: AppColors.surface,
         appBar: AppBar(
-          title: Text("Заказы", style: AppTextStyles.h2.copyWith(color: AppColors.neutral900)),
+          title: Text('orders.title'.tr(), style: AppTextStyles.h2.copyWith(color: AppColors.neutral900)),
           backgroundColor: Colors.white,
           elevation: 0,
           centerTitle: true,
@@ -38,7 +38,7 @@ class OrdersPage extends StatelessWidget {
                     children: [
                       const Icon(AppIcons.noOrders, size: 64, color: AppColors.neutral200),
                       const SizedBox(height: 16),
-                      Text("У вас пока нет заказов", style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400)),
+                      Text('orders.empty'.tr(), style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400)),
                     ],
                   ),
                 );
@@ -49,7 +49,7 @@ class OrdersPage extends StatelessWidget {
                 itemCount: state.orders.length,
                 itemBuilder: (context, index) {
                   final order = state.orders[index];
-                  return _OrderCard(order: order);
+                  return OrderCard(order: order);
                 },
               );
             }
@@ -61,133 +61,102 @@ class OrdersPage extends StatelessWidget {
   }
 }
 
-class _OrderCard extends StatelessWidget {
+class OrderCard extends StatelessWidget {
   final OrderEntity order;
-  const _OrderCard({required this.order});
+  const OrderCard({super.key, required this.order});
 
   @override
   Widget build(BuildContext context) {
+    // Determine status color
+    Color statusColor = AppColors.neutral700;
+    if (order.status == 6) statusColor = Colors.green; // Completed
+    if (order.status == 1) statusColor = Colors.red; // Rejected
+    if (order.status == 4) statusColor = Colors.orange; // In Progress
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.neutral200),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: InkWell(
-        onTap: () => context.push('/order/${order.number}'),
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header: #OrderNumber and Status
-              Row(
+        onTap: () => context.push('/order/${order.id}', extra: order),
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header: ID and Status
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("#${order.number}", style: AppTextStyles.labelLarge.copyWith(color: AppColors.neutral900, fontWeight: FontWeight.w700)),
-                  _buildStatusBadge(order.status),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '#${order.id}',
+                        style: AppTextStyles.h4.copyWith(color: AppColors.neutral900),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        order.type ?? '',
+                        style: AppTextStyles.bodyExtraSmall.copyWith(color: AppColors.neutral500),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      order.statusText,
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 16),
-              
-              // Product entries
-              ...order.products.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.neutral100),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: CachedNetworkImage(
-                          imageUrl: item.product.thumbnail,
-                          fit: BoxFit.cover,
-                          errorWidget: (_, __, ___) => const Icon(AppIcons.pizza, size: 24, color: AppColors.neutral200),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(item.product.title, style: AppTextStyles.labelSmall.copyWith(color: AppColors.neutral900)),
-                          if (item.variant != null)
-                            Text(item.variant!.title, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral600)),
-                          Text(
-                            "${item.quantity} x ${item.price.toInt()} so'm",
-                            style: AppTextStyles.bodySmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              )),
-              
-              const Divider(height: 24, color: AppColors.neutral100),
+            ),
+            const Divider(height: 1, color: AppColors.neutral100),
 
-              // Bottom info: Type, Payment, Total
-              Row(
+            // Total Price & Short Info
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Olib ketish • Naqd",
-                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral600),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${order.products.length} mahsulot',
+                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral700),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${order.totalPrice.toInt()} sum',
+                        style: AppTextStyles.h4.copyWith(color: AppColors.primary),
+                      ),
+                    ],
                   ),
-                  Text(
-                    "${order.total.toInt()} so'm",
-                    style: AppTextStyles.labelLarge.copyWith(color: AppColors.primary, fontWeight: FontWeight.w700),
-                  ),
+                  const Icon(Icons.chevron_right_rounded, color: AppColors.neutral300),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(String status) {
-    Color bgColor;
-    Color textColor;
-    String text;
-    
-    switch (status.toLowerCase()) {
-      case 'completed':
-        bgColor = AppColors.neutral100;
-        textColor = AppColors.neutral600;
-        text = "Tugallangan";
-        break;
-      case 'rejected':
-      case 'cancelled':
-      case 'rad etilgan':
-        bgColor = AppColors.error.withOpacity(0.1);
-        textColor = AppColors.error;
-        text = "Rad etilgan";
-        break;
-      default:
-        bgColor = AppColors.info.withOpacity(0.1);
-        textColor = AppColors.info;
-        text = status;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        text,
-        style: AppTextStyles.labelSmall.copyWith(color: textColor, fontSize: 11),
       ),
     );
   }

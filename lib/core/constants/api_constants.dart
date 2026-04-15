@@ -6,9 +6,9 @@ class ApiConstants {
 
   static const _base = kReleaseMode ? _prodBase : _devBase;
 
-  // AGENTS.md ga muvofiq schema query string orqali beriladi
-  static const commonEndpoint = '$_base/graphql?schema=common';
-  static const orderEndpoint  = '$_base/graphql?schema=order';
+  // AGENTS.md ga muvofiq schema path segment orqali beriladi
+  static const commonEndpoint = '$_base/graphql/common';
+  static const orderEndpoint  = '$_base/graphql/order';
 
   // HMAC-SHA256 secret key (Xavfsizlik uchun --dart-define orqali berish tavsiya etiladi)
   static const hmacSecret = String.fromEnvironment(

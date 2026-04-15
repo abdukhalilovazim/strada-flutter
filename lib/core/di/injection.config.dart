@@ -47,6 +47,8 @@ import 'package:pizza_strada/features/orders/domain/usecases/get_orders_usecase.
     as _i576;
 import 'package:pizza_strada/features/orders/presentation/bloc/order_cubit.dart'
     as _i539;
+import 'package:pizza_strada/features/splash/presentation/bloc/splash_cubit.dart'
+    as _i74;
 
 extension GetItInjectableX on _i174.GetIt {
 // initializes the registration of main-scope dependencies inside of GetIt
@@ -85,6 +87,8 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i918.GetProductsUseCase(gh<_i929.HomeRepository>()));
     gh.lazySingleton<_i918.GetSettingsUseCase>(
         () => _i918.GetSettingsUseCase(gh<_i929.HomeRepository>()));
+    gh.factory<_i74.SplashCubit>(
+        () => _i74.SplashCubit(gh<_i929.HomeRepository>()));
     gh.lazySingleton<_i576.GetOrdersUseCase>(
         () => _i576.GetOrdersUseCase(gh<_i414.OrderRepository>()));
     gh.factory<_i528.HomeCubit>(() => _i528.HomeCubit(

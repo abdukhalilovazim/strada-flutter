@@ -15,6 +15,7 @@ class HomeLoading extends HomeState {}
 class HomeLoaded extends HomeState {
   final List<SliderEntity> sliders;
   final List<CategoryEntity> categories;
+  final List<ProductEntity> fullProducts;
   final List<ProductEntity> products;
   final SettingsEntity? settings;
   final String? selectedCategory;
@@ -22,13 +23,14 @@ class HomeLoaded extends HomeState {
   const HomeLoaded({
     required this.sliders,
     required this.categories,
+    required this.fullProducts,
     required this.products,
     this.settings,
     this.selectedCategory,
   });
 
   @override
-  List<Object?> get props => [sliders, categories, products, settings, selectedCategory];
+  List<Object?> get props => [sliders, categories, fullProducts, products, settings, selectedCategory];
 }
 class HomeFailure extends HomeState {
   final String message;
@@ -69,6 +71,7 @@ class HomeCubit extends Cubit<HomeState> {
             (settings) => emit(HomeLoaded(
               sliders: sliders,
               categories: categories,
+              fullProducts: products,
               products: products,
               settings: settings,
             )),
@@ -81,21 +84,33 @@ class HomeCubit extends Cubit<HomeState> {
   Future<void> selectCategory(String slug) async {
     final currentState = state;
     if (currentState is HomeLoaded) {
-      if (currentState.selectedCategory == slug) return;
-
-      emit(HomeLoading());
-      final productsCol = await _getProductsUseCase(categorySlug: slug);
-
-      productsCol.fold(
-        (f) => emit(HomeFailure(f.messageKey)),
-        (products) => emit(HomeLoaded(
+      if (currentState.selectedCategory == slug) {
+        // Unselect if same category clicked (optional, but requested "filter sifatida ishlash")
+        emit(HomeLoaded(
           sliders: currentState.sliders,
           categories: currentState.categories,
-          products: products,
+          fullProducts: currentState.fullProducts,
+          products: currentState.fullProducts,
           settings: currentState.settings,
-          selectedCategory: slug,
-        )),
-      );
+          selectedCategory: null,
+        ));
+        return;
+      }
+
+      final filteredProducts = currentState.fullProducts.where((p) {
+        // API dan kelgan productlarda category bo'lishi kerak. 
+        // Agar category null bo'lsa yoki slug mos kelsa
+        return p.category?.slug == slug;
+      }).toList();
+
+      emit(HomeLoaded(
+        sliders: currentState.sliders,
+        categories: currentState.categories,
+        fullProducts: currentState.fullProducts,
+        products: filteredProducts,
+        settings: currentState.settings,
+        selectedCategory: slug,
+      ));
     }
   }
 }
