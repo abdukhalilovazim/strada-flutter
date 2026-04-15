@@ -10,6 +10,7 @@ import 'package:pizza_strada/features/auth/presentation/pages/login_page.dart';
 import 'package:pizza_strada/features/auth/presentation/pages/otp_page.dart';
 import 'package:pizza_strada/features/cart/presentation/pages/cart_page.dart';
 import 'package:pizza_strada/features/cart/presentation/pages/checkout_page.dart';
+import 'package:pizza_strada/features/cart/presentation/pages/map_picker_page.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/pages/home_page.dart';
 import 'package:pizza_strada/features/home/presentation/pages/product_detail_page.dart';
@@ -20,7 +21,6 @@ import 'package:pizza_strada/features/profile/presentation/pages/profile_page.da
 import 'package:pizza_strada/features/splash/presentation/pages/splash_page.dart';
 
 // Placeholder pages for minor routes
-class MapPickerPage extends StatelessWidget { const MapPickerPage({super.key}); @override Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Map Picker'))); }
 
 class MainScaffold extends StatelessWidget {
   final Widget child;

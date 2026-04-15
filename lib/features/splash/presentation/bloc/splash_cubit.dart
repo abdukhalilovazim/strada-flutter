@@ -30,12 +30,6 @@ class SplashCubit extends Cubit<SplashState> {
         emit(SplashFailure(errorMessage));
       },
       (settings) async {
-        // Ilova ish vaqtini (can_order) tekshirish
-        if (!settings.canOrder) {
-          emit(const SplashMaintenance('Hozirda buyurtmalar qabul qilinmaydi. Ish vaqti: 09:00 - 23:00'));
-          return;
-        }
-
         // Token mavjudligini tekshirish orqali auth holatini aniqlash
         final token = await SecureStorage.getToken();
         if (token != null && token.isNotEmpty) {

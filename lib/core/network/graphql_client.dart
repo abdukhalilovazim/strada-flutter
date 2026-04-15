@@ -21,8 +21,8 @@ const _orderOperations = {
   'calculateDeliveryPrice', 'CalculateDeliveryPrice',
 };
 
-/// GraphQL client yaratish. [token] null bo'lsa Authorization header yuklanmaydi.
-GraphQLClient buildGraphQLClient({String? token}) {
+/// GraphQL client yaratish. Token har bir so'rovda dynamic olinadi.
+GraphQLClient buildGraphQLClient() {
   // --- HTTP Client: 30 soniyalik timeout ---
   final ioClient = IOClient(
     HttpClient()
@@ -38,7 +38,8 @@ GraphQLClient buildGraphQLClient({String? token}) {
   );
 
   // --- Birlashtirilgan Link: Auth + Signature + Logging ---
-  final combinedLink = Link.function((request, [forward]) {
+  final combinedLink = Link.function((request, [forward]) async* {
+    final token = await SecureStorage.getToken();
     final definitions = request.operation.document.definitions
         .whereType<OperationDefinitionNode>();
     final isMutation = definitions.any((d) => d.type == OperationType.mutation);
@@ -93,7 +94,7 @@ GraphQLClient buildGraphQLClient({String? token}) {
       );
     }
 
-    return forward!(req);
+    yield* forward!(req);
   }).concat(httpLink);
 
   return GraphQLClient(

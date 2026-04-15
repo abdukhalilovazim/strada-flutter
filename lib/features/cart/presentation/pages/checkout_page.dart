@@ -10,6 +10,8 @@ import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
+import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
+import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -48,9 +50,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
     _initClient();
   }
 
-  Future<void> _initClient() async {
-    final token = await SecureStorage.getToken();
-    setState(() => _gqlClient = buildGraphQLClient(token: token));
+  void _initClient() {
+    setState(() => _gqlClient = buildGraphQLClient());
   }
 
   @override
@@ -66,7 +67,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Future<void> _calculateDelivery({double? lat, double? lng}) async {
     setState(() => _loadingDelivery = true);
     const mutation = r'''
-      mutation CalculateDeliveryPrice($latitude: Float!, $longitude: Float!) {
+      mutation CalculateDeliveryPrice($latitude: Float, $longitude: Float) {
         calculateDeliveryPrice(latitude: $latitude, longitude: $longitude)
       }
     ''';
@@ -96,7 +97,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     });
 
     const mutation = r'''
-      mutation CheckPromoCode($promo_code: String, $total_price: Float) {
+      mutation CheckPromoCode($promo_code: String!, $total_price: Int!) {
         checkPromoCode(promo_code: $promo_code, total_price: $total_price) {
           promo_code
           type
@@ -107,7 +108,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     final result = await _gqlClient.mutate(MutationOptions(
       document: gql(mutation),
-      variables: {'promo_code': code, 'total_price': subtotal},
+      variables: {'promo_code': code, 'total_price': subtotal.toInt()},
       operationName: 'CheckPromoCode',
     ));
 
@@ -183,6 +184,36 @@ class _CheckoutPageState extends State<CheckoutPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ── Store Closed Warning ──────────────────────────────────
+                BlocBuilder<HomeCubit, HomeState>(
+                  builder: (context, homeState) {
+                    final canOrder = homeState is HomeLoaded ? (homeState.settings?.canOrder ?? true) : true;
+                    if (!canOrder) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 20),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline_rounded, color: AppColors.error),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Hozirda buyurtmalar qabul qilinmaydi. Ish vaqti: 09:00 - 23:00',
+                                style: AppTextStyles.bodySmall.copyWith(color: AppColors.error, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
                 // ── Delivery / Pickup Toggle ──────────────────────────────
                 Container(
                   padding: const EdgeInsets.all(4),
@@ -223,7 +254,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     child: TextField(
                       controller: _addressController,
                       readOnly: true,
-                      onTap: () => context.push('/map-picker'),
+                      onTap: () async {
+                        final result = await context.push<Point>('/map-picker');
+                        if (result != null) {
+                          setState(() {
+                            _addressController.text = "${result.latitude.toStringAsFixed(6)}, ${result.longitude.toStringAsFixed(6)}";
+                          });
+                          _calculateDelivery(lat: result.latitude, lng: result.longitude);
+                        }
+                      },
                       decoration: InputDecoration(
                         hintText: 'checkout.select_address'.tr(),
                         hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
@@ -492,9 +531,17 @@ class _CheckoutPageState extends State<CheckoutPage> {
           child: SizedBox(
             height: 54,
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _onConfirm,
-              child: Text('checkout.confirm'.tr()),
+            child: BlocBuilder<HomeCubit, HomeState>(
+              builder: (context, homeState) {
+                final canOrder = homeState is HomeLoaded ? (homeState.settings?.canOrder ?? true) : true;
+                return ElevatedButton(
+                  onPressed: _onConfirm,
+                  style: !canOrder ? ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.neutral300,
+                  ) : null,
+                  child: Text('checkout.confirm'.tr()),
+                );
+              },
             ),
           ),
         ),
@@ -503,6 +550,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   void _onConfirm() {
+    // Check if store is open
+    final homeState = context.read<HomeCubit>().state;
+    if (homeState is HomeLoaded) {
+      if (!(homeState.settings?.canOrder ?? true)) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Hozirda buyurtmalar qabul qilinmaydi. Ish vaqti: 09:00 - 23:00'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ));
+        return;
+      }
+    }
+
     final cartCubit = context.read<CartCubit>();
     context.go('/orders');
     cartCubit.clear();

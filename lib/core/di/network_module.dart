@@ -8,7 +8,6 @@ abstract class NetworkModule {
   @preResolve
   @lazySingleton
   Future<GraphQLClient> get client async {
-    final token = await SecureStorage.getToken();
-    return buildGraphQLClient(token: token);
+    return buildGraphQLClient();
   }
 }

@@ -4,7 +4,7 @@ class ApiConstants {
   static const _prodBase = 'https://pizzastrada.uz';
   static const _devBase  = 'https://food.khalilovdev.uz';
 
-  static const _base = kReleaseMode ? _prodBase : _devBase;
+  static const _base = _devBase;
 
   // AGENTS.md ga muvofiq schema path segment orqali beriladi
   static const commonEndpoint = '$_base/graphql/common';
