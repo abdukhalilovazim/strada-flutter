@@ -11,10 +11,15 @@ GraphQLClient buildGraphQLClient({String? token}) {
   // ORDER API ga yuborilishi kerak bo'lgan operatsiya nomlari
   const orderOperations = {'orders', 'order', 'createOrder', 'checkPromoCode'};
 
+  // 30 soniyalik timeout o'rnatildi (avval timeout aniqlanmagan edi)
+  final httpClient = HttpClient()
+    ..connectionTimeout = const Duration(seconds: 30)
+    ..idleTimeout = const Duration(seconds: 30);
+
   final httpLink = Link.split(
     (request) => orderOperations.contains(request.operation.operationName),
-    HttpLink(ApiConstants.orderEndpoint),
-    HttpLink(ApiConstants.commonEndpoint),
+    HttpLink(ApiConstants.orderEndpoint, httpClient: httpClient),
+    HttpLink(ApiConstants.commonEndpoint, httpClient: httpClient),
   );
 
   final authLink = Link.function((request, [forward]) {
