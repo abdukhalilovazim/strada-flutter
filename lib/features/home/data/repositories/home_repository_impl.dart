@@ -79,6 +79,9 @@ class HomeRepositoryImpl implements HomeRepository {
         if (statusCode == 403) {
           return const ServerFailure(message: 'So\'rov bloklandi (403). Security sozlamalarini tekshiring.');
         }
+        if (statusCode == 200) {
+          return const ServerFailure(message: 'Serverdan noto\'g\'ri formatda javob keldi (JSON emas).');
+        }
         return ServerFailure(message: 'Server xatosi (HTTP $statusCode)');
       }
 

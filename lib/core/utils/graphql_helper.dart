@@ -18,6 +18,9 @@ class GraphQLHelper {
     }
     final link = e.linkException;
     if (link is HttpLinkServerException) {
+      if (link.response.statusCode == 200) {
+        return 'Serverdan noto\'g\'ri formatda javob keldi (JSON emas)';
+      }
       return 'Server xatosi (HTTP ${link.response.statusCode})';
     }
     if (link is NetworkException) {

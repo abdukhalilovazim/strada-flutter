@@ -60,14 +60,35 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                     children: [
                       _buildLogo(),
                       const SizedBox(height: 48),
-                      const SizedBox(
-                        width: 28,
-                        height: 28,
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary,
-                          strokeWidth: 2.5,
+                      if (state is SplashFailure) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            state.error,
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () => context.read<SplashCubit>().init(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('Qayta urinish'),
+                        ),
+                      ] else ...[
+                        const SizedBox(
+                          width: 28,
+                          height: 28,
+                          child: CircularProgressIndicator(
+                            color: AppColors.primary,
+                            strokeWidth: 2.5,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
