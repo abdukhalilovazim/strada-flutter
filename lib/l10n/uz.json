@@ -79,5 +79,6 @@
   "common.yes": "Ha",
   "common.no": "Yo'q",
   "common.cancel": "Bekor qilish",
-  "common.retry": "Qayta urinish"
+  "common.retry": "Qayta urinish",
+  "common.currency": "so'm"
 }

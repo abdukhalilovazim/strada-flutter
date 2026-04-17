@@ -79,5 +79,6 @@
   "nav.home": "Главная",
   "nav.cart": "Корзина",
   "nav.orders": "Заказы",
-  "nav.profile": "Профиль"
+  "nav.profile": "Профиль",
+  "common.currency": "сум"
 }

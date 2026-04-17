@@ -79,5 +79,6 @@
   "nav.home": "Home",
   "nav.cart": "Cart",
   "nav.orders": "Orders",
-  "nav.profile": "Profile"
+  "nav.profile": "Profile",
+  "common.currency": "UZS"
 }
