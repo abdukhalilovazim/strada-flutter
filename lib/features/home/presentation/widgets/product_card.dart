@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/theme/app_icons.dart';
+import 'package:pizza_strada/core/utils/number_formatter.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 
 class ProductCard extends StatelessWidget {
@@ -115,7 +116,7 @@ class ProductCard extends StatelessWidget {
                           children: [
                             Flexible(
                               child: Text(
-                                "${product.price.toInt()} so'm",
+                                "${NumberFormatter.formatSum(product.price)} so'm",
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppTextStyles.labelSmall.copyWith(
@@ -240,7 +241,7 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
                         ),
                       ),
                       Text(
-                        "${v.price.toInt()} so'm",
+                        "${NumberFormatter.formatSum(v.price)} so'm",
                         style: AppTextStyles.bodyExtraSmall.copyWith(
                           color: isSelected ? Colors.white70 : AppColors.neutral500,
                         ),

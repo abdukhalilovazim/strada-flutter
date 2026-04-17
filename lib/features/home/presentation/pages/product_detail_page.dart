@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_dimensions.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
+import 'package:pizza_strada/core/utils/number_formatter.dart';
 import 'package:pizza_strada/core/widgets/app_button.dart';
 import 'package:pizza_strada/core/theme/app_icons.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
@@ -111,7 +112,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                   ),
                                 ),
                                 Text(
-                                  "${v.price.toInt()} ${'product.price_suffix'.tr()}",
+                                  "${NumberFormatter.formatSum(v.price)} ${'product.price_suffix'.tr()}",
                                   style: AppTextStyles.bodySmall.copyWith(
                                     color: isSelected ? Colors.white70 : AppColors.neutral400,
                                   ),
@@ -157,7 +158,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         child: SafeArea(
           child: AppButton(
             text: _selectedVariant != null 
-                ? "${'product.add_to_cart'.tr()} - ${_selectedVariant!.price.toInt()} UZS"
+                ? "${'product.add_to_cart'.tr()} - ${NumberFormatter.formatSum(_selectedVariant!.price)} UZS"
                 : 'product.add_to_cart'.tr(),
             onTap: () {
               // Point 2 & 7: Savatga qo'shish uchun tanlash shart

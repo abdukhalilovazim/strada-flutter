@@ -325,6 +325,7 @@ Yangi singleton qo'shishda `@LazySingleton` yoki `@injectable` annotatsiyasidan 
 | Bottom Nav Icons   | Outlined (inactive) → Rounded (active) juftlari                           |
 | Card Radius        | `16px` — `OrderCard`, `20px` — `ProductCard`, `DetailCard`               |
 | BoxShadow          | `Colors.black.withOpacity(0.04)`, `blurRadius: 10`                        |
+| **Narx Formati**   | **Barcha narxlar `NumberFormatter.formatSum(price)` orqali ko'rsatiladi** — `product.price.toInt()` kabi raw format TAQIQLANGAN. Tegishli joylar: `ProductCard`, `_VariantPickerSheet`, `ProductDetailPage` variant chips va bottom button, `CartPage`, `CheckoutPage`, `OrderDetailPage` |
 
 ### 5. Xatolarni Boshqarish
 
