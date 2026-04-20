@@ -26,8 +26,8 @@ GraphQLClient buildGraphQLClient() {
   // --- HTTP Client: 30 soniyalik timeout ---
   final ioClient = IOClient(
     HttpClient()
-      ..connectionTimeout = const Duration(seconds: 30)
-      ..idleTimeout = const Duration(seconds: 30),
+      ..connectionTimeout = const Duration(seconds: 60)
+      ..idleTimeout = const Duration(seconds: 60),
   );
 
   // --- HTTP Link: order vs common routing ---
@@ -88,13 +88,38 @@ GraphQLClient buildGraphQLClient() {
       final schema = _orderOperations.contains(req.operation.operationName)
           ? 'ORDER'
           : 'COMMON';
-      debugPrint(
-        '🚀 [GraphQL] [$schema] ${req.operation.operationName} '
-        '| mutation: $isMutation',
-      );
+      final operationName = req.operation.operationName ?? 'unnamed';
+      final variables = const JsonEncoder.withIndent('  ').convert(req.variables);
+
+      debugPrint('┌──────────────────────────────────────────────────────────────────');
+      debugPrint('│ 🚀 [GraphQL REQUEST] [$schema]');
+      debugPrint('│ Operation: $operationName');
+      debugPrint('│ Context: $variables');
+      debugPrint('└──────────────────────────────────────────────────────────────────');
     }
 
-    yield* forward!(req);
+    yield* forward!(req).map((response) {
+      if (kDebugMode) {
+        final schema = _orderOperations.contains(req.operation.operationName)
+            ? 'ORDER'
+            : 'COMMON';
+        final operationName = req.operation.operationName ?? 'unnamed';
+        
+        debugPrint('┌──────────────────────────────────────────────────────────────────');
+        if (response.errors != null && response.errors!.isNotEmpty) {
+          debugPrint('│ ❌ [GraphQL ERROR] [$schema] $operationName');
+          final errors = const JsonEncoder.withIndent('  ').convert(response.errors);
+          debugPrint('│ Errors: $errors');
+        } else {
+          debugPrint('│ ✅ [GraphQL RESPONSE] [$schema] $operationName');
+          // Faqat kichikroq datalarni yoki bir qismini chiqarish (log to'lib ketmasligi uchun)
+          final data = const JsonEncoder.withIndent('  ').convert(response.data);
+          debugPrint('│ Data: ${data.length > 1000 ? "${data.substring(0, 1000)}..." : data}');
+        }
+        debugPrint('└──────────────────────────────────────────────────────────────────');
+      }
+      return response;
+    });
   }).concat(httpLink);
 
   return GraphQLClient(

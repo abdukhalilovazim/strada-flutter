@@ -46,7 +46,7 @@ class ProductCard extends StatelessWidget {
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                   child: AspectRatio(
-                    aspectRatio: 1.1,
+                    aspectRatio: 1.2,
                     child: CachedNetworkImage(
                       imageUrl: product.thumbnail,
                       fit: BoxFit.cover,
@@ -104,7 +104,7 @@ class ProductCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.bodyExtraSmall.copyWith(color: AppColors.neutral500),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -195,7 +195,7 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('product.select_variant'.tr(), style: AppTextStyles.h3),
+              Text('product.select_variant_title'.tr(), style: AppTextStyles.h3),
               IconButton(
                 onPressed: () => Navigator.pop(context),
                 icon: const Icon(Icons.close),
@@ -203,16 +203,24 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
             ],
           ),
           const SizedBox(height: 16),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: widget.product.variants.map((v) {
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 2.2,
+            ),
+            itemCount: widget.product.variants.length,
+            itemBuilder: (context, index) {
+              final v = widget.product.variants[index];
               final isSelected = v.id == selectedVariant.id;
               return InkWell(
                 onTap: () => setState(() => selectedVariant = v),
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.neutral50,
                     border: Border.all(
@@ -222,10 +230,13 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         v.title,
-                        style: AppTextStyles.bodyMedium.copyWith(
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.labelSmall.copyWith(
                           color: isSelected ? AppColors.primary : AppColors.neutral700,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
@@ -240,7 +251,7 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
                   ),
                 ),
               );
-            }).toList(),
+            },
           ),
           const SizedBox(height: 32),
           ElevatedButton(

@@ -83,6 +83,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     final result = await _client.query(QueryOptions(
       document: gql(query),
       variables: {'category_slug': categorySlug},
+      operationName: 'products',
       fetchPolicy: FetchPolicy.networkOnly,
     ));
     if (result.hasException) throw result.exception!;

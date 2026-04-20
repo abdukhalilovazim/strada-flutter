@@ -15,7 +15,7 @@ class MapPickerPage extends StatefulWidget {
 }
 
 class _MapPickerPageState extends State<MapPickerPage> {
-  late YandexMapController _controller;
+  YandexMapController? _controller;
   Point _targetPoint = const Point(latitude: 39.6465, longitude: 66.9535); // Samarqand, Amir Temur
   String _address = '...';
   bool _isMoving = false;
@@ -70,7 +70,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
 
       final position = await Geolocator.getCurrentPosition();
       final point = Point(latitude: position.latitude, longitude: position.longitude);
-      _controller.moveCamera(
+      _controller?.moveCamera(
         CameraUpdate.newCameraPosition(
           CameraPosition(target: point, zoom: 15),
         ),
@@ -101,7 +101,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
           YandexMap(
             onMapCreated: (controller) {
               _controller = controller;
-              _controller.moveCamera(
+              _controller?.moveCamera(
                 CameraUpdate.newCameraPosition(
                   CameraPosition(target: _targetPoint, zoom: 15),
                 ),

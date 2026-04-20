@@ -42,6 +42,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
   // Qaytim (change)
   bool _showChangeInput = false;
 
+  // Location
+  double? _lat;
+  double? _lng;
+
+  bool _isSubmitting = false;
+
   late GraphQLClient _gqlClient;
 
   @override
@@ -80,6 +86,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
     setState(() {
       _loadingDelivery = false;
       if (!result.hasException) {
+        _lat = lat;
+        _lng = lng;
         _deliveryPrice = double.tryParse(
           result.data?['calculateDeliveryPrice']?.toString() ?? '0',
         );
@@ -539,11 +547,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
               builder: (context, homeState) {
                 final canOrder = homeState is HomeLoaded ? (homeState.settings?.canOrder ?? true) : true;
                 return ElevatedButton(
-                  onPressed: (!canOrder || (_isDelivery && _loadingDelivery)) ? null : _onConfirm,
+                  onPressed: (!canOrder || (_isDelivery && _loadingDelivery) || _isSubmitting) ? null : _onConfirm,
                   style: !canOrder ? ElevatedButton.styleFrom(
                     backgroundColor: AppColors.neutral300,
                   ) : null,
-                  child: Text('checkout.confirm'.tr()),
+                  child: _isSubmitting
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : Text('checkout.confirm'.tr()),
                 );
               },
             ),
@@ -553,27 +563,112 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
-  void _onConfirm() {
-    // Check if store is open
-    final homeState = context.read<HomeCubit>().state;
-    if (homeState is HomeLoaded) {
-      if (!(homeState.settings?.canOrder ?? true)) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('error.order_disabled'.tr()),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
+  void _onConfirm() async {
+    // 1. Validation
+    if (_isDelivery) {
+      if (_addressController.text.isEmpty) {
+        _showError('checkout.select_address'.tr());
+        return;
+      }
+      if (_deliveryPrice == null) {
+        _showError('checkout.calculating'.tr());
         return;
       }
     }
 
-    final cartCubit = context.read<CartCubit>();
-    context.go('/orders');
-    cartCubit.clear();
+    // Check if store is open
+    final homeState = context.read<HomeCubit>().state;
+    if (homeState is HomeLoaded) {
+      if (!(homeState.settings?.canOrder ?? true)) {
+        _showError('error.order_disabled'.tr());
+        return;
+      }
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final cartState = context.read<CartCubit>().state;
+      
+      final productsJson = cartState.items.map((item) => {
+        'id': item.product.slug,
+        'quantity': item.quantity,
+        'variant_id': item.variant?.id,
+      }).toList();
+
+      const mutation = r'''
+        mutation createOrder(
+          $type: Int!,
+          $branch_id: Int,
+          $latitude: Float,
+          $longitude: Float,
+          $payment_method: Int!,
+          $products: [OrderProductInput]!,
+          $promo_code: String,
+          $comment: String
+        ) {
+          createOrder(
+            type: $type,
+            branch_id: $branch_id,
+            latitude: $latitude,
+            longitude: $longitude,
+            payment_method: $payment_method,
+            products: $products,
+            promo_code: $promo_code,
+            comment: $comment
+          ) {
+            order_id
+            status_text
+            payment_url
+          }
+        }
+      ''';
+
+      final result = await _gqlClient.mutate(MutationOptions(
+        document: gql(mutation),
+        operationName: 'createOrder',
+        variables: {
+          'type': _isDelivery ? 0 : 1,
+          'branch_id': _isDelivery ? null : 1, // Default main branch
+          'latitude': _isDelivery ? _lat : null,
+          'longitude': _isDelivery ? _lng : null,
+          'payment_method': 0, // Cash
+          'products': productsJson,
+          'promo_code': _appliedPromoCode,
+          'comment': _commentController.text.trim(),
+        },
+      ));
+
+      if (result.hasException) {
+        final msg = result.exception?.graphqlErrors.firstOrNull?.message ?? 
+                    result.exception?.linkException?.toString() ?? 
+                    'error.server'.tr();
+        _showError(msg);
+        return;
+      }
+
+      // Success
+      context.read<CartCubit>().clear();
+      context.go('/orders');
+      
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('checkout.order_placed'.tr()),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+    } catch (e) {
+      _showError(e.toString());
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  void _showError(String msg) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('checkout.order_placed'.tr()),
-      backgroundColor: AppColors.success,
+      content: Text(msg),
+      backgroundColor: AppColors.error,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ));

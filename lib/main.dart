@@ -19,9 +19,6 @@ void main() async {
   // Load environment variables
   await dotenv.load(fileName: ".env");
 
-  // Initialize Yandex Map with dynamic key from .env
-  await YandexMapKeyManager.init();
-  
   AndroidYandexMap.useAndroidViewSurface = true;
 
   // Ekran faqat portrait (tik) holatda ishlaydi

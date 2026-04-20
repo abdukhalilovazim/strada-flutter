@@ -53,7 +53,7 @@ static const orderEndpoint  = '$_base/graphql/order';
 
 ### 2. GraphQL Client (`lib/core/network/graphql_client.dart`)
 
-- `IOClient` bilan **30 soniyalik** connection timeout o'rnatilgan.
+- `IOClient` bilan **60 soniyalik** connection timeout o'rnatilgan (majburiy).
 - Routing `Link.split` orqali operation nomi asosida amalga oshiriladi (order vs common).
 - Order operatsiyalari: `orders`, `Orders`, `order`, `Order`, `createOrder`, `checkPromoCode`.
 - Barcha Auth, Localization, Signature va Logging mantiqi **bitta `Link.function`** da birlashtirилган — bu "Future already completed" crash'larini bartaraf etadi.
@@ -353,6 +353,7 @@ Hozirda test yozish majburiy emas (Dev Mode). Lekin har bir yangi metod uchun Da
 - **Localization asset:** `lib/l10n/` papkasi `pubspec.yaml`dagi `assets:` ro'yxatida saqlanishi shart.
 - **N+1 muammodan** saqlanish uchun GraphQL fragment yoki to'liq field listidan foydalaniladi.
 - **Orientatsiya:** Ilova faqat portrait rejimida ishlaydi (`SystemChrome.setPreferredOrientations`).
+- **Network Timeout:** Barcha tarmoq so'rovlari (GraphQL, HTTP) uchun majburiy **60 soniyalik** `connectionTimeout` o'rnatilishi shart.
 
 ---
 
