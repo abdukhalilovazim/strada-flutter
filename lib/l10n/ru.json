@@ -55,6 +55,7 @@
   "checkout.order_placed": "Заказ принят",
   "orders.title": "Мои заказы",
   "orders.items": "Продукты",
+  "orders.items_count": "{count} товаров",
   "orders.pay_now": "Оплатить",
   "orders.empty": "Заказов пока нет",
   "orders.status_completed": "Завершено",

@@ -26,7 +26,7 @@ class CartCubit extends Cubit<CartState> {
         item.product.slug == product.slug && item.variant?.id == variant?.id);
 
     if (index != -1) {
-      items[index].quantity++;
+      items[index] = items[index].copyWith(quantity: items[index].quantity + 1);
     } else {
       items.add(CartItemEntity(product: product, variant: variant));
     }
@@ -45,9 +45,11 @@ class CartCubit extends Cubit<CartState> {
         i.product.slug == item.product.slug && i.variant?.id == item.variant?.id);
 
     if (index != -1) {
-      items[index].quantity += delta;
-      if (items[index].quantity <= 0) {
+      final newQuantity = items[index].quantity + delta;
+      if (newQuantity <= 0) {
         items.removeAt(index);
+      } else {
+        items[index] = items[index].copyWith(quantity: newQuantity);
       }
       emit(CartState(items: items));
     }

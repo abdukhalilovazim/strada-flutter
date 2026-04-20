@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
@@ -148,35 +149,29 @@ class HomePage extends StatelessWidget {
                                           ),
                                         ),
                                       ),
-                                      if (slider.caption != null || slider.button != null)
+                                      if (slider.caption != null)
                                         Positioned(
                                           left: 20,
                                           bottom: 20,
                                           right: 20,
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              if (slider.caption != null)
-                                                Text(
-                                                  slider.caption!,
-                                                  style: AppTextStyles.h3.copyWith(color: Colors.white),
-                                                ),
-                                              if (slider.button != null) ...[
-                                                const SizedBox(height: 12),
-                                                ElevatedButton(
-                                                  onPressed: () {},
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor: AppColors.primary,
-                                                    foregroundColor: Colors.white,
-                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                                    elevation: 0,
-                                                  ),
-                                                  child: Text(slider.button!),
-                                                ),
-                                              ],
-                                            ],
+                                          child: Text(
+                                            slider.caption!,
+                                            style: AppTextStyles.h3.copyWith(color: Colors.white),
+                                          ),
+                                        ),
+                                      // InkWell for navigation if URL exists
+                                      if (slider.buttonUrl != null && slider.buttonUrl!.isNotEmpty)
+                                        Positioned.fill(
+                                          child: Material(
+                                            color: Colors.transparent,
+                                            child: InkWell(
+                                              onTap: () async {
+                                                final uri = Uri.tryParse(slider.buttonUrl!);
+                                                if (uri != null && await canLaunchUrl(uri)) {
+                                                  await launchUrl(uri);
+                                                }
+                                              },
+                                            ),
                                           ),
                                         ),
                                     ],
@@ -261,10 +256,19 @@ class HomePage extends StatelessWidget {
                       delegate: SliverChildBuilderDelegate(
                         (ctx, i) {
                           final product = state.products[i];
-                          return ProductCard(
-                            product: product,
-                            onTap: () => context.push('/product/${product.slug}', extra: product),
-                            onAddTap: (variant) => context.read<CartCubit>().addToCart(product, variant: variant),
+                          return BlocBuilder<CartCubit, CartState>(
+                            builder: (context, cartState) {
+                              // Calculate total quantity of this product (across all variants) in the cart
+                              final quantity = cartState.items
+                                  .where((item) => item.product.slug == product.slug)
+                                  .fold<int>(0, (sum, item) => sum + item.quantity);
+
+                              return ProductCard(
+                                product: product,
+                                quantityInCart: quantity,
+                                onTap: () => context.push('/product/${product.slug}', extra: product),
+                              );
+                            },
                           );
                         },
                         childCount: state.products.length,

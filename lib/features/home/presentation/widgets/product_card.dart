@@ -1,42 +1,24 @@
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
-import 'package:pizza_strada/core/theme/app_icons.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
+import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class ProductCard extends StatelessWidget {
   final ProductEntity product;
-  final VoidCallback onTap;
-  /// Called with the selected variant (or null if no variants)
-  final void Function(VariantEntity? variant) onAddTap;
+  final int quantityInCart;
+  final VoidCallback? onTap;
 
   const ProductCard({
     super.key,
     required this.product,
-    required this.onTap,
-    required this.onAddTap,
+    this.quantityInCart = 0,
+    this.onTap,
   });
-
-  void _handleAdd(BuildContext context) {
-    if (product.variants.length <= 1) {
-      // No choice needed — add directly (with the single variant if present)
-      onAddTap(product.variants.isNotEmpty ? product.variants.first : null);
-      return;
-    }
-
-    // Multiple variants — show bottom sheet to pick one
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => _VariantPickerSheet(product: product, onPick: onAddTap),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,116 +34,90 @@ class ProductCard extends StatelessWidget {
           ),
         ],
       ),
-      child: ClipRRect(
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(20),
-        child: Stack(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Full card content (not tappable by itself)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // Image + Quantity Badge (Top Right)
+            Stack(
               children: [
-                // Image
-                CachedNetworkImage(
-                  imageUrl: product.photo,
-                  height: 130,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  placeholder: (_, __) => Container(
-                    height: 130,
-                    color: AppColors.neutral100,
-                  ),
-                  errorWidget: (_, __, ___) => Container(
-                    height: 130,
-                    color: AppColors.neutral100,
-                    child: const Icon(AppIcons.pizza, size: 36, color: AppColors.neutral200),
-                  ),
-                ),
-
-                // Info
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Title + description
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              product.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: AppColors.neutral900,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            if (product.description != null) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                product.description!,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTextStyles.bodyExtraSmall
-                                    .copyWith(color: AppColors.neutral500),
-                              ),
-                            ],
-                          ],
-                        ),
-
-                        // Price row (right-side button handled below via Stack)
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                "${NumberFormatter.formatSum(product.price)} so'm",
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTextStyles.labelSmall.copyWith(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                            // Placeholder so text doesn't go under the button
-                            const SizedBox(width: 36),
-                          ],
-                        ),
-                      ],
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  child: AspectRatio(
+                    aspectRatio: 1.1,
+                    child: CachedNetworkImage(
+                      imageUrl: product.thumbnail,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(color: AppColors.neutral100),
+                      errorWidget: (_, __, ___) => const Icon(Icons.image_not_supported_outlined),
                     ),
                   ),
                 ),
+                if (quantityInCart > 0)
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        '$quantityInCart',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
 
-            // ── Navigation InkWell (covers everything except the + button area)
-            Positioned.fill(
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: onTap,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-            ),
-
-            // ── Add button (highest z-order — always on top)
-            Positioned(
-              right: 8,
-              bottom: 8,
-              child: Material(
-                color: AppColors.primaryLight,
-                shape: const CircleBorder(),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: () => _handleAdd(context),
-                  child: const Padding(
-                    padding: EdgeInsets.all(6),
-                    child: Icon(Icons.add_rounded, color: AppColors.primary, size: 18),
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.bold),
                   ),
-                ),
+                  const SizedBox(height: 4),
+                  Text(
+                    product.description ?? '',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.bodyExtraSmall.copyWith(color: AppColors.neutral500),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${NumberFormatter.formatSum(product.price)} ${'common.currency'.tr()}',
+                          style: AppTextStyles.labelLarge.copyWith(color: AppColors.primary),
+                        ),
+                      ),
+                      _buildAddButton(context),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
@@ -169,12 +125,43 @@ class ProductCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildAddButton(BuildContext context) {
+    return Material(
+      color: AppColors.primary,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: () {
+          if (product.variants.length > 1) {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => _VariantPickerSheet(
+                product: product,
+                onPick: (variant) {
+                  context.read<CartCubit>().addToCart(product, variant: variant);
+                },
+              ),
+            );
+          } else {
+            context.read<CartCubit>().addToCart(product, variant: product.variants.first);
+          }
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: const Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Icon(Icons.add_rounded, color: Colors.white, size: 20),
+        ),
+      ),
+    );
+  }
 }
 
-/// Bottom sheet for picking a variant before adding to cart
 class _VariantPickerSheet extends StatefulWidget {
   final ProductEntity product;
-  final void Function(VariantEntity? variant) onPick;
+  final Function(VariantEntity) onPick;
+
   const _VariantPickerSheet({required this.product, required this.onPick});
 
   @override
@@ -182,68 +169,68 @@ class _VariantPickerSheet extends StatefulWidget {
 }
 
 class _VariantPickerSheetState extends State<_VariantPickerSheet> {
-  VariantEntity? _selected;
+  late VariantEntity selectedVariant;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedVariant = widget.product.variants.first;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.neutral200,
-                borderRadius: BorderRadius.circular(2),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('product.select_variant'.tr(), style: AppTextStyles.h3),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close),
               ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Product title
-          Text(widget.product.title, style: AppTextStyles.h3),
-          const SizedBox(height: 4),
-          Text(
-            'product.size'.tr(),
-            style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500),
+            ],
           ),
           const SizedBox(height: 16),
-
-          // Variant chips
           Wrap(
-            spacing: 10,
-            runSpacing: 10,
+            spacing: 12,
+            runSpacing: 12,
             children: widget.product.variants.map((v) {
-              final isSelected = _selected?.id == v.id;
-              return GestureDetector(
-                onTap: () => setState(() => _selected = v),
+              final isSelected = v.id == selectedVariant.id;
+              return InkWell(
+                onTap: () => setState(() => selectedVariant = v),
+                borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : AppColors.neutral100,
-                    borderRadius: BorderRadius.circular(12),
+                    color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.neutral50,
                     border: Border.all(
                       color: isSelected ? AppColors.primary : AppColors.neutral200,
+                      width: 1.5,
                     ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         v.title,
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: isSelected ? Colors.white : AppColors.neutral900,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isSelected ? AppColors.primary : AppColors.neutral700,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
                       Text(
-                        "${NumberFormatter.formatSum(v.price)} so'm",
+                        '${NumberFormatter.formatSum(v.price)} ${'common.currency'.tr()}',
                         style: AppTextStyles.bodyExtraSmall.copyWith(
-                          color: isSelected ? Colors.white70 : AppColors.neutral500,
+                          color: isSelected ? AppColors.primary : AppColors.neutral500,
                         ),
                       ),
                     ],
@@ -252,30 +239,21 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
               );
             }).toList(),
           ),
-          const SizedBox(height: 24),
-
-          // Confirm button
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: _selected == null
-                  ? null
-                  : () {
-                      Navigator.pop(context);
-                      widget.onPick(_selected);
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                disabledBackgroundColor: AppColors.neutral200,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              child: Text(
-                'product.add_to_cart'.tr(),
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-              ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: () {
+              widget.onPick(selectedVariant);
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
+            child: Text('cart.add'.tr()),
           ),
+          const SizedBox(height: 16),
         ],
       ),
     );

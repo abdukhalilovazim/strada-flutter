@@ -65,9 +65,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   // ─── Delivery price mutation ──────────────────────────────────────────────
   Future<void> _calculateDelivery({double? lat, double? lng}) async {
+    if (lat == null || lng == null) return;
     setState(() => _loadingDelivery = true);
     const mutation = r'''
-      mutation CalculateDeliveryPrice($latitude: Float, $longitude: Float) {
+      mutation CalculateDeliveryPrice($latitude: Float!, $longitude: Float!) {
         calculateDeliveryPrice(latitude: $latitude, longitude: $longitude)
       }
     ''';
@@ -255,12 +256,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       controller: _addressController,
                       readOnly: true,
                       onTap: () async {
-                        final result = await context.push<Point>('/map-picker');
+                        final result = await context.push<Map<String, dynamic>>('/map-picker');
                         if (result != null) {
+                          final point = result['point'] as Point;
+                          final address = result['address'] as String;
                           setState(() {
-                            _addressController.text = "${result.latitude.toStringAsFixed(6)}, ${result.longitude.toStringAsFixed(6)}";
+                            _addressController.text = address;
                           });
-                          _calculateDelivery(lat: result.latitude, lng: result.longitude);
+                          _calculateDelivery(lat: point.latitude, lng: point.longitude);
                         }
                       },
                       decoration: InputDecoration(
@@ -277,13 +280,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   const SizedBox(height: 8),
                   _buildCardField(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
                       child: Row(
                         children: [
-                          const Icon(Icons.storefront_rounded, color: AppColors.primary, size: 20),
+                          const Icon(Icons.storefront_rounded, color: AppColors.primary, size: 22),
                           const SizedBox(width: 12),
                           Expanded(child: Text('Pizza Strada (Asosiy filial)', style: AppTextStyles.bodyMedium)),
-                          const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.neutral400),
+                          const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.neutral400, size: 20),
                         ],
                       ),
                     ),
@@ -431,18 +434,18 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     ),
                     const SizedBox(width: 8),
                     SizedBox(
-                      height: 52,
+                      height: 44,
                       child: ElevatedButton(
                         onPressed: _loadingPromo ? null : () => _applyPromo(subtotal),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                         ),
                         child: _loadingPromo
-                            ? const SizedBox(width: 20, height: 20,
+                            ? const SizedBox(width: 18, height: 18,
                                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : Text('cart.apply'.tr(), style: const TextStyle(color: Colors.white)),
+                            : Text('cart.apply'.tr(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
                       ),
                     ),
                   ],
@@ -479,6 +482,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       hintText: '${'checkout.comment'.tr()}...',
                       hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
                       border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     ),
                   ),
                 ),
@@ -522,7 +526,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         },
       ),
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
         decoration: const BoxDecoration(
           color: Colors.white,
           boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4))],
@@ -535,7 +539,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
               builder: (context, homeState) {
                 final canOrder = homeState is HomeLoaded ? (homeState.settings?.canOrder ?? true) : true;
                 return ElevatedButton(
-                  onPressed: _onConfirm,
+                  onPressed: (!canOrder || (_isDelivery && _loadingDelivery)) ? null : _onConfirm,
                   style: !canOrder ? ElevatedButton.styleFrom(
                     backgroundColor: AppColors.neutral300,
                   ) : null,

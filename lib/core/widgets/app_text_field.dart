@@ -50,7 +50,7 @@ class AppTextField extends StatelessWidget {
             suffixIcon: suffix,
             filled: true,
             fillColor: AppColors.neutral100,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: AppDim.radiusMd,
               borderSide: BorderSide(color: AppColors.neutral200, width: AppDim.borderThin),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,8 +23,39 @@ class _OtpPageState extends State<OtpPage> {
       List.generate(4, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
 
+  Timer? _timer;
+  int _secondsRemaining = 60;
+  bool _canResend = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    setState(() {
+      _secondsRemaining = 60;
+      _canResend = false;
+    });
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining == 0) {
+        setState(() {
+          _canResend = true;
+          timer.cancel();
+        });
+      } else {
+        setState(() {
+          _secondsRemaining--;
+        });
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _timer?.cancel();
     for (final c in _controllers) c.dispose();
     for (final f in _focusNodes) f.dispose();
     super.dispose();
@@ -32,6 +65,14 @@ class _OtpPageState extends State<OtpPage> {
     final codeStr = _controllers.map((c) => c.text).join();
     if (codeStr.length == 4) {
       ctx.read<AuthCubit>().confirmOtp(phone: widget.phone, code: int.parse(codeStr));
+    }
+  }
+
+  void _onResend(BuildContext ctx) {
+    if (_canResend) {
+      // API call to resend OTP
+      ctx.read<AuthCubit>().login(phone: widget.phone, fullName: ""); // fullName empty because they already entered it
+      _startTimer();
     }
   }
 
@@ -89,6 +130,29 @@ class _OtpPageState extends State<OtpPage> {
                         );
                       }),
                     ),
+                    const SizedBox(height: 32),
+
+                    // Timer and Resend
+                    Center(
+                      child: Column(
+                        children: [
+                          if (!_canResend)
+                            Text(
+                              "auth.timer".tr(namedArgs: {"seconds": _secondsRemaining.toString()}),
+                              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500),
+                            )
+                          else
+                            TextButton(
+                              onPressed: () => _onResend(ctx),
+                              child: Text(
+                                "auth.resend".tr(),
+                                style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+
                     const SizedBox(height: 48),
 
                     // Confirm button
@@ -122,8 +186,10 @@ class _OtpPageState extends State<OtpPage> {
       child: TextField(
         controller: controller,
         focusNode: focusNode,
+        autofocus: index == 0,
         textAlign: TextAlign.center,
         keyboardType: TextInputType.number,
+        autofillHints: const [AutofillHints.oneTimeCode],
         maxLength: 1,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         onChanged: (val) {

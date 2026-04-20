@@ -8,6 +8,7 @@ import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/theme/app_icons.dart';
 import 'package:pizza_strada/features/orders/domain/entities/order_entity.dart';
 import 'package:pizza_strada/features/orders/presentation/bloc/order_cubit.dart';
+import 'package:pizza_strada/core/utils/number_formatter.dart';
 
 class OrdersPage extends StatelessWidget {
   const OrdersPage({super.key});
@@ -141,12 +142,12 @@ class OrderCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${order.products.length} mahsulot',
+                        'orders.items_count'.tr(namedArgs: {'count': order.products.length.toString()}),
                         style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral700),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${order.totalPrice.toInt()} sum',
+                        '${NumberFormatter.formatSum(order.totalPrice)} ${'common.currency'.tr()}',
                         style: AppTextStyles.h4.copyWith(color: AppColors.primary),
                       ),
                     ],

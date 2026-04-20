@@ -55,6 +55,7 @@
   "checkout.order_placed": "Buyurtma qabul qilindi",
   "orders.title": "Buyurtmalarim",
   "orders.items": "Mahsulotlar",
+  "orders.items_count": "{count} ta mahsulot",
   "orders.pay_now": "To'lovni amalga oshirish",
   "orders.empty": "Sizda hali buyurtmalar yo'q",
   "nav.home": "Asosiy",

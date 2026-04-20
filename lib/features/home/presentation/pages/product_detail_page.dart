@@ -94,7 +94,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                           onTap: () => setState(() => _selectedVariant = v),
                           borderRadius: BorderRadius.circular(12),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
                               color: isSelected ? AppColors.primary : AppColors.neutral100,
                               borderRadius: BorderRadius.circular(12),
@@ -112,7 +112,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                   ),
                                 ),
                                 Text(
-                                  "${NumberFormatter.formatSum(v.price)} ${'product.price_suffix'.tr()}",
+                                  "${NumberFormatter.formatSum(v.price)} ${'product.currency'.tr()}",
                                   style: AppTextStyles.bodySmall.copyWith(
                                     color: isSelected ? Colors.white70 : AppColors.neutral400,
                                   ),

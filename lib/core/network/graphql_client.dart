@@ -19,7 +19,6 @@ const _orderOperations = {
   'order', 'Order',
   'createOrder',
   'checkPromoCode', 'CheckPromoCode',
-  'calculateDeliveryPrice', 'CalculateDeliveryPrice',
 };
 
 /// GraphQL client yaratish. Token har bir so'rovda dynamic olinadi.
