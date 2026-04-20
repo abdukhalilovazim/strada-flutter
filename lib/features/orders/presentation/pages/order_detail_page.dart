@@ -18,7 +18,7 @@ class OrderDetailPage extends StatelessWidget {
     if (order == null) {
       return Scaffold(
         appBar: AppBar(title: Text('#$orderId')),
-        body: const Center(child: Text('Order details not found')),
+        body: Center(child: Text('error.not_found'.tr())),
       );
     }
 
@@ -121,7 +121,7 @@ class OrderDetailPage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text('x${item.quantity}', style: AppTextStyles.bodySmall),
-                              Text('${NumberFormatter.formatSum(item.price)} so\'m', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary)),
+                              Text('${NumberFormatter.formatSum(item.price)} ${'common.currency'.tr()}', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary)),
                             ],
                           ),
                         ],
@@ -202,7 +202,7 @@ class _PriceRow extends StatelessWidget {
       children: [
         Text(label, style: isTotal ? AppTextStyles.labelLarge : AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500)),
         Text(
-          "${isNegative ? '- ' : ''}${NumberFormatter.formatSum(price)} so'm",
+          "${isNegative ? '- ' : ''}${NumberFormatter.formatSum(price)} ${'common.currency'.tr()}",
           style: isTotal
             ? AppTextStyles.h4.copyWith(color: AppColors.primary)
             : AppTextStyles.labelSmall.copyWith(color: AppColors.neutral900),

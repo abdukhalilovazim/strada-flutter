@@ -7,6 +7,7 @@ import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/theme/app_icons.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
+import 'package:pizza_strada/core/utils/yandex_key_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -96,6 +97,17 @@ class _ProfilePageState extends State<ProfilePage> {
               icon: Icons.language_rounded,
               title: 'profile.change_language'.tr(),
               onTap: () => _showLanguagePicker(),
+            ),
+            _buildItem(
+              icon: Icons.map_rounded,
+              title: "Next Map Key (Debug)",
+              subtitle: "Xarita ishlamasa bosing va appni restart qiling",
+              onTap: () async {
+                await YandexMapKeyManager.switchToNextKey();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Xarita kaliti o\'zgartirildi. Ilovani restart qiling!')));
+                }
+              },
             ),
             
             // Phone call from settings

@@ -204,7 +204,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                'Hozirda buyurtmalar qabul qilinmaydi. Ish vaqti: 09:00 - 23:00',
+                                'error.order_disabled'.tr(),
                                 style: AppTextStyles.bodySmall.copyWith(color: AppColors.error, fontWeight: FontWeight.w600),
                               ),
                             ),
@@ -375,7 +375,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                           child: Icon(Icons.money_rounded, color: AppColors.primary, size: 20),
                                         ),
                                         prefixIconConstraints: const BoxConstraints(minWidth: 0),
-                                        suffix: Text("so'm",
+                                        suffix: Text('common.currency'.tr(),
                                             style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
                                       ),
                                     ),
@@ -388,7 +388,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                           const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.success),
                                           const SizedBox(width: 6),
                                           Text(
-                                            '${'checkout.change_info'.tr()}: ${NumberFormatter.formatSum(change)} so\'m',
+                                            '${'checkout.change_info'.tr()}: ${NumberFormatter.formatSum(change)} ${'common.currency'.tr()}',
                                             style: AppTextStyles.bodySmall.copyWith(
                                                 color: AppColors.success, fontWeight: FontWeight.w600),
                                           ),
@@ -463,7 +463,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 16),
                         const SizedBox(width: 6),
                         Text(
-                          '$_appliedPromoCode — -${NumberFormatter.formatSum(_computeDiscount(subtotal))} so\'m',
+                          '$_appliedPromoCode — -${NumberFormatter.formatSum(_computeDiscount(subtotal))} ${'common.currency'.tr()}',
                           style: AppTextStyles.bodySmall.copyWith(color: AppColors.success, fontWeight: FontWeight.w600),
                         ),
                       ],
@@ -507,16 +507,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           'cart.delivery'.tr(),
                           _loadingDelivery
                               ? 'checkout.calculating'.tr()
-                              : '${NumberFormatter.formatSum(delivery)} so\'m',
+                              : '${NumberFormatter.formatSum(delivery)} ${'common.currency'.tr()}',
                         ),
                       ],
                       if (discount > 0) ...[
                         const SizedBox(height: 12),
-                        _buildRow('cart.discount'.tr(), '- ${NumberFormatter.formatSum(discount)} so\'m',
+                        _buildRow('cart.discount'.tr(), '- ${NumberFormatter.formatSum(discount)} ${'common.currency'.tr()}',
                             isDiscount: true),
                       ],
                       const Divider(height: 28, color: AppColors.neutral100),
-                      _buildRow('cart.total'.tr(), '${NumberFormatter.formatSum(total)} so\'m', isTotal: true),
+                      _buildRow('cart.total'.tr(), '${NumberFormatter.formatSum(total)} ${'common.currency'.tr()}', isTotal: true),
                     ],
                   ),
                 ),
@@ -559,7 +559,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     if (homeState is HomeLoaded) {
       if (!(homeState.settings?.canOrder ?? true)) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Hozirda buyurtmalar qabul qilinmaydi. Ish vaqti: 09:00 - 23:00'),
+          content: Text('error.order_disabled'.tr()),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

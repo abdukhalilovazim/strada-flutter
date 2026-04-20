@@ -87,7 +87,7 @@ class ProductCard extends StatelessWidget {
 
             // Content
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -97,21 +97,24 @@ class ProductCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     product.description ?? '',
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.bodyExtraSmall.copyWith(color: AppColors.neutral500),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
                         child: Text(
                           '${NumberFormatter.formatSum(product.price)} ${'common.currency'.tr()}',
-                          style: AppTextStyles.labelLarge.copyWith(color: AppColors.primary),
+                          style: AppTextStyles.labelMedium.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       _buildAddButton(context),
@@ -148,10 +151,10 @@ class ProductCard extends StatelessWidget {
             context.read<CartCubit>().addToCart(product, variant: product.variants.first);
           }
         },
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         child: const Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Icon(Icons.add_rounded, color: Colors.white, size: 20),
+          padding: EdgeInsets.all(6.0),
+          child: Icon(Icons.add_rounded, color: Colors.white, size: 18),
         ),
       ),
     );

@@ -17,6 +17,10 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v4
 
+      # ✅ Create .env from secrets
+      - name: Create .env file
+        run: echo "${{ secrets.ENV_FILE }}" > .env
+
       # ✅ Setup Flutter with cache
       - name: Setup Flutter
         uses: subosito/flutter-action@v2

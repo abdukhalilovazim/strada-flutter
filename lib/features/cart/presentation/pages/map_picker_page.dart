@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
@@ -50,6 +51,23 @@ class _MapPickerPageState extends State<MapPickerPage> {
   Future<void> _getCurrentLocation() async {
     setState(() => _isLoadingLocation = true);
     try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw 'error.location_service_disabled'.tr();
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw 'error.location_permission_denied'.tr();
+        }
+      }
+      
+      if (permission == LocationPermission.deniedForever) {
+        throw 'error.location_permission_permanently_denied'.tr();
+      }
+
       final position = await Geolocator.getCurrentPosition();
       final point = Point(latitude: position.latitude, longitude: position.longitude);
       _controller.moveCamera(
@@ -60,7 +78,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Xatolik: $e')),
+          SnackBar(content: Text('${'error.title'.tr()}: $e')),
         );
       }
     } finally {
@@ -72,7 +90,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Manzilni tanlang'),
+        title: Text('map.title'.tr()),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => context.pop(),
@@ -166,7 +184,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
-              child: const Text('Manzilni tasdiqlash'),
+              child: Text('map.confirm'.tr()),
             ),
           ),
         ],

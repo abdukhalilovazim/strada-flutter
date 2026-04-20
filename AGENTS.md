@@ -222,7 +222,8 @@ mutation CalculateDeliveryPrice($latitude: Float, $longitude: Float) {
 1. Barcha static textlar (label, button, error) `lib/l10n/*.json`da saqlanishi shart.
 2. Kodda faqat `.tr()` extension metodi ishlatiladi: `'key'.tr()`.
 3. Yangi text qo'shilganda **barcha 3 ta tilda** tarjima majburiy.
-4. Til o'zgarganda `HomeCubit.init()` chaqiriladi — API so'rovlar yangi `language` headeri bilan qayta yuboriladi.
+4. Xatolik xabarlari (error messages) foydalanuvchiga tushunarli, mazmunan to'g'ri va to'liq tarjima qilingan bo'lishi shart. Hardcoded stringlar (hatto xatoliklar uchun ham) TAQIQLANGAN.
+5. Til o'zgarganda `HomeCubit.init()` chaqiriladi — API so'rovlar yangi `language` headeri bilan qayta yuboriladi.
 
 > `locale_keys.g.dart` **ishlatilmaydi** — faqat string key bilan `.tr()` ishlatiladi.
 
