@@ -7,19 +7,15 @@ import 'package:pizza_strada/core/router/app_router.dart';
 import 'package:pizza_strada/core/theme/app_theme.dart';
 import 'package:pizza_strada/core/utils/device_info_helper.dart';
 import 'package:pizza_strada/core/storage/shared_prefs.dart';
-import 'package:pizza_strada/core/utils/yandex_key_manager.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:yandex_mapkit/yandex_mapkit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Load environment variables
   await dotenv.load(fileName: ".env");
-
-  AndroidYandexMap.useAndroidViewSurface = true;
 
   // Ekran faqat portrait (tik) holatda ishlaydi
   await SystemChrome.setPreferredOrientations([

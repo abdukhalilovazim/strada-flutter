@@ -28,9 +28,11 @@ dependencies:
   easy_localization: ^3.0.7
 
   # Maps & Geo
-  yandex_mapkit: ^3.3.0
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
   geolocator: ^13.0.2
   geocoding: ^3.0.0
+  permission_handler: ^11.3.1
 
   # Storage
   flutter_secure_storage: ^9.2.2

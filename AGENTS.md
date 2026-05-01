@@ -17,7 +17,7 @@ Ushbu qo'llanma Strada Pizza loyihasi uchun Flutter mobil ilovasini ishlab chiqi
 | Secure Storage      | `flutter_secure_storage`       | ^9.2.2           |
 | Local Cache         | `shared_preferences`           | ^2.3.3           |
 | Image Cache         | `cached_network_image`         | ^3.4.1           |
-| Maps & Geo          | `yandex_mapkit`, `geolocator`  | ^3.3.0 / ^13.0.2 |
+| Maps & Geo          | `flutter_map`, `geolocator`    | ^7.0.2 / ^13.0.2 |
 | Crypto              | `crypto`                       | ^3.0.5           |
 | Device Info         | `device_info_plus`             | ^11.1.1          |
 | Typography          | `google_fonts` (Inter)         | ^6.2.1           |
@@ -348,7 +348,7 @@ Hozirda test yozish majburiy emas (Dev Mode). Lekin har bir yangi metod uchun Da
 
 ## ⚠️ Muhim Cheklovlar
 
-- **APK hajmi:** `yandex_mapkit` qo'shilganda APK 50MB dan oshishi mumkin. Bunday bo'lsa GitHub Releases orqali tarqatish kerak (Telegram Bot 50MB chegarasi).
+- **Xaritalar:** Ilova `flutter_map` va OpenStreetMap (OSM) dan foydalanadi. Maxsus API kalit talab qilinmaydi.
 - **HMAC_SECRET:** Production build uchun: `flutter build apk --dart-define=HMAC_SECRET=<real_secret>`.
 - **Localization asset:** `lib/l10n/` papkasi `pubspec.yaml`dagi `assets:` ro'yxatida saqlanishi shart.
 - **N+1 muammodan** saqlanish uchun GraphQL fragment yoki to'liq field listidan foydalaniladi.

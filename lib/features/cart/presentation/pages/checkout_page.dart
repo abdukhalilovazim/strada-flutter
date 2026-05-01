@@ -11,7 +11,7 @@ import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
-import 'package:yandex_mapkit/yandex_mapkit.dart';
+
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -266,12 +266,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       onTap: () async {
                         final result = await context.push<Map<String, dynamic>>('/map-picker');
                         if (result != null) {
-                          final point = result['point'] as Point;
+                          final lat = result['lat'] as double;
+                          final lng = result['lng'] as double;
                           final address = result['address'] as String;
                           setState(() {
                             _addressController.text = address;
                           });
-                          _calculateDelivery(lat: point.latitude, lng: point.longitude);
+                          _calculateDelivery(lat: lat, lng: lng);
                         }
                       },
                       decoration: InputDecoration(
