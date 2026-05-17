@@ -172,12 +172,13 @@ class _VariantPickerSheet extends StatefulWidget {
 }
 
 class _VariantPickerSheetState extends State<_VariantPickerSheet> {
-  late VariantEntity selectedVariant;
+  VariantEntity? selectedVariant;
 
   @override
   void initState() {
     super.initState();
-    selectedVariant = widget.product.variants.first;
+    // Dastlab hech bir variant tanlanmagan bo'ladi
+    selectedVariant = null;
   }
 
   @override
@@ -185,49 +186,66 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Drag handle (premium tortgich)
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.neutral300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Sarlavha paneli
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('product.select_variant_title'.tr(), style: AppTextStyles.h3),
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close),
+              Text(
+                'product.select_variant_title'.tr(), 
+                style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.bold),
+              ),
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: const Icon(Icons.close_rounded, size: 20, color: AppColors.neutral500),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          // Ixcham variantlar paneli
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 2.2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 2.5,
             ),
             itemCount: widget.product.variants.length,
             itemBuilder: (context, index) {
               final v = widget.product.variants[index];
-              final isSelected = v.id == selectedVariant.id;
+              final isSelected = selectedVariant?.id == v.id;
               return InkWell(
                 onTap: () => setState(() => selectedVariant = v),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.neutral50,
+                    color: isSelected ? AppColors.primaryLight : AppColors.neutral50,
                     border: Border.all(
                       color: isSelected ? AppColors.primary : AppColors.neutral200,
                       width: 1.5,
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -237,14 +255,15 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.labelSmall.copyWith(
-                          color: isSelected ? AppColors.primary : AppColors.neutral700,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected ? AppColors.primary : AppColors.neutral800,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         '${NumberFormatter.formatSum(v.price)} ${'common.currency'.tr()}',
                         style: AppTextStyles.bodyExtraSmall.copyWith(
-                          color: isSelected ? AppColors.primary : AppColors.neutral500,
+                          color: isSelected ? AppColors.primary.withOpacity(0.8) : AppColors.neutral500,
                         ),
                       ),
                     ],
@@ -253,21 +272,27 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
               );
             },
           ),
-          const SizedBox(height: 32),
-          ElevatedButton(
-            onPressed: () {
-              widget.onPick(selectedVariant);
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          // Agar variant tanlangan bo'lsa, chiroyli "Qo'shish" tugmasini ko'rsatamiz
+          if (selectedVariant != null) ...[
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                widget.onPick(selectedVariant!);
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+              child: Text(
+                '${'cart.add'.tr()} - ${NumberFormatter.formatSum(selectedVariant!.price)} ${'common.currency'.tr()}',
+                style: AppTextStyles.labelMedium.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
             ),
-            child: Text('cart.add'.tr()),
-          ),
-          const SizedBox(height: 16),
+          ],
         ],
       ),
     );

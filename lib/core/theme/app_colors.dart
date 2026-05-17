@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Primary — Pizza Strada qizil (logotipdan)
-  static const primary        = Color(0xFFE8431A);
-  static const primaryDark    = Color(0xFFC73615);
-  static const primaryLight   = Color(0xFFFFF0ED);
+  // Primary — Pizza Strada premium qizil (Vibrant culinary red)
+  static const primary        = Color(0xFFD32F2F);
+  static const primaryDark    = Color(0xFF9A0007);
+  static const primaryLight   = Color(0xFFFFEBEE);
 
-  // Secondary (sariq/oltin)
-  static const secondary      = Color(0xFFF5A623);
-  static const secondaryLight = Color(0xFFFFF8ED);
+  // Secondary — Pizza Strada reyhan yashili (Basil green)
+  static const secondary      = Color(0xFF2E7D32);
+  static const secondaryLight = Color(0xFFE8F5E9);
 
   // Neutral
   static const neutral900     = Color(0xFF1C1C1E);

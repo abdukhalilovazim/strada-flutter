@@ -89,5 +89,10 @@
   "nav.cart": "Cart",
   "nav.orders": "Orders",
   "nav.profile": "Profile",
-  "common.currency": "UZS"
+  "common.currency": "UZS",
+  "orders.reorder": "Reorder",
+  "orders.reorder_confirm_title": "Update Cart",
+  "orders.reorder_confirm_desc": "The current items in the cart will be cleared and replaced with the items from this order. Do you want to continue?",
+  "orders.reorder_success": "Products added to cart",
+  "orders.reorder_error": "Some products were not found or are out of stock"
 }

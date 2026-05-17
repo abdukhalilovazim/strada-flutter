@@ -43,4 +43,30 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Env files & Credentials
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+*.env.*
+android/local.properties
+android/key.properties
+**/google-services.json
+**/GoogleService-Info.plist
+
+# Xcode user state & workspace
+**/xcuserdata/
+**/*.xcuserstate
+**/*.mode1v3
+**/*.mode2v3
+**/*.perspectivev3
+**/derivedData/
+**/*.moved-aside
+
+# macOS files
+.DS_Store
+.AppleDouble
+.LSOverride

@@ -87,5 +87,10 @@
   "nav.cart": "Корзина",
   "nav.orders": "Заказы",
   "nav.profile": "Профиль",
-  "common.currency": "сум"
+  "common.currency": "сум",
+  "orders.reorder": "Повторить заказ",
+  "orders.reorder_confirm_title": "Обновление корзины",
+  "orders.reorder_confirm_desc": "Текущие товары в корзине будут удалены, и вместо них будут добавлены товары из этого заказа. Продолжить?",
+  "orders.reorder_success": "Товары добавлены в корзину",
+  "orders.reorder_error": "Некоторые товары не найдены или отсутствуют в продаже"
 }

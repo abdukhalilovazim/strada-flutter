@@ -21,25 +21,52 @@ class OrderModel extends OrderEntity {
     required List<OrderItemModel> super.products,
   });
 
-  factory OrderModel.fromJson(Map<String, dynamic> json) => OrderModel(
-        id: int.tryParse(json['order_id']?.toString() ?? '0') ?? 0,
-        status: int.tryParse(json['status']?.toString() ?? '0') ?? 0,
-        statusText: json['status_text'] as String? ?? '',
-        address: json['address'] as String?,
-        comment: json['comment'] as String?,
-        paymentUrl: json['payment_url'] as String?,
-        type: json['type'] as String?,
-        branch: json['branch'] as String?,
-        latitude: double.tryParse(json['latitude']?.toString() ?? ''),
-        longitude: double.tryParse(json['longitude']?.toString() ?? ''),
-        paymentMethodText: json['payment_method_text'] as String?,
-        paymentMethod: json['payment_method']?.toString(),
-        subtotalPrice: double.tryParse(json['subtotal_price']?.toString() ?? '0') ?? 0.0,
-        discountAmount: double.tryParse(json['discount_amount']?.toString() ?? '0') ?? 0.0,
-        deliveryPrice: double.tryParse(json['delivery_price']?.toString() ?? '0') ?? 0.0,
-        totalPrice: double.tryParse(json['total_price']?.toString() ?? '0') ?? 0.0,
-        products: (json['products'] as List? ?? []).map((e) => OrderItemModel.fromJson(e as Map<String, dynamic>)).toList(),
-      );
+  factory OrderModel.fromJson(Map<String, dynamic> json) {
+    final rawStatus = json['status'];
+    int statusInt = 0;
+    String statusTextStr = '';
+
+    if (rawStatus is int) {
+      statusInt = rawStatus;
+    } else if (rawStatus is String) {
+      statusTextStr = rawStatus;
+      // Map common string values to integer status for UI coloring/actions
+      final lower = rawStatus.toLowerCase();
+      if (lower.contains('tugat') || lower.contains('complet') || lower.contains('done') || lower.contains('yopildi') || lower.contains('success')) {
+        statusInt = 6;
+      } else if (lower.contains('rad') || lower.contains('reject') || lower.contains('cancel') || lower.contains('bekor')) {
+        statusInt = 1;
+      } else if (lower.contains('yo\'l') || lower.contains('yol') || lower.contains('sent') || lower.contains('progress') || lower.contains('tayyorlan') || lower.contains('accept') || lower.contains('prepar')) {
+        statusInt = 4;
+      } else {
+        statusInt = 0;
+      }
+    }
+
+    if (json['status_text'] is String) {
+      statusTextStr = json['status_text'] as String;
+    }
+
+    return OrderModel(
+      id: int.tryParse(json['order_id']?.toString() ?? '0') ?? 0,
+      status: statusInt,
+      statusText: statusTextStr,
+      address: json['address'] as String?,
+      comment: json['comment'] as String?,
+      paymentUrl: json['payment_url'] as String?,
+      type: json['type'] as String?,
+      branch: json['branch'] as String?,
+      latitude: double.tryParse(json['latitude']?.toString() ?? ''),
+      longitude: double.tryParse(json['longitude']?.toString() ?? ''),
+      paymentMethodText: json['payment_method_text'] as String?,
+      paymentMethod: json['payment_method']?.toString(),
+      subtotalPrice: double.tryParse(json['subtotal_price']?.toString() ?? '0') ?? 0.0,
+      discountAmount: double.tryParse(json['discount_amount']?.toString() ?? '0') ?? 0.0,
+      deliveryPrice: double.tryParse(json['delivery_price']?.toString() ?? '0') ?? 0.0,
+      totalPrice: double.tryParse(json['total_price']?.toString() ?? '0') ?? 0.0,
+      products: (json['products'] as List? ?? []).map((e) => OrderItemModel.fromJson(e as Map<String, dynamic>)).toList(),
+    );
+  }
 }
 
 class OrderItemModel extends OrderItemEntity {

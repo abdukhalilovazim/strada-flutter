@@ -11,6 +11,8 @@ import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
+import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 
 class CheckoutPage extends StatefulWidget {
@@ -48,6 +50,137 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   bool _isSubmitting = false;
 
+  // Branches
+  List<CheckoutBranch> _branches = [];
+  CheckoutBranch? _selectedBranch;
+  bool _isLoadingBranches = false;
+
+  // Payment Method
+  String _selectedPaymentMethodKey = '0';
+
+  int _getPaymentMethodId(String key) {
+    final cleanKey = key.toLowerCase().trim();
+    if (cleanKey == 'payme' || cleanKey == '1') {
+      return 1;
+    } else if (cleanKey == 'click' || cleanKey == '2') {
+      return 2;
+    }
+    return 0; // Default Cash (Naqd)
+  }
+
+  Future<void> _loadBranches() async {
+    setState(() => _isLoadingBranches = true);
+    try {
+      const query = r'''
+        query Branches {
+          branches {
+            id
+            title
+            address
+            latitude
+            longitude
+          }
+        }
+      ''';
+      
+      final result = await _gqlClient.query(QueryOptions(
+        document: gql(query),
+        operationName: 'Branches',
+        fetchPolicy: FetchPolicy.networkOnly,
+      ));
+
+      if (!result.hasException && result.data?['branches'] != null) {
+        final list = result.data?['branches'] as List;
+        setState(() {
+          _branches = list.map((e) => CheckoutBranch.fromJson(e)).toList();
+          if (_branches.isNotEmpty) {
+            _selectedBranch = _branches.first;
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading branches: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingBranches = false);
+      }
+    }
+  }
+
+  void _showBranchPicker() {
+    if (_branches.isEmpty) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Top drag indicator
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.neutral300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'checkout.branch'.tr(),
+                style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: _branches.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.neutral100),
+                  itemBuilder: (context, index) {
+                    final branch = _branches[index];
+                    final isSelected = _selectedBranch?.id == branch.id;
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        branch.title,
+                        style: AppTextStyles.labelMedium.copyWith(
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          color: isSelected ? AppColors.primary : AppColors.neutral800,
+                        ),
+                      ),
+                      subtitle: Text(
+                        branch.address,
+                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500),
+                      ),
+                      trailing: isSelected 
+                          ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
+                          : null,
+                      onTap: () {
+                        setState(() {
+                          _selectedBranch = branch;
+                        });
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   late GraphQLClient _gqlClient;
 
   @override
@@ -58,6 +191,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   void _initClient() {
     setState(() => _gqlClient = buildGraphQLClient());
+    _loadBranches();
+
+    // Set initial payment method from HomeLoaded settings
+    final homeState = context.read<HomeCubit>().state;
+    if (homeState is HomeLoaded) {
+      final methods = homeState.settings?.paymentMethods ?? [];
+      if (methods.isNotEmpty) {
+        _selectedPaymentMethodKey = methods.first.key;
+      }
+    }
   }
 
   @override
@@ -187,6 +330,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
           final discount = _computeDiscount(subtotal);
           final total = subtotal + delivery - discount;
           final change = _changeAmount;
+          final homeState = context.read<HomeCubit>().state;
+          List<PaymentMethodEntity> paymentMethods = [];
+          if (homeState is HomeLoaded) {
+            paymentMethods = homeState.settings?.paymentMethods ?? [];
+          }
+          if (paymentMethods.isEmpty) {
+            paymentMethods = [
+              const PaymentMethodEntity(key: '0', value: 'Naqd pul'),
+            ];
+          }
 
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -288,15 +441,33 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   _sectionLabel('checkout.branch'.tr()),
                   const SizedBox(height: 8),
                   _buildCardField(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.storefront_rounded, color: AppColors.primary, size: 22),
-                          const SizedBox(width: 12),
-                          Expanded(child: Text('Pizza Strada (Asosiy filial)', style: AppTextStyles.bodyMedium)),
-                          const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.neutral400, size: 20),
-                        ],
+                    child: InkWell(
+                      onTap: _showBranchPicker,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.storefront_rounded, color: AppColors.primary, size: 22),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _selectedBranch != null 
+                                    ? _selectedBranch!.title 
+                                    : (_isLoadingBranches ? 'checkout.calculating'.tr() : 'checkout.branch'.tr()), 
+                                style: AppTextStyles.bodyMedium,
+                              ),
+                            ),
+                            if (_isLoadingBranches)
+                              const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                              )
+                            else
+                              const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.neutral400, size: 20),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -314,100 +485,128 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   ),
                   child: Column(
                     children: [
-                      // Cash row
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.payments_outlined, color: AppColors.primary, size: 20),
-                            const SizedBox(width: 12),
-                            Expanded(child: Text('checkout.cash'.tr(), style: AppTextStyles.bodyMedium)),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryLight,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text('checkout.cash'.tr(),
-                                  style: AppTextStyles.bodyExtraSmall.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w700,
-                                  )),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Divider(height: 1, color: AppColors.neutral100),
-                      // Qaytim toggle row
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16, right: 8, top: 4, bottom: 4),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.receipt_long_outlined, color: AppColors.primary, size: 20),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text('checkout.change'.tr(), style: AppTextStyles.bodyMedium),
-                            ),
-                            Switch.adaptive(
-                              value: _showChangeInput,
-                              onChanged: (val) => setState(() {
-                                _showChangeInput = val;
-                                if (!val) _changeController.clear();
-                              }),
-                              activeColor: AppColors.primary,
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Animated input expansion
-                      AnimatedSize(
-                        duration: const Duration(milliseconds: 250),
-                        curve: Curves.easeInOut,
-                        child: _showChangeInput
-                            ? Column(
-                                children: [
-                                  const Divider(height: 1, color: AppColors.neutral100),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                                    child: TextField(
-                                      controller: _changeController,
-                                      keyboardType: TextInputType.number,
-                                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                      autofocus: true,
-                                      onChanged: (_) => setState(() {}),
-                                      decoration: InputDecoration(
-                                        hintText: 'checkout.change_hint'.tr(),
-                                        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
-                                        border: InputBorder.none,
-                                        prefixIcon: const Padding(
-                                          padding: EdgeInsets.only(right: 8),
-                                          child: Icon(Icons.money_rounded, color: AppColors.primary, size: 20),
+                      // Dynamic payment methods list
+                      ...paymentMethods.map((method) {
+                        final isSelected = _selectedPaymentMethodKey == method.key;
+                        final methodId = _getPaymentMethodId(method.key);
+                        
+                        // Decide which icon to show
+                        IconData icon;
+                        if (methodId == 1) {
+                          icon = Icons.account_balance_wallet_outlined;
+                        } else if (methodId == 2) {
+                          icon = Icons.credit_card_outlined;
+                        } else {
+                          icon = Icons.payments_outlined;
+                        }
+
+                        return InkWell(
+                          onTap: () => setState(() => _selectedPaymentMethodKey = method.key),
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                child: Row(
+                                  children: [
+                                    Icon(icon, color: isSelected ? AppColors.primary : AppColors.neutral500, size: 20),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        method.value, 
+                                        style: AppTextStyles.bodyMedium.copyWith(
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                          color: isSelected ? AppColors.neutral900 : AppColors.neutral700,
                                         ),
-                                        prefixIconConstraints: const BoxConstraints(minWidth: 0),
-                                        suffix: Text('common.currency'.tr(),
-                                            style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
                                       ),
                                     ),
-                                  ),
-                                  if (change != null)
+                                    if (isSelected)
+                                      const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 20)
+                                    else
+                                      const Icon(Icons.radio_button_off_rounded, color: AppColors.neutral300, size: 20),
+                                  ],
+                                ),
+                              ),
+                              if (method != paymentMethods.last)
+                                const Divider(height: 1, color: AppColors.neutral100),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+
+                      // Show Qaytim toggle ONLY if Cash (Naqd) is selected!
+                      if (_getPaymentMethodId(_selectedPaymentMethodKey) == 0) ...[
+                        const Divider(height: 1, color: AppColors.neutral100),
+                        // Qaytim toggle row
+                        Padding(
+                          padding: const EdgeInsets.only(left: 16, right: 8, top: 4, bottom: 4),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.receipt_long_outlined, color: AppColors.primary, size: 20),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text('checkout.change'.tr(), style: AppTextStyles.bodyMedium),
+                              ),
+                              Switch.adaptive(
+                                value: _showChangeInput,
+                                onChanged: (val) => setState(() {
+                                  _showChangeInput = val;
+                                  if (!val) _changeController.clear();
+                                }),
+                                activeColor: AppColors.primary,
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Animated input expansion
+                        AnimatedSize(
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeInOut,
+                          child: _showChangeInput
+                              ? Column(
+                                  children: [
+                                    const Divider(height: 1, color: AppColors.neutral100),
                                     Padding(
-                                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.success),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            '${'checkout.change_info'.tr()}: ${NumberFormatter.formatSum(change)} ${'common.currency'.tr()}',
-                                            style: AppTextStyles.bodySmall.copyWith(
-                                                color: AppColors.success, fontWeight: FontWeight.w600),
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                      child: TextField(
+                                        controller: _changeController,
+                                        keyboardType: TextInputType.number,
+                                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                        autofocus: true,
+                                        onChanged: (_) => setState(() {}),
+                                        decoration: InputDecoration(
+                                          hintText: 'checkout.change_hint'.tr(),
+                                          hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
+                                          border: InputBorder.none,
+                                          prefixIcon: const Padding(
+                                            padding: EdgeInsets.only(right: 8),
+                                            child: Icon(Icons.money_rounded, color: AppColors.primary, size: 20),
                                           ),
-                                        ],
+                                          prefixIconConstraints: const BoxConstraints(minWidth: 0),
+                                          suffix: Text('common.currency'.tr(),
+                                              style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
+                                        ),
                                       ),
                                     ),
-                                ],
-                              )
-                            : const SizedBox.shrink(),
-                      ),
+                                    if (change != null)
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.success),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              '${'checkout.change_info'.tr()}: ${NumberFormatter.formatSum(change)} ${'common.currency'.tr()}',
+                                              style: AppTextStyles.bodySmall.copyWith(
+                                                  color: AppColors.success, fontWeight: FontWeight.w600),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -575,6 +774,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
         _showError('checkout.calculating'.tr());
         return;
       }
+    } else {
+      if (_selectedBranch == null) {
+        _showError('checkout.branch'.tr());
+        return;
+      }
     }
 
     // Check if store is open
@@ -591,10 +795,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
     try {
       final cartState = context.read<CartCubit>().state;
       
-      final productsJson = cartState.items.map((item) => {
-        'id': item.product.slug,
-        'quantity': item.quantity,
-        'variant_id': item.variant?.id,
+      final productsJson = cartState.items.map((item) {
+        final variantId = item.variant?.id ?? item.product.variants.firstOrNull?.id;
+        return {
+          'variant_id': variantId ?? 0,
+          'quantity': item.quantity,
+        };
       }).toList();
 
       const mutation = r'''
@@ -604,7 +810,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           $latitude: Float,
           $longitude: Float,
           $payment_method: Int!,
-          $products: [OrderProductInput]!,
+          $products: [OrderProductInput!]!,
           $promo_code: String,
           $comment: String
         ) {
@@ -619,7 +825,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
             comment: $comment
           ) {
             order_id
-            status_text
+            status
             payment_url
           }
         }
@@ -630,10 +836,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
         operationName: 'createOrder',
         variables: {
           'type': _isDelivery ? 0 : 1,
-          'branch_id': _isDelivery ? null : 1, // Default main branch
+           'branch_id': _isDelivery ? null : _selectedBranch?.id,
           'latitude': _isDelivery ? _lat : null,
           'longitude': _isDelivery ? _lng : null,
-          'payment_method': 0, // Cash
+          'payment_method': _getPaymentMethodId(_selectedPaymentMethodKey),
           'products': productsJson,
           'promo_code': _appliedPromoCode,
           'comment': _commentController.text.trim(),
@@ -649,8 +855,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
       }
 
       // Success
-      context.read<CartCubit>().clear();
-      context.go('/orders');
+      final orderData = result.data?['createOrder'];
+      final paymentUrl = orderData?['payment_url'] as String?;
+
+      if (mounted) {
+        context.read<CartCubit>().clear();
+        context.go('/orders');
+      }
+
+      if (paymentUrl != null && paymentUrl.isNotEmpty) {
+        final uri = Uri.tryParse(paymentUrl);
+        if (uri != null) {
+          try {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } catch (e) {
+            debugPrint('Could not launch payment URL: $e');
+          }
+        }
+      }
       
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('checkout.order_placed'.tr()),
@@ -749,6 +971,32 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   : AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.w600),
         ),
       ],
+    );
+  }
+}
+
+class CheckoutBranch {
+  final int id;
+  final String title;
+  final String address;
+  final double? latitude;
+  final double? longitude;
+
+  CheckoutBranch({
+    required this.id,
+    required this.title,
+    required this.address,
+    this.latitude,
+    this.longitude,
+  });
+
+  factory CheckoutBranch.fromJson(Map<String, dynamic> json) {
+    return CheckoutBranch(
+      id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      title: json['title'] as String? ?? '',
+      address: json['address'] as String? ?? '',
+      latitude: double.tryParse(json['latitude']?.toString() ?? ''),
+      longitude: double.tryParse(json['longitude']?.toString() ?? ''),
     );
   }
 }

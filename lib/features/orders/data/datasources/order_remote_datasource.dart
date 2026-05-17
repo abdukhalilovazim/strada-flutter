@@ -27,10 +27,8 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
       query Orders {
         orders {
           order_id
-          address
           comment
           status
-          status_text
           payment_url
           type
           branch
@@ -71,7 +69,6 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
           address
           comment
           status
-          status_text
           payment_url
           type
           branch

@@ -11,19 +11,149 @@ import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_card.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final ScrollController _scrollController = ScrollController();
+  final ScrollController _categoryScrollController = ScrollController();
+  
+  String? _activeCategory;
+  bool _isScrollingToCategory = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _categoryScrollController.dispose();
+    super.dispose();
+  }
+
+  // Ekranda ko'rinib turgan scroll offsetiga qarab aktiv kategoriyani aniqlash
+  void _onScroll() {
+    if (_isScrollingToCategory) return;
+    
+    final state = context.read<HomeCubit>().state;
+    if (state is! HomeLoaded) return;
+
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double scrollOffset = _scrollController.offset;
+
+    final activeSlug = _getActiveCategory(
+      scrollOffset,
+      screenWidth,
+      state.categories,
+      state.fullProducts,
+    );
+
+    if (activeSlug != _activeCategory) {
+      setState(() {
+        _activeCategory = activeSlug;
+      });
+      _scrollToActiveCategoryChip(state.categories.indexWhere((c) => c.slug == activeSlug));
+    }
+  }
+
+  // Kategoriya chipiga mos keluvchi scroll offsetini hisoblash
+  double _getTargetOffset(
+    String targetSlug,
+    double screenWidth,
+    List<CategoryEntity> categories,
+    List<ProductEntity> allProducts,
+  ) {
+    double currentOffset = 0.0;
+    
+    // Sliders height (200px height + 40px paddings)
+    currentOffset += 240.0; 
+    
+    final double gridItemWidth = (screenWidth - 48) / 2;
+    final double rowHeight = (gridItemWidth / 0.68) + 16; // 0.68 is childAspectRatio, 16 is spacing
+    
+    for (final cat in categories) {
+      if (cat.slug == targetSlug) {
+        return currentOffset;
+      }
+      final catProducts = allProducts.where((p) => p.category?.slug == cat.slug).toList();
+      if (catProducts.isEmpty) continue;
+      
+      final int rows = (catProducts.length / 2).ceil();
+      final double sectionHeight = 56.0 + (rows * rowHeight) + 16.0; // 56px header + grid + bottom padding
+      currentOffset += sectionHeight;
+    }
+    
+    return currentOffset;
+  }
+
+  // Scroll holatiga qarab joriy kategoriyani aniqlash formulasi
+  String _getActiveCategory(
+    double scrollOffset,
+    double screenWidth,
+    List<CategoryEntity> categories,
+    List<ProductEntity> allProducts,
+  ) {
+    double currentOffset = 240.0; // Slidersdan keyin birinchi kategoriya boshlanadi
+    
+    if (scrollOffset < currentOffset) {
+      return categories.firstOrNull?.slug ?? '';
+    }
+
+    final double gridItemWidth = (screenWidth - 48) / 2;
+    final double rowHeight = (gridItemWidth / 0.68) + 16;
+    
+    for (final cat in categories) {
+      final catProducts = allProducts.where((p) => p.category?.slug == cat.slug).toList();
+      if (catProducts.isEmpty) continue;
+      
+      final int rows = (catProducts.length / 2).ceil();
+      final double sectionHeight = 56.0 + (rows * rowHeight) + 16.0;
+      
+      if (scrollOffset >= currentOffset && scrollOffset < currentOffset + sectionHeight) {
+        return cat.slug;
+      }
+      currentOffset += sectionHeight;
+    }
+    
+    return categories.lastOrNull?.slug ?? '';
+  }
+
+  // Yuqoridagi kategoriya chiplari o'zgarishi bilan gorizontal listni scroll qilish
+  void _scrollToActiveCategoryChip(int index) {
+    if (index < 0 || !_categoryScrollController.hasClients) return;
+    final double targetOffset = index * 100.0; // Taxminiy chip kengligi
+    _categoryScrollController.animateTo(
+      targetOffset.clamp(0.0, _categoryScrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, state) {
+          // Birinchi yuklanganda aktiv kategoriyani belgilash
+          if (state is HomeLoaded && _activeCategory == null) {
+            _activeCategory = state.categories.firstOrNull?.slug;
+          }
+
           return RefreshIndicator(
             onRefresh: () => context.read<HomeCubit>().init(),
             color: AppColors.primary,
             child: CustomScrollView(
+              controller: _scrollController,
               slivers: [
                 // App Bar
                 SliverAppBar(
@@ -98,7 +228,7 @@ class HomePage extends StatelessWidget {
                     ),
                   )
                 else if (state is HomeLoaded) ...[
-                  // Sliders - 100% width and support for text/button
+                  // Sliders
                   if (state.sliders.isNotEmpty)
                     SliverToBoxAdapter(
                       child: Padding(
@@ -136,7 +266,6 @@ class HomePage extends StatelessWidget {
                                           child: const Icon(Icons.image_not_supported_outlined),
                                         ),
                                       ),
-                                      // Dark overlay for text readability
                                       Container(
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
@@ -159,21 +288,7 @@ class HomePage extends StatelessWidget {
                                             style: AppTextStyles.h3.copyWith(color: Colors.white),
                                           ),
                                         ),
-                                      // InkWell for navigation if URL exists
-                                      if (slider.buttonUrl != null && slider.buttonUrl!.isNotEmpty)
-                                        Positioned.fill(
-                                          child: Material(
-                                            color: Colors.transparent,
-                                            child: InkWell(
-                                              onTap: () async {
-                                                final uri = Uri.tryParse(slider.buttonUrl!);
-                                                if (uri != null && await canLaunchUrl(uri)) {
-                                                  await launchUrl(uri);
-                                                }
-                                              },
-                                            ),
-                                          ),
-                                        ),
+                                      // Completely non-clickable sliders
                                     ],
                                   ),
                                 ),
@@ -184,9 +299,6 @@ class HomePage extends StatelessWidget {
                       ),
                     ),
 
-                  // Sticky Category chips (Removed categories title)
-
-
                   // Sticky Category chips
                   SliverPersistentHeader(
                     pinned: true,
@@ -195,18 +307,40 @@ class HomePage extends StatelessWidget {
                         color: Colors.white,
                         alignment: Alignment.centerLeft,
                         child: ListView.builder(
+                          controller: _categoryScrollController,
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           itemCount: state.categories.length,
                           itemBuilder: (_, i) {
                             final cat = state.categories[i];
-                            final selected = state.selectedCategory == cat.slug;
+                            final selected = _activeCategory == cat.slug;
                             return Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: ChoiceChip(
                                 label: Text(cat.title),
                                 selected: selected,
-                                onSelected: (_) => context.read<HomeCubit>().selectCategory(cat.slug),
+                                onSelected: (_) {
+                                  setState(() {
+                                    _activeCategory = cat.slug;
+                                    _isScrollingToCategory = true;
+                                  });
+                                  
+                                  // Chip bosilganda tegishli kategoriyaga silliq scroll qilish
+                                  final targetOffset = _getTargetOffset(
+                                    cat.slug,
+                                    screenWidth,
+                                    state.categories,
+                                    state.fullProducts,
+                                  );
+
+                                  _scrollController.animateTo(
+                                    targetOffset,
+                                    duration: const Duration(milliseconds: 350),
+                                    curve: Curves.easeInOut,
+                                  ).then((_) {
+                                    _isScrollingToCategory = false;
+                                  });
+                                },
                                 selectedColor: AppColors.primary,
                                 backgroundColor: Colors.white,
                                 disabledColor: Colors.white,
@@ -229,51 +363,70 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
 
-                  // Section title: Selected category name
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
-                    sliver: SliverToBoxAdapter(
-                      child: Text(
-                        state.categories
-                            .cast<CategoryEntity>()
-                            .firstWhere((c) => c.slug == state.selectedCategory, orElse: () => state.categories.first)
-                            .title,
-                        style: AppTextStyles.h3.copyWith(color: AppColors.neutral900),
+                  // Har bir kategoriya va uning mahsulotlarini alohida ko'rsatish
+                  for (final cat in state.categories) ...[
+                    // Guruh sarlavhasi (Category Header)
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                      sliver: SliverToBoxAdapter(
+                        child: Text(
+                          cat.title,
+                          style: AppTextStyles.h3.copyWith(
+                            color: AppColors.neutral900,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
 
-                  // Product grid
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                    sliver: SliverGrid(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
-                        childAspectRatio: 0.68,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (ctx, i) {
-                          final product = state.products[i];
-                          return BlocBuilder<CartCubit, CartState>(
-                            builder: (context, cartState) {
-                              // Calculate total quantity of this product (across all variants) in the cart
-                              final quantity = cartState.items
-                                  .where((item) => item.product.slug == product.slug)
-                                  .fold<int>(0, (sum, item) => sum + item.quantity);
+                    // Guruhga tegishli mahsulotlar griddi
+                    Builder(
+                      builder: (context) {
+                        final catProducts = state.fullProducts
+                            .where((p) => p.category?.slug == cat.slug)
+                            .toList();
 
-                              return ProductCard(
-                                product: product,
-                                quantityInCart: quantity,
-                                onTap: () => context.push('/product/${product.slug}', extra: product),
-                              );
-                            },
-                          );
-                        },
-                        childCount: state.products.length,
-                      ),
+                        if (catProducts.isEmpty) {
+                          return const SliverToBoxAdapter(child: SizedBox.shrink());
+                        }
+
+                        return SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          sliver: SliverGrid(
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 16,
+                              crossAxisSpacing: 16,
+                              childAspectRatio: 0.68,
+                            ),
+                            delegate: SliverChildBuilderDelegate(
+                              (ctx, i) {
+                                final product = catProducts[i];
+                                return BlocBuilder<CartCubit, CartState>(
+                                  builder: (context, cartState) {
+                                    final quantity = cartState.items
+                                        .where((item) => item.product.slug == product.slug)
+                                        .fold<int>(0, (sum, item) => sum + item.quantity);
+
+                                    return ProductCard(
+                                      product: product,
+                                      quantityInCart: quantity,
+                                      onTap: () => context.push('/product/${product.slug}', extra: product),
+                                    );
+                                  },
+                                );
+                              },
+                              childCount: catProducts.length,
+                            ),
+                          ),
+                        );
+                      },
                     ),
+                  ],
+                  
+                  // Pastki bo'shliq
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: 120),
                   ),
                 ],
               ],

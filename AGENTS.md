@@ -258,7 +258,9 @@ mutation CalculateDeliveryPrice($latitude: Float, $longitude: Float) {
 
 `lib/core/theme/app_colors.dart` — `AppColors` klasi barcha rang konstantlarini saqlaydi.
 
-- Primary: `AppColors.primary`, `AppColors.primaryLight`
+- Primary (Premium Qizil): `AppColors.primary` (`0xFFD32F2F`), `AppColors.primaryLight` (`0xFFFFEBEE`)
+- Secondary (Reyhan Yashili): `AppColors.secondary` (`0xFF2E7D32`), `AppColors.secondaryLight` (`0xFFE8F5E9`)
+- Oq (White) ranglar brendning toza va premium pizza foni uchun keng qo'llaniladi. To'q sariq (Orange) va tilla (Gold) ranglar brendingda mutlaqo ishlatilmaydi.
 - Neutral: `neutral50` → `neutral900`
 - Semantic: `success`, `error`, `warning`
 - Dark mode: `darkBackground`, `darkSurface`
