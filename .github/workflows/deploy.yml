@@ -1,0 +1,109 @@
+name: 🚀 Flutter → Play Store
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'   # v1.0.0, v2.1.3 kabi taglarda ishga tushadi
+
+jobs:
+  deploy:
+    name: Build & Deploy to Play Store
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Kodni yuklab olish
+      - name: ⬇️ Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Java o'rnatish (Android build uchun kerak)
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 3. Flutter o'rnatish
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'   # ← o'zingizning Flutter versiyangizni yozing
+          channel: 'stable'
+          cache: true
+
+      # 4. Keystore faylini yaratish (GitHub Secret'dan)
+      - name: 🔑 Create keystore file
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
+
+      # 5. key.properties faylini yaratish
+      - name: 📝 Create key.properties
+        run: |
+          cat > android/key.properties << EOF
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          storeFile=release.keystore
+          EOF
+
+      # 6. Versiyani tag'dan olish (v1.2.3 → 1.2.3)
+      - name: 🏷️ Extract version from tag
+        id: version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/v}
+          BUILD_NUMBER=$(date +%Y%m%d%H%M)
+          echo "version=$TAG" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "📦 Version: $TAG, Build: $BUILD_NUMBER"
+
+      # 7. Flutter paketlarini o'rnatish
+      - name: 📦 Get Flutter packages
+        run: flutter pub get
+
+      # 8. Kodni tekshirish (ixtiyoriy, olib tashlasa ham bo'ladi)
+      - name: 🔍 Analyze code
+        run: flutter analyze --no-fatal-infos
+        continue-on-error: true
+
+      # 9. Testlarni ishga tushurish (ixtiyoriy)
+      - name: 🧪 Run tests
+        run: flutter test
+        continue-on-error: true
+
+      # 10. Release AAB build qilish
+      - name: 🏗️ Build Release AAB
+        run: |
+          flutter build appbundle \
+            --release \
+            --build-name=${{ steps.version.outputs.version }} \
+            --build-number=${{ steps.version.outputs.build_number }}
+
+      # 11. AAB faylini artifact sifatida saqlash (debug uchun)
+      - name: 💾 Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-${{ steps.version.outputs.version }}
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      # 12. Google Play'ga yuklash
+      - name: 🚀 Deploy to Play Store (Internal Testing)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
+          packageName: com.yourcompany.yourapp    # ← o'z package name'ingizni yozing
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: internal          # internal → alpha → beta → production
+          status: completed
+          # whatsNewDirectory: distribution/whatsnew   # Release notes (ixtiyoriy)
+
+      # 13. Muvaffaqiyat xabari (ixtiyoriy - Telegram yoki Slack)
+      - name: ✅ Notify success
+        if: success()
+        run: |
+          echo "🎉 v${{ steps.version.outputs.version }} Play Store Internal Testing'ga yuklandi!"
+
+      # 14. Xato bo'lsa xabar (ixtiyoriy)
+      - name: ❌ Notify failure
+        if: failure()
+        run: |
+          echo "💥 Deploy muvaffaqiyatsiz tugadi! Loglarni tekshiring."

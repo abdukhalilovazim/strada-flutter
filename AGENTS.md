@@ -1,367 +1,226 @@
-# Strada Pizza — Flutter Mobile App Development Guide
+# Strada Pizza — AI Agent Operational Guide
 
-Ushbu qo'llanma Strada Pizza loyihasi uchun Flutter mobil ilovasini ishlab chiqishda AI agent uchun asosiy qoidalar, arxitektura patterns va GraphQL API bilan ishlash bo'yicha **haqiqiy kod bilan mos** to'liq ko'rsatmalarni o'z ichiga oladi.
-
----
-
-## 🏗 Texnologiyalar (pubspec.yaml ga muvofiq)
-
-| Qatlam              | Kutubxona                      | Versiya          |
-| ------------------- | ------------------------------ | ---------------- |
-| Framework           | Flutter                        | SDK ≥ 3.0.0      |
-| State Management    | `flutter_bloc`                 | ^8.1.6           |
-| DI                  | `get_it` + `injectable`        | ^8.0.2 / ^2.4.4  |
-| API Client          | `graphql_flutter`              | ^5.2.0-beta.7    |
-| Navigation          | `go_router`                    | ^14.6.2          |
-| Localization        | `easy_localization`            | ^3.0.7           |
-| Secure Storage      | `flutter_secure_storage`       | ^9.2.2           |
-| Local Cache         | `shared_preferences`           | ^2.3.3           |
-| Image Cache         | `cached_network_image`         | ^3.4.1           |
-| Maps & Geo          | `flutter_map`, `geolocator`    | ^7.0.2 / ^13.0.2 |
-| Crypto              | `crypto`                       | ^3.0.5           |
-| Device Info         | `device_info_plus`             | ^11.1.1          |
-| Typography          | `google_fonts` (Inter)         | ^6.2.1           |
-| Push Notifications  | `firebase_messaging`           | ^15.1.6          |
-| HTTP util           | `url_launcher`                 | ^6.3.1           |
-
-> **Eslatma:** `flutter_screenutil` ishlatilmaydi. Responsiveness uchun `MediaQuery` va `LayoutBuilder` dan foydalaniladi.
+> **Scope:** This file defines strict execution rules, architecture constraints, and performance mandates for any AI agent working on the Strada Pizza Flutter codebase.
 
 ---
 
-## 📡 GraphQL API Konfiguratsiyasi
+## 1. Architecture Overview
 
-Loyiha ikkita asosiy schema'dan foydalanadi:
-
-1. **Common Schema:** `/graphql/common` — Auth, mahsulotlar, kategoriyalar, filiallar, sozlamalar.
-2. **Order Schema:** `/graphql/order` — Buyurtmalar yaratish, ko'rish.
-
-### 1. Environments & Base URLs
-
-Muhit farqi **`kReleaseMode`** orqali `ApiConstants` klassida avtomatik sozlanadi:
-
-```dart
-// lib/core/constants/api_constants.dart
-static const _base = kReleaseMode ? _prodBase : _devBase;
-static const commonEndpoint = '$_base/graphql/common';
-static const orderEndpoint  = '$_base/graphql/order';
-```
-
-| Muht         | URL                                       |
-| ------------ | ----------------------------------------- |
-| Production   | `https://pizzastrada.uz/graphql/`         |
-| Development  | `https://food.khalilovdev.uz/graphql/`    |
-
-### 2. GraphQL Client (`lib/core/network/graphql_client.dart`)
-
-- `IOClient` bilan **60 soniyalik** connection timeout o'rnatilgan (majburiy).
-- Routing `Link.split` orqali operation nomi asosida amalga oshiriladi (order vs common).
-- Order operatsiyalari: `orders`, `Orders`, `order`, `Order`, `createOrder`, `checkPromoCode`.
-- Barcha Auth, Localization, Signature va Logging mantiqi **bitta `Link.function`** da birlashtirилган — bu "Future already completed" crash'larini bartaraf etadi.
-
-### 3. Majburiy Request Headerlar
-
-Barcha so'rovlarda (Query va Mutation) quyidagilar yuborilishi shart:
-
-| Header          | Qiymat / Manba                                        |
-| --------------- | ----------------------------------------------------- |
-| `Accept`        | `application/json`                                    |
-| `Content-Type`  | `application/json`                                    |
-| `language`      | `uz`, `ru` yoki `en` — `EasyLocalization.of(context)` |
-| `device`        | `android` yoki `ios` — `Platform.isIOS`               |
-| `device-id`     | `DeviceInfoHelper.deviceId` — `device_info_plus`      |
-| `device-name`   | `DeviceInfoHelper.deviceName`                         |
-| `Authorization` | `Bearer <token>` — `flutter_secure_storage`dan        |
-| `User-Agent`    | `PizzaStrada/iOS-Android Mobile App`                  |
-
-### 4. Xavfsizlik Headerlari (Faqat Mutations uchun)
-
-Har bir mutatsiya so'roviga qo'shimcha ravishda:
-
-| Header               | Tavsif                     |
-| -------------------- | -------------------------- |
-| `Header-Random-Str`  | 16 belgilik random string  |
-| `Header-Timestamp`   | ms dagi joriy vaqt         |
-| `Header-Sign`        | HMAC-SHA256 imzosi         |
-
-**Imzo hisoblash (to'g'ri algorim):**
-
-```dart
-final payload = jsonEncode(variables) + randomStr + timestamp;
-final hmac = Hmac(sha256, utf8.encode(ApiConstants.hmacSecret));
-final sign = hmac.convert(utf8.encode(payload)).toString();
-```
-
-> `hmacSecret` `--dart-define=HMAC_SECRET=...` orqali build vaqtida beriladi. Default value hardcoded qoldirilgan (dev uchun).
-
----
-
-## 📂 Loyiha Tuzilmasi (Haqiqiy)
+### 1.1 Pattern: Feature-First Clean Architecture + BLoC
 
 ```
 lib/
-  core/
-    constants/       # ApiConstants, AppConstants (navigatorKey)
-    di/              # injection.dart — get_it + injectable
-    error/           # Failure classes (dartz Either)
-    network/         # graphql_client.dart — single link chain
-    router/          # app_router.dart — go_router config
-    storage/         # SecureStorage, SharedPrefs
-    theme/           # AppColors, AppTextStyles, AppTheme, AppIcons, AppDimensions
-    utils/           # DeviceInfoHelper, validators
-    widgets/         # AppButton, AppShimmer, AppTextField
-  features/
-    auth/
-      data/          # AuthRemoteDataSource, AuthRepositoryImpl, UserModel
-      domain/        # UserEntity, AuthRepository, LoginUseCase, ConfirmOtpUseCase
-      presentation/  # AuthCubit, LoginPage, OtpPage
-    cart/
-      data/          # CartItemEntity (domain bilan birlashtirilgan)
-      presentation/  # CartCubit, CartPage, CheckoutPage
-    home/
-      data/          # HomeRemoteDataSource, HomeRepositoryImpl, HomeModels
-      domain/        # HomeEntities (ProductEntity, CategoryEntity, VariantEntity, SliderEntity, SettingsEntity)
-      presentation/  # HomeCubit, HomePage, ProductDetailPage, ProductCard
-    orders/
-      data/          # OrderRemoteDataSource, OrderRepositoryImpl, OrderModel
-      domain/        # OrderEntity, OrderItemEntity, OrderRepository, GetOrdersUseCase
-      presentation/  # OrderCubit, OrdersPage (compact list), OrderDetailPage (full view)
-    profile/
-      presentation/  # ProfilePage (settings, language, support, logout)
-    splash/
-      presentation/  # SplashPage, SplashCubit — settings query orqali can_order tekshirish
-  l10n/
-    uz.json          # O'zbek (asosiy til)
-    ru.json          # Rus tili
-    en.json          # Ingliz tili
-  main.dart
+├── core/                         # Shared infrastructure
+│   ├── constants/                # ApiConstants, AppConstants
+│   ├── di/                       # get_it + @injectable DI
+│   ├── error/                    # Failure classes (dartz Either<Failure, T>)
+│   ├── network/                  # GraphQL client (single link chain)
+│   ├── router/                   # go_router configuration
+│   ├── storage/                  # SecureStorage, SharedPrefs
+│   ├── theme/                    # AppColors, AppTextStyles, AppTheme, AppIcons, AppDimensions
+│   ├── utils/                    # DeviceInfoHelper, validators, NumberFormatter
+│   └── widgets/                  # AppButton, AppShimmer, AppTextField
+├── features/
+│   ├── auth/                     # Login + OTP (data → domain → presentation)
+│   ├── cart/                     # Cart management (domain → presentation)
+│   ├── home/                     # Products, categories, sliders (data → domain → presentation)
+│   ├── orders/                   # Order history + detail (data → domain → presentation)
+│   ├── profile/                  # Settings page (presentation only)
+│   └── splash/                   # Splash + can_order check (presentation only)
+├── l10n/                         # uz.json, ru.json, en.json
+├── generated/                    # locale_keys.g.dart (NOT used — .tr() only)
+└── main.dart                     # Entry point, global BlocProviders
+```
+
+### 1.2 Data Flow
+
+```
+UI (Widget) → Cubit → UseCase → Repository → DataSource → GraphQL API
+                ↓
+        State emission → UI rebuild
+```
+
+### 1.3 Technology Stack
+
+| Layer            | Library                        | Version        |
+|------------------|--------------------------------|----------------|
+| State Management | `flutter_bloc` (Cubit)         | ^8.1.6         |
+| DI               | `get_it` + `injectable`        | ^8.0.2 / ^2.4.4|
+| API Client       | `graphql_flutter`              | ^5.2.0-beta.7  |
+| Navigation       | `go_router`                    | ^14.6.2        |
+| Localization     | `easy_localization`            | ^3.0.7         |
+| Secure Storage   | `flutter_secure_storage`       | ^9.2.2         |
+| Maps             | `flutter_map` + `geolocator`   | ^7.0.2 / ^13.0.2|
+| Firebase         | `firebase_core` + `firebase_messaging` | ^3.8.1 / ^15.1.6 |
+
+### 1.4 Global vs Scoped Cubits
+
+| Cubit       | Scope   | Provided In                       |
+|-------------|---------|-----------------------------------|
+| `HomeCubit` | Global  | `main.dart` → `MultiBlocProvider` |
+| `CartCubit` | Global  | `main.dart` → `MultiBlocProvider` |
+| `AuthCubit` | Scoped  | Feature-level `BlocProvider`      |
+| `OrderCubit`| Scoped  | Feature-level `BlocProvider`      |
+| `SplashCubit`| Scoped | Feature-level `BlocProvider`      |
+
+---
+
+## 2. Strict Operational Rules
+
+### 2.1 Dead Code Elimination ⚠️ MANDATORY
+
+During **every** code modification, the agent **MUST**:
+
+1. **Remove unused imports** — Run conceptual `dart fix --apply` checks. Every `import` must be referenced.
+2. **Delete dead variables** — Any variable assigned but never read must be removed.
+3. **Remove orphaned methods** — Private methods (`_methodName`) not called anywhere in the file must be deleted.
+4. **Clean unused widgets** — Widget classes not referenced in any route, builder, or parent widget must be removed.
+5. **Prune stale state fields** — Cubit state fields not consumed by any `BlocBuilder`/`BlocListener` must be removed.
+6. **Remove commented-out code** — Blocks of commented code (not documentation comments) must be deleted.
+
+> **Rule:** Never leave dead code "for later." If it's not used now, it doesn't exist.
+
+### 2.2 API Minimization & Performance ⚡ MANDATORY
+
+#### Widget Rebuild Optimization
+- Use `const` constructors on **every** widget and parameter that allows it.
+- Never use `setState()` in a `StatelessWidget` or inside a `BlocBuilder`. Use `Cubit.emit()`.
+- Prefer `BlocSelector` over `BlocBuilder` when only a subset of state fields triggers a rebuild.
+- Extract heavy subtrees into separate `const` widgets to isolate rebuilds.
+- Never create objects (lists, maps, callbacks) inline inside `build()` — hoist them to class-level or use `const`.
+
+#### GraphQL / Network Efficiency
+- **No duplicate requests:** Before adding a new GraphQL call, verify the data isn't already available in an existing Cubit state.
+- **No redundant fetches:** `HomeCubit.init()` fetches products + categories + sliders in parallel. Never re-fetch individually.
+- **Client-side filtering only:** Products are fetched once; category filtering happens in-memory via `category.slug` match.
+- **Debounce mutations:** Never fire the same mutation (e.g., `createOrder`) twice. Disable UI trigger after first tap.
+- **Cache-first:** Use GraphQL cache policies (`CachePolicy.cacheFirst`) for static data (settings, categories, branches).
+- **60s timeout:** All network operations MUST have a 60-second `connectionTimeout`. No exceptions.
+
+#### State Management Efficiency
+- Emit **new state objects** — never mutate existing state.
+- One Cubit per domain concern — no god cubits handling unrelated logic.
+- Don't duplicate data across Cubits — reference `HomeCubit` for product data in `CartCubit`, not a copy.
+
+### 2.3 Token Efficiency 📏 MANDATORY
+
+When responding to code modification requests:
+
+1. **Minimal diffs only** — Output only the changed lines with surrounding context (3–5 lines). Never reprint an entire file or widget tree.
+2. **Targeted snippets** — Reference files by path and line range, e.g., "In `lib/features/home/presentation/pages/home_page.dart:42-58`, replace..."
+3. **No boilerplate repetition** — Don't repeat import blocks, class declarations, or unchanged methods. Use `// ... existing code ...` markers.
+4. **Batch related changes** — Group all edits to a single file in one response block, not scattered across the conversation.
+5. **Use file references** — Point to existing implementations instead of re-explaining them. E.g., "Follow the pattern in `AuthCubit`."
+
+### 2.4 Localization Enforcement 🌐 MANDATORY
+
+- **Zero hardcoded strings** in UI. Every user-visible string MUST use `'key'.tr()`.
+- New strings MUST be added to ALL 3 locale files: `uz.json`, `ru.json`, `en.json`.
+- Error messages from the server should be displayed as-is (they arrive pre-localized via the `language` header).
+- `locale_keys.g.dart` exists but is **NOT used** — only raw string keys with `.tr()`.
+
+### 2.5 Code Style & Documentation 📝 MANDATORY
+
+- Every new public method/class MUST have a `///` Dart doc comment.
+- Follow `flutter_lints` rules from `analysis_options.yaml`.
+- Use `AppColors`, `AppTextStyles`, `AppDimensions` from the design system — no magic numbers or hex literals.
+- Format all prices via `NumberFormatter.formatSum(price)` — raw `.toInt()` or `.toString()` on prices is **FORBIDDEN**.
+- `flutter_screenutil` is **NOT used** — responsiveness via `MediaQuery` and `LayoutBuilder` only.
+
+### 2.6 File Organization Rules 📁
+
+- **Feature-first:** All feature code lives under `lib/features/<feature_name>/`.
+- **Clean Architecture layers** within each feature: `data/` → `domain/` → `presentation/`.
+- Shared code lives in `lib/core/`. Never put feature-specific code in core.
+- New shared widgets go in `lib/core/widgets/`.
+- New constants go in `lib/core/constants/`.
+
+### 2.7 Dependency Injection Rules 💉
+
+- All injectable classes use `@injectable` or `@LazySingleton` annotations.
+- After adding new injectable classes, remind to run:
+  ```bash
+  flutter pub run build_runner build --delete-conflicting-outputs
+  ```
+- Never manually register in `get_it` — always go through `@injectable` code generation.
+
+---
+
+## 3. Navigation Contract
+
+| Route            | Widget             | Auth Required |
+|------------------|--------------------|---------------|
+| `/splash`        | `SplashPage`       | No            |
+| `/auth/login`    | `LoginPage`        | No            |
+| `/auth/otp`      | `OtpPage`          | No            |
+| `/home`          | `HomePage`         | Yes           |
+| `/cart`          | `CartPage`         | Yes           |
+| `/orders`        | `OrdersPage`       | Yes           |
+| `/profile`       | `ProfilePage`      | Yes           |
+| `/product/:slug` | `ProductDetailPage`| Yes           |
+| `/checkout`      | `CheckoutPage`     | Yes           |
+| `/order/:id`     | `OrderDetailPage`  | Yes           |
+| `/map-picker`    | `MapPickerPage`    | Yes           |
+
+- Auth redirect: If `SecureStorage.getToken()` returns `null`, redirect to `/auth/login`.
+- Pass complex objects via `extra:` parameter (e.g., `ProductEntity`, `OrderEntity`).
+
+---
+
+## 4. GraphQL Schemas
+
+| Schema  | Endpoint            | Operations                                                    |
+|---------|---------------------|---------------------------------------------------------------|
+| Common  | `/graphql/common`   | Products, Categories, Settings, Branches, Login, ConfirmOtp   |
+| Order   | `/graphql/order`    | Orders, Order, CreateOrder, CheckPromoCode, CalculateDeliveryPrice |
+
+### Routing Rule
+Operations are routed via `Link.split` based on operation name. Order-schema operations: `orders`, `Orders`, `order`, `Order`, `createOrder`, `checkPromoCode`, `calculateDeliveryPrice`.
+
+### Security Headers (Mutations Only)
+Every mutation includes HMAC-SHA256 signature:
+```
+Header-Random-Str: <16-char random string>
+Header-Timestamp:  <current time in ms>
+Header-Sign:       HMAC-SHA256(jsonEncode(variables) + randomStr + timestamp, HMAC_SECRET)
 ```
 
 ---
 
-## 🛠 GraphQL So'rovlari
+## 5. Design System Quick Reference
 
-### Common Schema Queries
-
-```graphql
-# Barcha mahsulotlar (client-side filtering uchun)
-query Products {
-  products {
-    slug title description thumbnail photo price
-    category { slug title }
-    variants { id title price }
-    values { key value }
-  }
-}
-# Kategoriyalar
-query Categories { categories { slug title } }
-# Sozlamalar (Splash da yuklanadi)
-query Settings { settings { support_phone can_order } }
-# Filiallar
-query Branches { branches { id title address latitude longitude } }
-```
-
-### Order Schema Queries
-
-```graphql
-query Orders { orders { order_id address comment status status_text payment_url type branch latitude longitude payment_method_text payment_method subtotal_price discount_amount delivery_price total_price products { slug title image variant price quantity total_amount } } }
-query Order($id: Int!) { order(id: $id) { ... same fields ... } }
-```
-
-### Mutations
-
-```graphql
-mutation login($phone: String!, $full_name: String!) { login(phone: $phone, full_name: $full_name) }
-mutation confirmOtp($phone: String!, $code: Int!) { confirmOtp(phone: $phone, code: $code) { token } }
-mutation createOrder(...) { createOrder(...) }
-
-# Promo code: pass subtotal as total_price (delivery excluded)
-mutation CheckPromoCode($promo_code: String, $total_price: Float) {
-  checkPromoCode(promo_code: $promo_code, total_price: $total_price) {
-    promo_code type value
-  }
-}
-
-# Delivery price calculation: run when Delivery type is selected
-mutation CalculateDeliveryPrice($latitude: Float, $longitude: Float) {
-  calculateDeliveryPrice(latitude: $latitude, longitude: $longitude)
-}
-```
-
-### Promo Code Logic (CheckoutPage)
-
-| Field  | Type | Tavsif |
-|--------|------|--------|
-| `type` | `1`  | **Percent** — subtotal × value / 100 (delivery kirmaydi) |
-| `type` | `0`  | **Fixed** — total summadan aniq `value` ayriladi |
-
-- Muvaffaqiyatli promo: `_appliedPromoCode`ni saqla, `createOrder`ga uzat.
-- Xato kelsa serverning error `message`ini foydalanuvchiga ko'rsat (`:remain`, `:amount` placeholderlar bilan kelishi mumkin).
-
-### `createOrder` Argumentlari
-
-| Argument         | Turi      | Tavsif                                          |
-| ---------------- | --------- | ----------------------------------------------- |
-| `type`           | `int`     | `0` — Delivery, `1` — Pickup                    |
-| `branch_id`      | `int?`    | `type=1` bo'lsa majburiy                        |
-| `latitude`       | `float?`  | `type=0` bo'lsa majburiy                        |
-| `longitude`      | `float?`  | `type=0` bo'lsa majburiy                        |
-| `payment_method` | `int`     | `0` — Naqd, `1` — Payme, `2` — Click            |
-| `products`       | `List`    | `[{ id, quantity, variant_id }]`                |
-| `promo_code`     | `string?` | Ixtiyoriy promo kod                             |
+| Token              | Value / Class                    |
+|--------------------|----------------------------------|
+| Primary Color      | `AppColors.primary` (`0xFFD32F2F`) |
+| Secondary Color    | `AppColors.secondary` (`0xFF2E7D32`) |
+| Card Radius        | `16px` (OrderCard), `20px` (ProductCard) |
+| Shadow             | `Colors.black.withOpacity(0.04)`, `blurRadius: 10` |
+| Font Family        | Inter (via `google_fonts`)       |
+| Grid Aspect Ratio  | `0.68` (ProductCard grid)        |
+| Slider Viewport    | `0.92` fraction, `20px` radius   |
 
 ---
 
-## 🌍 Localization (Ko'p tillilik)
+## 6. Pre-Modification Checklist
 
-- **3 ta til:** `uz` (asosiy), `ru`, `en`
-- Paket: `easy_localization` + JSON fayllar (`lib/l10n/`)
-- Localization fayllar `pubspec.yaml`da asset sifatida ro'yxatga olingan.
+Before making **any** code change, verify:
 
-### Majburiy Qoidalar
-
-1. Barcha static textlar (label, button, error) `lib/l10n/*.json`da saqlanishi shart.
-2. Kodda faqat `.tr()` extension metodi ishlatiladi: `'key'.tr()`.
-3. Yangi text qo'shilganda **barcha 3 ta tilda** tarjima majburiy.
-4. Xatolik xabarlari (error messages) foydalanuvchiga tushunarli, mazmunan to'g'ri va to'liq tarjima qilingan bo'lishi shart. Hardcoded stringlar (hatto xatoliklar uchun ham) TAQIQLANGAN.
-5. Til o'zgarganda `HomeCubit.init()` chaqiriladi — API so'rovlar yangi `language` headeri bilan qayta yuboriladi.
-
-> `locale_keys.g.dart` **ishlatilmaydi** — faqat string key bilan `.tr()` ishlatiladi.
+- [ ] No duplicate GraphQL operation exists for the same data
+- [ ] New strings are added to all 3 locale files
+- [ ] `const` is used wherever possible
+- [ ] Prices use `NumberFormatter.formatSum()`
+- [ ] No unused imports remain after the edit
+- [ ] Injectable classes are annotated correctly
+- [ ] Widget builds don't create inline objects
+- [ ] Error states are handled with localized messages
 
 ---
 
-## 🖼 Navigatsiya (go_router)
+## 7. Auto-Update Policy
 
-`AppRouter.dart`da `go_router` konfiguratsiyasi:
+This `agents.md` file MUST be updated immediately when:
+1. A new technical requirement or constraint is established.
+2. A new feature area or pattern is introduced.
+3. An existing rule is modified or deprecated.
 
-| Route             | Widget             | Tavsif                          |
-| ----------------- | ------------------ | ------------------------------- |
-| `/splash`         | `SplashPage`       | Boshlang'ich ekran              |
-| `/auth/login`     | `LoginPage`        | Telefon raqamni kiritish        |
-| `/auth/otp`       | `OtpPage`          | SMS tasdiqlash                  |
-| `/home`           | `HomePage`         | ShellRoute (bottom nav)         |
-| `/cart`           | `CartPage`         | ShellRoute                      |
-| `/orders`         | `OrdersPage`       | ShellRoute                      |
-| `/profile`        | `ProfilePage`      | ShellRoute                      |
-| `/product/:slug`  | `ProductDetailPage`| `extra: ProductEntity`          |
-| `/checkout`       | `CheckoutPage`     | Buyurtma tasdiqlash             |
-| `/order/:id`      | `OrderDetailPage`  | `extra: OrderEntity?`           |
-| `/map-picker`     | `MapPickerPage`    | Manzil tanlash (placeholder)    |
-
-- `SecureStorage.getToken()` `null` bo'lsa `/auth/login`ga redirect.
-- `navigatorKey`: `AppConstants.navigatorKey` orqali global `BuildContext` olinadi.
-
----
-
-## 🎨 Design System
-
-### AppColors
-
-`lib/core/theme/app_colors.dart` — `AppColors` klasi barcha rang konstantlarini saqlaydi.
-
-- Primary (Premium Qizil): `AppColors.primary` (`0xFFD32F2F`), `AppColors.primaryLight` (`0xFFFFEBEE`)
-- Secondary (Reyhan Yashili): `AppColors.secondary` (`0xFF2E7D32`), `AppColors.secondaryLight` (`0xFFE8F5E9`)
-- Oq (White) ranglar brendning toza va premium pizza foni uchun keng qo'llaniladi. To'q sariq (Orange) va tilla (Gold) ranglar brendingda mutlaqo ishlatilmaydi.
-- Neutral: `neutral50` → `neutral900`
-- Semantic: `success`, `error`, `warning`
-- Dark mode: `darkBackground`, `darkSurface`
-
-### AppTextStyles
-
-`lib/core/theme/app_text_styles.dart` — `Inter` Google Font asosida:
-`display`, `h1-h4`, `bodyLarge/Medium/Small/ExtraSmall`, `labelLarge/Medium/Small`
-
-### AppTheme
-
-`lib/core/theme/app_theme.dart`:
-- `AppTheme.light` — Material 3, `useMaterial3: true`
-- `AppTheme.dark` — Qorong'i rejim
-
-### AppIcons
-
-`lib/core/theme/app_icons.dart` — Material Icons wrappers. Navigation uchun ikki holat (inactive/active):
-
-```dart
-static const IconData home = Icons.home_outlined;
-static const IconData homeActive = Icons.home_rounded;
-// + cart, orders, profile (xuddi shunday juftlar)
-```
-
----
-
-## 🛑 Kod Qoidalari
-
-### 1. Model va Entity Ajratish
-
-```
-Data layer:  OrderModel (fromJson, toJson) — GraphQL response mapping
-Domain layer: OrderEntity — ilovada ishlatiladigan sof Dart klassi
-```
-
-### 2. BLoC Pattern
-
-```
-Cubit → UseCase → Repository → DataSource → GraphQL API
-```
-
-- `HomeCubit` va `CartCubit` global (`main.dart`dagi `MultiBlocProvider`da).
-- `OrderCubit`, `AuthCubit` — feature ichida `BlocProvider` orqali.
-
-### 3. DI — Injectable
-
-```bash
-flutter pub run build_runner build --delete-conflicting-outputs
-```
-
-Yangi singleton qo'shishda `@LazySingleton` yoki `@injectable` annotatsiyasidan foydalaniladi.
-
-### 4. UI/UX Majburiy Qoidalar
-
-| Qoida              | Tavsif                                                                     |
-| ------------------ | -------------------------------------------------------------------------- |
-| Kategoriya Filter  | Client-side! Barcha `products` bir marta olinadi, `category.slug` bo'yicha filter |
-| Variants           | 1 tadan ko'p bo'lsa tanlash majburiy; 1 ta bo'lsa UI yashiriladi           |
-| Sliders            | `viewportFraction: 0.92`, `radius: 20px`, gradient overlay, shadow         |
-| Pull-to-Refresh    | `HomePage`da `RefreshIndicator` bor                                        |
-| Grid Ratio         | `childAspectRatio: 0.68` — `ProductCard` overflow oldini oladi             |
-| Order Card         | Compact: faqat ID, status, mahsulot soni va jami narx                     |
-| Order Detail       | `OrderDetailPage` — status, barcha mahsulotlar, subtotal/delivery/total   |
-| Bottom Nav Icons   | Outlined (inactive) → Rounded (active) juftlari                           |
-| Card Radius        | `16px` — `OrderCard`, `20px` — `ProductCard`, `DetailCard`               |
-| BoxShadow          | `Colors.black.withOpacity(0.04)`, `blurRadius: 10`                        |
-| **Narx Formati**   | **Barcha narxlar `NumberFormatter.formatSum(price)` orqali ko'rsatiladi** — `product.price.toInt()` kabi raw format TAQIQLANGAN. Tegishli joylar: `ProductCard`, `_VariantPickerSheet`, `ProductDetailPage` variant chips va bottom button, `CartPage`, `CheckoutPage`, `OrderDetailPage` |
-
-### 5. Xatolarni Boshqarish
-
-- GraphQL xatolari: `result.hasException` tekshiriladi, exception throw qilinadi.
-- UI da `SnackBar` yoki state (`OrderFailure`, `HomeFailure`) orqali ko'rsatiladi.
-- Tarmoq xatolari alohida ushlanadi.
-
-### 6. Splash va `can_order`
-
-`SplashCubit` `Settings` query'si orqali API holatini tekshiradi:
-- `can_order: false` bo'lsa foydalanuvchiga tegishli xabar ko'rsatiladi.
-- Token borligiga qarab `/home` yoki `/auth/login`ga yo'naltiriladi.
-
-### 7. Testing
-
-Hozirda test yozish majburiy emas (Dev Mode). Lekin har bir yangi metod uchun Dart docstring (`///`) yozib ketilishi shart.
-
----
-
-## ⚠️ Muhim Cheklovlar
-
-- **Xaritalar:** Ilova `flutter_map` va OpenStreetMap (OSM) dan foydalanadi. Maxsus API kalit talab qilinmaydi.
-- **HMAC_SECRET:** Production build uchun: `flutter build apk --dart-define=HMAC_SECRET=<real_secret>`.
-- **Localization asset:** `lib/l10n/` papkasi `pubspec.yaml`dagi `assets:` ro'yxatida saqlanishi shart.
-- **N+1 muammodan** saqlanish uchun GraphQL fragment yoki to'liq field listidan foydalaniladi.
-- **Orientatsiya:** Ilova faqat portrait rejimida ishlaydi (`SystemChrome.setPreferredOrientations`).
-- **Network Timeout:** Barcha tarmoq so'rovlari (GraphQL, HTTP) uchun majburiy **60 soniyalik** `connectionTimeout` o'rnatilishi shart.
-
----
-
-## 🔄 Avtomatik Yangilanish Qoidasi
-
-Agent har safar yangi texnik talab, cheklov yoki qaror qabul qilinsa ushbu `AGENTS.md` faylini darhol yangilashi shart:
-1. Tegishli bo'limga yangi qoidani qo'shish.
-2. Kerak bo'lsa yangi bo'lim ochish.
-3. Faylning dolzarbligini doimo ta'minlash.
+The file must always reflect the current, ground-truth state of the project.

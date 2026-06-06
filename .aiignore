@@ -1,108 +1,72 @@
 # ==============================================================================
-# Strada Pizza — Comprehensive .gitignore
-# Optimized for Flutter/Dart + Firebase + GraphQL project
+# .aiignore — AI Agent Token Optimization
+# Blocks heavy directories from AI scanning to save context window tokens
 # ==============================================================================
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Flutter / Dart SDK & Pub
+# Flutter / Dart Tooling (largest token consumers)
 # ──────────────────────────────────────────────────────────────────────────────
 .dart_tool/
 .packages
 .flutter-plugins
 .flutter-plugins-dependencies
-.pub-cache/
-.pub/
-**/doc/api/
-**/ios/Flutter/.last_build_id
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Build Outputs (ALL platforms)
+# Build Output — NEVER scan
 # ──────────────────────────────────────────────────────────────────────────────
-/build/
-/coverage/
+build/
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Android Build & Gradle Caches
 # ──────────────────────────────────────────────────────────────────────────────
 android/.gradle/
 android/app/build/
-android/app/debug/
-android/app/profile/
-android/app/release/
-android/local.properties
-android/key.properties
-**/gradle-wrapper.jar
-.gradle/
+android/gradle/
 
 # ──────────────────────────────────────────────────────────────────────────────
-# iOS — CocoaPods, Symlinks & Xcode Artifacts
+# iOS — CocoaPods & Symlinks (10K+ files)
 # ──────────────────────────────────────────────────────────────────────────────
 ios/Pods/
 ios/.symlinks/
-ios/Flutter/Flutter.framework
-ios/Flutter/Flutter.podspec
-**/xcuserdata/
-**/*.xcuserstate
-**/*.mode1v3
-**/*.mode2v3
-**/*.perspectivev3
-**/derivedData/
-**/*.moved-aside
+ios/Flutter/
 
 # ──────────────────────────────────────────────────────────────────────────────
-# macOS / Linux / Windows Build Caches
+# macOS / Linux / Windows Ephemeral Build Caches
 # ──────────────────────────────────────────────────────────────────────────────
-macos/Flutter/ephemeral/
-linux/flutter/ephemeral/
+macos/
+linux/
 windows/flutter/ephemeral/
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Environment Variables & Credentials (SECURITY)
+# Lock Files & Generated Code (only scan on demand)
+# ──────────────────────────────────────────────────────────────────────────────
+pubspec.lock
+lib/generated/
+lib/core/di/injection.config.dart
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Git, IDE, OS artifacts
+# ──────────────────────────────────────────────────────────────────────────────
+.git/
+.idea/
+.vscode/
+.DS_Store
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Environment & Credentials
 # ──────────────────────────────────────────────────────────────────────────────
 .env
 .env.*
-!.env.example
 **/google-services.json
 **/GoogleService-Info.plist
 
 # ──────────────────────────────────────────────────────────────────────────────
-# IDE & Editor
+# CI / CD Workflows (rarely relevant to coding tasks)
 # ──────────────────────────────────────────────────────────────────────────────
-.idea/
-.vscode/
-*.iml
-*.ipr
-*.iws
-*.swp
-*.swo
-*~
+.github/
 
 # ──────────────────────────────────────────────────────────────────────────────
-# OS-specific Junk
+# Test output & coverage
 # ──────────────────────────────────────────────────────────────────────────────
-.DS_Store
-.AppleDouble
-.LSOverride
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Symbolication & Obfuscation
-# ──────────────────────────────────────────────────────────────────────────────
-app.*.symbols
-app.*.map.json
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Miscellaneous
-# ──────────────────────────────────────────────────────────────────────────────
-*.class
-*.log
-*.pyc
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
+coverage/
+test/
