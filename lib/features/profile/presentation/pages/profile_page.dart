@@ -626,7 +626,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
 class _AnimatedScaleButton extends StatefulWidget {
   final Widget child;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _AnimatedScaleButton({
     required this.child,

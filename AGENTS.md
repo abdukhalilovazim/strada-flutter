@@ -126,6 +126,7 @@ When responding to code modification requests:
 - Use `AppColors`, `AppTextStyles`, `AppDimensions` from the design system — no magic numbers or hex literals.
 - Format all prices via `NumberFormatter.formatSum(price)` — raw `.toInt()` or `.toString()` on prices is **FORBIDDEN**.
 - `flutter_screenutil` is **NOT used** — responsiveness via `MediaQuery` and `LayoutBuilder` only.
+- **Type Safety & Nullability**: Always verify method parameters and type constraints. When passing optional callbacks (like disabled state callbacks), declare parameters as nullable (e.g. `VoidCallback?`) to avoid compile errors. Ensure no nullable types are assigned to non-nullable ones.
 
 ### 2.6 File Organization Rules 📁
 
