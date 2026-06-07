@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +14,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Catch unhandled asynchronous errors globally (e.g. stream timeouts on background resume)
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('🚨 [Unhandled Async Error]: $error\n$stack');
+    return true; // Prevents application crash
+  };
   
   // Load environment variables
   await dotenv.load(fileName: ".env");

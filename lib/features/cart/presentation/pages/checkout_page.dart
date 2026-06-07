@@ -1027,11 +1027,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
       final orderData = result.data?['createOrder'];
       final paymentUrl = orderData?['payment_url'] as String?;
 
-      if (mounted) {
-        context.read<CartCubit>().clear();
-        context.go('/orders');
-      }
-
       if (paymentUrl != null && paymentUrl.isNotEmpty) {
         final uri = Uri.tryParse(paymentUrl);
         if (uri != null) {
@@ -1041,6 +1036,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
             debugPrint('Could not launch payment URL: $e');
           }
         }
+      }
+
+      if (mounted) {
+        context.read<CartCubit>().clear();
+        context.go('/orders');
       }
       
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
