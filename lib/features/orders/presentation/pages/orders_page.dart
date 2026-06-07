@@ -71,6 +71,27 @@ class OrderCard extends StatelessWidget {
   final OrderEntity order;
   const OrderCard({super.key, required this.order});
 
+  Widget _buildInfoRow(BuildContext context, String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.neutral500,
+          ),
+        ),
+        Text(
+          value,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Determine status color
@@ -95,30 +116,20 @@ class OrderCard extends StatelessWidget {
       child: InkWell(
         onTap: () => context.push('/order/${order.id}', extra: order),
         borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header: ID and Status
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header: ID and Status
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '#${order.id}',
-                        style: AppTextStyles.h4.copyWith(
-                          color: Theme.of(context).textTheme.headlineMedium?.color,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        order.type ?? '',
-                        style: AppTextStyles.bodyExtraSmall.copyWith(color: AppColors.neutral500),
-                      ),
-                    ],
+                  Text(
+                    '#${order.id}',
+                    style: AppTextStyles.h4.copyWith(
+                      color: Theme.of(context).textTheme.headlineMedium?.color,
+                    ),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -136,22 +147,41 @@ class OrderCard extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-            const Divider(height: 1, color: AppColors.neutral100),
+              const SizedBox(height: 16),
 
-            // Total Price & Short Info
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
+              // Info rows: Type, Branch, Payment Method, Items count
+              if (order.type != null && order.type!.isNotEmpty) ...[
+                _buildInfoRow(context, 'orders.type'.tr(), order.type!),
+                const SizedBox(height: 8),
+              ],
+              if (order.branch != null && order.branch!.isNotEmpty) ...[
+                _buildInfoRow(context, 'orders.branch'.tr(), order.branch!),
+                const SizedBox(height: 8),
+              ],
+              if (order.paymentMethodText != null && order.paymentMethodText!.isNotEmpty) ...[
+                _buildInfoRow(context, 'orders.payment_method'.tr(), order.paymentMethodText!),
+                const SizedBox(height: 8),
+              ],
+              _buildInfoRow(
+                context,
+                'orders.items'.tr(),
+                'orders.items_count'.tr(namedArgs: {'count': order.products.length.toString()}),
+              ),
+
+              const Divider(height: 24, color: AppColors.neutral100),
+
+              // Bottom Price & Chevron indicator
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'orders.items_count'.tr(namedArgs: {'count': order.products.length.toString()}),
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: Theme.of(context).brightness == Brightness.dark ? AppColors.neutral400 : AppColors.neutral700,
+                        'cart.total'.tr(),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.neutral500,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -164,8 +194,8 @@ class OrderCard extends StatelessWidget {
                   const Icon(Icons.chevron_right_rounded, color: AppColors.neutral300),
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
