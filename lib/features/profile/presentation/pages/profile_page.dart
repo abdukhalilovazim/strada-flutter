@@ -22,6 +22,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String _name = 'Mijoz';
   String _phone = '';
   String? _selectedPurpose;
+  bool _showInquiryForm = false;
   final _messageController = TextEditingController();
   bool _isSubmitting = false;
   int _charCount = 0;
@@ -60,7 +61,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: Text('profile.title'.tr(), style: AppTextStyles.h2.copyWith(color: Theme.of(context).textTheme.headlineMedium?.color)),
@@ -142,10 +145,27 @@ class _ProfilePageState extends State<ProfilePage> {
                 );
               },
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
+            _buildItem(
+              icon: Icons.chat_bubble_outline_rounded,
+              title: 'profile.support_inquiry'.tr(),
+              onTap: () {
+                setState(() {
+                  _showInquiryForm = !_showInquiryForm;
+                });
+              },
+            ),
 
-            // Support Inquiry Form
-            _buildInquiryForm(),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              child: _showInquiryForm
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: _buildInquiryForm(),
+                    )
+                  : const SizedBox.shrink(),
+            ),
 
             const SizedBox(height: 32),
 
@@ -216,8 +236,9 @@ class _ProfilePageState extends State<ProfilePage> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _showLanguagePicker() {
     showModalBottomSheet(
@@ -456,29 +477,30 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildSendButton() {
+    final isEnabled = _selectedPurpose != null && _messageController.text.trim().length >= 5;
     return _AnimatedScaleButton(
-      onTap: _submitInquiry,
+      onTap: isEnabled ? _submitInquiry : null,
       child: Container(
         width: double.infinity,
         height: 52,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: AppColors.primary,
+          color: isEnabled ? AppColors.primary : AppColors.neutral200,
           borderRadius: BorderRadius.circular(26),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.send_rounded,
-              color: Colors.white,
+              color: isEnabled ? Colors.white : AppColors.neutral400,
               size: 18,
             ),
             const SizedBox(width: 8),
             Text(
               'profile.send'.tr(),
               style: AppTextStyles.labelLarge.copyWith(
-                color: Colors.white,
+                color: isEnabled ? Colors.white : AppColors.neutral400,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -489,6 +511,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _submitInquiry() async {
+    FocusScope.of(context).unfocus();
     final purpose = _selectedPurpose;
     final message = _messageController.text.trim();
 
@@ -619,10 +642,11 @@ class _AnimatedScaleButtonState extends State<_AnimatedScaleButton> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isEnabled = widget.onTap != null;
     return GestureDetector(
-      onTapDown: (_) => setState(() => _scale = 0.96),
-      onTapUp: (_) => setState(() => _scale = 1.0),
-      onTapCancel: () => setState(() => _scale = 1.0),
+      onTapDown: !isEnabled ? null : (_) => setState(() => _scale = 0.96),
+      onTapUp: !isEnabled ? null : (_) => setState(() => _scale = 1.0),
+      onTapCancel: !isEnabled ? null : () => setState(() => _scale = 1.0),
       onTap: widget.onTap,
       child: AnimatedScale(
         scale: _scale,

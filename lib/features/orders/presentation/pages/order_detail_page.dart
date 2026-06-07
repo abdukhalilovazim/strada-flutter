@@ -32,6 +32,7 @@ class OrderDetailPage extends StatelessWidget {
     if (o.status == 6) statusColor = Colors.green;
     if (o.status == 1) statusColor = Colors.red;
     if (o.status == 4) statusColor = Colors.orange;
+    final showPayNow = o.paymentUrl != null && o.status != 6 && o.status != 1;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -211,102 +212,80 @@ class OrderDetailPage extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Builder(
-            builder: (context) {
-              final showPayNow = o.paymentUrl != null && o.status != 6 && o.status != 1;
-              
-              if (showPayNow) {
-                return Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
+      bottomNavigationBar: (showPayNow || o.status == 6)
+          ? Container(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: Builder(
+                  builder: (context) {
+                    if (showPayNow) {
+                      return SizedBox(
+                        height: 50,
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final url = o.paymentUrl;
+                            if (url != null && url.isNotEmpty) {
+                              final uri = Uri.tryParse(url);
+                              if (uri != null) {
+                                try {
+                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                } catch (e) {
+                                  debugPrint('Could not launch payment URL: $e');
+                                }
+                              }
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text(
+                            'orders.pay_now'.tr(),
+                            style: AppTextStyles.labelMedium.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return SizedBox(
+                      height: 50,
+                      width: double.infinity,
+                      child: ElevatedButton(
                         onPressed: () => _handleReorder(context, o),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primary,
-                          side: const BorderSide(color: AppColors.primary, width: 1.5),
-                          minimumSize: const Size(double.infinity, 50),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         child: Text(
                           'orders.reorder'.tr(),
-                          style: AppTextStyles.labelMedium.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          final url = o.paymentUrl;
-                          if (url != null && url.isNotEmpty) {
-                            final uri = Uri.tryParse(url);
-                            if (uri != null) {
-                              try {
-                                await launchUrl(uri, mode: LaunchMode.externalApplication);
-                              } catch (e) {
-                                debugPrint('Could not launch payment URL: $e');
-                              }
-                            }
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(double.infinity, 50),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: Text(
-                          'orders.pay_now'.tr(),
                           style: AppTextStyles.labelMedium.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                );
-              }
-
-              return SizedBox(
-                height: 50,
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _handleReorder(context, o),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text(
-                    'orders.reorder'.tr(),
-                    style: AppTextStyles.labelMedium.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
-        ),
-      ),
+              ),
+            )
+          : null,
     );
   }
 
