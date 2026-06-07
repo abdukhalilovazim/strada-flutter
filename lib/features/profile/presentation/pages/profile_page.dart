@@ -8,6 +8,8 @@ import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/theme/app_icons.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:pizza_strada/core/network/graphql_client.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -505,69 +507,97 @@ class _ProfilePageState extends State<ProfilePage> {
       _isSubmitting = true;
     });
 
-    debugPrint('──────────────────────────────────────────────────────────────────');
-    debugPrint('📩 [SUPPORT INQUIRY SUBMISSION]');
-    debugPrint('Purpose: $purpose');
-    debugPrint('Message: $message');
-    debugPrint('──────────────────────────────────────────────────────────────────');
+    try {
+      const String mutation = r'''
+        mutation createInquiry($type: String!, $message: String!) {
+          createInquiry(type: $type, message: $message)
+        }
+      ''';
 
-    await Future.delayed(const Duration(milliseconds: 1500));
+      final client = buildGraphQLClient();
+      final result = await client.mutate(MutationOptions(
+        document: gql(mutation),
+        variables: {
+          'type': purpose,
+          'message': message,
+        },
+        operationName: 'createInquiry',
+      ));
 
-    if (!mounted) return;
+      if (result.hasException) {
+        throw result.exception!;
+      }
 
-    setState(() {
-      _isSubmitting = false;
-      _selectedPurpose = null;
-      _messageController.clear();
-      _charCount = 0;
-    });
+      if (!mounted) return;
 
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: Theme.of(dialogContext).cardColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Row(
-            children: [
-              const Icon(
-                Icons.check_circle_rounded,
-                color: AppColors.success,
-                size: 28,
+      setState(() {
+        _isSubmitting = false;
+        _selectedPurpose = null;
+        _messageController.clear();
+        _charCount = 0;
+      });
+
+      showDialog(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            backgroundColor: Theme.of(dialogContext).cardColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.success,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'profile.support'.tr(),
+                    style: AppTextStyles.h3.copyWith(
+                      color: Theme.of(dialogContext).textTheme.headlineMedium?.color,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              'profile.inquiry_success'.tr(),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(dialogContext).textTheme.bodyMedium?.color,
               ),
-              const SizedBox(width: 12),
-              Expanded(
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
                 child: Text(
-                  'profile.support'.tr(),
-                  style: AppTextStyles.h3.copyWith(
-                    color: Theme.of(dialogContext).textTheme.headlineMedium?.color,
+                  'common.yes'.tr(),
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: AppColors.primary,
                   ),
                 ),
               ),
             ],
-          ),
-          content: Text(
-            'profile.inquiry_success'.tr(),
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Theme.of(dialogContext).textTheme.bodyMedium?.color,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(
-                'common.yes'.tr(),
-                style: AppTextStyles.labelMedium.copyWith(
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+          );
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().contains('Unauthenticated')
+              ? 'error.unauthorized'.tr()
+              : 'error.server'.tr()),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 }
 
