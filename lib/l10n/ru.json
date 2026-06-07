@@ -96,5 +96,17 @@
   "orders.reorder_confirm_desc": "Текущие товары в корзине будут удалены, и вместо них будут добавлены товары из этого заказа. Продолжить?",
   "orders.reorder_success": "Товары добавлены в корзину",
   "orders.reorder_error": "Некоторые товары не найдены или отсутствуют в продаже",
-  "checkout.additional": "Дополнительно"
+  "checkout.additional": "Дополнительно",
+  "profile.inquiry_purpose": "Цель обращения",
+  "profile.inquiry_purpose_food": "🍕 Качество еды",
+  "profile.inquiry_purpose_delivery": "🚚 Доставка",
+  "profile.inquiry_purpose_service": "💬 Обслуживание клиентов",
+  "profile.inquiry_purpose_suggestion": "💡 Предложение",
+  "profile.inquiry_purpose_complaint": "⚠️ Жалоба",
+  "profile.inquiry_purpose_other": "❓ Другое",
+  "profile.message": "Сообщение",
+  "profile.message_hint": "Напишите ваше сообщение...",
+  "profile.send": "Отправить",
+  "profile.inquiry_success": "Ваше обращение принято. Мы свяжемся с вами в ближайшее время!",
+  "profile.inquiry_validation_error": "Пожалуйста, выберите цель обращения и напишите сообщение"
 }

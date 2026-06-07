@@ -75,7 +75,12 @@ class OrderDetailPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(o.statusText, style: AppTextStyles.h4.copyWith(color: statusColor)),
+                        Text(
+                          o.statusText.startsWith('orders.status_')
+                              ? o.statusText.tr()
+                              : o.statusText,
+                          style: AppTextStyles.h4.copyWith(color: statusColor),
+                        ),
                         Text(o.type ?? '', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
                       ],
                     ),

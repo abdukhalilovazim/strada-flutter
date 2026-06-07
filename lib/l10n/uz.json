@@ -98,5 +98,17 @@
   "orders.reorder_confirm_desc": "Savatdagi joriy mahsulotlar o'chirib tashlanadi va ushbu buyurtmadagi mahsulotlar savatga qo'shiladi. Davom etasizmi?",
   "orders.reorder_success": "Mahsulotlar savatga qo'shildi",
   "orders.reorder_error": "Ayrim mahsulotlar topilmadi yoki sotuvda yo'q",
-  "checkout.additional": "Qo'shimcha ma'lumotlar"
+  "checkout.additional": "Qo'shimcha ma'lumotlar",
+  "profile.inquiry_purpose": "Murojaat turi",
+  "profile.inquiry_purpose_food": "🍕 Taom sifati",
+  "profile.inquiry_purpose_delivery": "🚚 Yetkazib berish",
+  "profile.inquiry_purpose_service": "💬 Mijozlarga xizmat ko'rsatish",
+  "profile.inquiry_purpose_suggestion": "💡 Taklif",
+  "profile.inquiry_purpose_complaint": "⚠️ Shikoyat",
+  "profile.inquiry_purpose_other": "❓ Boshqa",
+  "profile.message": "Xabar",
+  "profile.message_hint": "Xabaringizni yozing...",
+  "profile.send": "Yuborish",
+  "profile.inquiry_success": "Murojaatingiz qabul qilindi. Tez orada siz bilan bog'lanamiz!",
+  "profile.inquiry_validation_error": "Iltimos, murojaat turi va xabarni to'ldiring"
 }

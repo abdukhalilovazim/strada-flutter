@@ -138,7 +138,9 @@ class OrderCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      order.statusText,
+                      order.statusText.startsWith('orders.status_')
+                          ? order.statusText.tr()
+                          : order.statusText,
                       style: AppTextStyles.labelSmall.copyWith(
                         color: statusColor,
                         fontWeight: FontWeight.bold,

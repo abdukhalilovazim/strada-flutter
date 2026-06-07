@@ -19,11 +19,30 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   String _name = 'Mijoz';
   String _phone = '';
+  String? _selectedPurpose;
+  final _messageController = TextEditingController();
+  bool _isSubmitting = false;
+  int _charCount = 0;
+
+  final List<Map<String, String>> _purposes = [
+    {'key': 'food', 'translation': 'profile.inquiry_purpose_food'},
+    {'key': 'delivery', 'translation': 'profile.inquiry_purpose_delivery'},
+    {'key': 'service', 'translation': 'profile.inquiry_purpose_service'},
+    {'key': 'suggestion', 'translation': 'profile.inquiry_purpose_suggestion'},
+    {'key': 'complaint', 'translation': 'profile.inquiry_purpose_complaint'},
+    {'key': 'other', 'translation': 'profile.inquiry_purpose_other'},
+  ];
 
   @override
   void initState() {
     super.initState();
     _loadUserInfo();
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserInfo() async {
@@ -121,6 +140,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 );
               },
             ),
+            const SizedBox(height: 24),
+
+            // Support Inquiry Form
+            _buildInquiryForm(),
 
             const SizedBox(height: 32),
 
@@ -270,6 +293,311 @@ class _ProfilePageState extends State<ProfilePage> {
         subtitle: subtitle != null ? Text(subtitle, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400)) : null,
         trailing: const Icon(AppIcons.arrowRight, color: AppColors.neutral400, size: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
+  }
+
+  Widget _buildInquiryForm() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'profile.inquiry_purpose'.tr(),
+                style: AppTextStyles.h4.copyWith(
+                  color: Theme.of(context).textTheme.headlineMedium?.color,
+                ),
+              ),
+              const Text(
+                ' *',
+                style: TextStyle(color: AppColors.error),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _purposes.map((purpose) {
+              final isSelected = _selectedPurpose == purpose['key'];
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedPurpose = isSelected ? null : purpose['key'];
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primaryLight
+                        : (isDark ? AppColors.neutral800 : AppColors.neutral50),
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.primary
+                          : (isDark ? AppColors.neutral700 : AppColors.neutral200),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Text(
+                    purpose['translation']!.tr(),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: isSelected
+                          ? AppColors.primary
+                          : (isDark ? Colors.white : AppColors.neutral900),
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Text(
+                'profile.message'.tr(),
+                style: AppTextStyles.h4.copyWith(
+                  color: Theme.of(context).textTheme.headlineMedium?.color,
+                ),
+              ),
+              const Text(
+                ' *',
+                style: TextStyle(color: AppColors.error),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _messageController,
+            maxLines: 4,
+            maxLength: 500,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: isDark ? Colors.white : AppColors.neutral900,
+            ),
+            onChanged: (text) {
+              setState(() {
+                _charCount = text.length;
+              });
+            },
+            decoration: InputDecoration(
+              counterText: "",
+              hintText: 'profile.message_hint'.tr(),
+              hintStyle: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.neutral400,
+              ),
+              filled: true,
+              fillColor: isDark ? AppColors.neutral800.withOpacity(0.5) : AppColors.neutral50,
+              contentPadding: const EdgeInsets.all(16),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: isDark ? AppColors.neutral700 : AppColors.neutral200,
+                  width: 1.0,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: isDark ? AppColors.neutral700 : AppColors.neutral200,
+                  width: 1.0,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 1.5,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '$_charCount/500',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.neutral500,
+            ),
+          ),
+          const SizedBox(height: 24),
+          _isSubmitting
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      ),
+                    ),
+                  ),
+                )
+              : _buildSendButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSendButton() {
+    return _AnimatedScaleButton(
+      onTap: _submitInquiry,
+      child: Container(
+        width: double.infinity,
+        height: 52,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.primary,
+          borderRadius: BorderRadius.circular(26),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.send_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'profile.send'.tr(),
+              style: AppTextStyles.labelLarge.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _submitInquiry() async {
+    final purpose = _selectedPurpose;
+    final message = _messageController.text.trim();
+
+    if (purpose == null || message.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('profile.inquiry_validation_error'.tr()),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    debugPrint('──────────────────────────────────────────────────────────────────');
+    debugPrint('📩 [SUPPORT INQUIRY SUBMISSION]');
+    debugPrint('Purpose: $purpose');
+    debugPrint('Message: $message');
+    debugPrint('──────────────────────────────────────────────────────────────────');
+
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    if (!mounted) return;
+
+    setState(() {
+      _isSubmitting = false;
+      _selectedPurpose = null;
+      _messageController.clear();
+      _charCount = 0;
+    });
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: Theme.of(dialogContext).cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              const Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.success,
+                size: 28,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'profile.support'.tr(),
+                  style: AppTextStyles.h3.copyWith(
+                    color: Theme.of(dialogContext).textTheme.headlineMedium?.color,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'profile.inquiry_success'.tr(),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(dialogContext).textTheme.bodyMedium?.color,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                'common.yes'.tr(),
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _AnimatedScaleButton extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onTap;
+
+  const _AnimatedScaleButton({
+    required this.child,
+    required this.onTap,
+  });
+
+  @override
+  State<_AnimatedScaleButton> createState() => _AnimatedScaleButtonState();
+}
+
+class _AnimatedScaleButtonState extends State<_AnimatedScaleButton> {
+  double _scale = 1.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _scale = 0.96),
+      onTapUp: (_) => setState(() => _scale = 1.0),
+      onTapCancel: () => setState(() => _scale = 1.0),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _scale,
+        duration: const Duration(milliseconds: 100),
+        child: widget.child,
       ),
     );
   }

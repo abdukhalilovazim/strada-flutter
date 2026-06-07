@@ -43,8 +43,20 @@ class OrderModel extends OrderEntity {
       }
     }
 
-    if (json['status_text'] is String) {
+    if (json['status_text'] is String && (json['status_text'] as String).isNotEmpty) {
       statusTextStr = json['status_text'] as String;
+    } else {
+      switch (statusInt) {
+        case 6:
+          statusTextStr = 'orders.status_completed';
+          break;
+        case 1:
+          statusTextStr = 'orders.status_rejected';
+          break;
+        default:
+          statusTextStr = 'orders.status_pending';
+          break;
+      }
     }
 
     return OrderModel(
