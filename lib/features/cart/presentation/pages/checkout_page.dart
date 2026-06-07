@@ -44,6 +44,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   // Qaytim (change)
   bool _showChangeInput = false;
   bool _showCommentInput = false;
+  bool _showPromoInput = false;
 
   // Location
   double? _lat;
@@ -286,7 +287,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   // ─── Discount calculation ─────────────────────────────────────────────────
   double _computeDiscount(double subtotal) {
-    if (_appliedPromoCode == null || _promoValue == null) return 0;
+    if (!_showPromoInput || _appliedPromoCode == null || _promoValue == null) return 0;
     if (_promoType == 1) {
       // Percent — only from products, not delivery
       return subtotal * _promoValue! / 100;
@@ -495,7 +496,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         if (i > 0) const SizedBox(width: 8),
                         Expanded(
                           child: InkWell(
-                            onTap: () => setState(() => _selectedPaymentMethodKey = paymentMethods[i].key),
+                            onTap: () {
+                              setState(() {
+                                _selectedPaymentMethodKey = paymentMethods[i].key;
+                                if (_selectedPaymentMethodKey != '0') {
+                                  _showChangeInput = false;
+                                  _changeController.clear();
+                                }
+                              });
+                            },
                             borderRadius: BorderRadius.circular(12),
                             child: Container(
                               height: 48,
@@ -568,115 +577,135 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     children: [
                       // 1. Promo Code section
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
                                 const Icon(Icons.local_offer_outlined, color: AppColors.primary, size: 20),
                                 const SizedBox(width: 12),
-                                Text(
-                                  'cart.promo'.tr(),
-                                  style: AppTextStyles.labelMedium.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
                                 Expanded(
-                                  child: Container(
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBackground : AppColors.neutral50,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.neutral800 : AppColors.neutral200,
-                                      ),
-                                    ),
-                                    child: TextField(
-                                      controller: _promoController,
-                                      textCapitalization: TextCapitalization.characters,
-                                      decoration: InputDecoration(
-                                        hintText: 'checkout.promo_hint'.tr(),
-                                        hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400),
-                                        border: InputBorder.none,
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                                      ),
-                                      onChanged: (_) {
-                                        if (_appliedPromoCode != null) {
-                                          setState(() {
-                                            _appliedPromoCode = null;
-                                            _promoType = null;
-                                            _promoValue = null;
-                                          });
-                                        }
-                                      },
-                                    ),
-                                  ),
+                                  child: Text('cart.promo'.tr(), style: AppTextStyles.bodyMedium),
                                 ),
-                                const SizedBox(width: 8),
-                                SizedBox(
-                                  height: 44,
-                                  child: ElevatedButton(
-                                    onPressed: _loadingPromo ? null : () => _applyPromo(subtotal),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primary,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                                    ),
-                                    child: _loadingPromo
-                                        ? const SizedBox(width: 18, height: 18,
-                                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                        : Text('cart.apply'.tr(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
-                                  ),
+                                Switch.adaptive(
+                                  value: _showPromoInput,
+                                  onChanged: (val) => setState(() {
+                                    _showPromoInput = val;
+                                    if (!val) {
+                                      _promoController.clear();
+                                      _appliedPromoCode = null;
+                                      _promoType = null;
+                                      _promoValue = null;
+                                      _promoError = null;
+                                    }
+                                  }),
+                                  activeColor: AppColors.primary,
                                 ),
                               ],
                             ),
-                            if (_promoError != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8, left: 4),
-                                child: Text(_promoError!, style: AppTextStyles.bodySmall.copyWith(color: AppColors.error)),
-                              ),
-                            if (_appliedPromoCode != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8, left: 4),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 16),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      '$_appliedPromoCode — -${NumberFormatter.formatSum(_computeDiscount(subtotal))} ${'common.currency'.tr()}',
-                                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.success, fontWeight: FontWeight.w600),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            AnimatedSize(
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeInOut,
+                              child: _showPromoInput
+                                  ? Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  color: Theme.of(context).brightness == Brightness.dark
+                                                      ? AppColors.darkBackground
+                                                      : AppColors.neutral50,
+                                                  borderRadius: BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                    color: Theme.of(context).brightness == Brightness.dark
+                                                        ? AppColors.neutral800
+                                                        : AppColors.neutral200,
+                                                  ),
+                                                ),
+                                                child: TextField(
+                                                  controller: _promoController,
+                                                  style: AppTextStyles.bodyMedium,
+                                                  textAlignVertical: TextAlignVertical.center,
+                                                  inputFormatters: [
+                                                    UpperCaseTextFormatter(),
+                                                  ],
+                                                  decoration: InputDecoration(
+                                                    hintText: 'checkout.promo_hint'.tr(),
+                                                    hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
+                                                    border: InputBorder.none,
+                                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            SizedBox(
+                                              height: 44,
+                                              child: ElevatedButton(
+                                                onPressed: _loadingPromo ? null : () => _applyPromo(subtotal),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: AppColors.primary,
+                                                  foregroundColor: Colors.white,
+                                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(12),
+                                                  ),
+                                                  elevation: 0,
+                                                ),
+                                                child: _loadingPromo
+                                                    ? const SizedBox(
+                                                        width: 18,
+                                                        height: 18,
+                                                        child: CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                        ),
+                                                      )
+                                                    : Text(
+                                                        'cart.apply'.tr(),
+                                                        style: AppTextStyles.labelMedium.copyWith(
+                                                          color: Colors.white,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (_promoError != null) ...[
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            _promoError!,
+                                            style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
+                                          ),
+                                        ],
+                                      ],
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
                           ],
                         ),
                       ),
-
-                      // Divider
                       Divider(
                         height: 1,
                         color: Theme.of(context).brightness == Brightness.dark
                             ? AppColors.neutral800
                             : AppColors.neutral100,
                       ),
-
-                      // 2. Qaytim (Change) section
-                      if (_getPaymentMethodId(_selectedPaymentMethodKey) == 0) ...[
+                      
+                      // 2. Change for amount section (Only shown for Cash payment method, i.e., key: "0")
+                      if (_selectedPaymentMethodKey == '0') ...[
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           child: Column(
                             children: [
                               Row(
                                 children: [
-                                  const Icon(Icons.receipt_long_outlined, color: AppColors.primary, size: 20),
+                                  const Icon(Icons.payments_outlined, color: AppColors.primary, size: 20),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Text('checkout.change'.tr(), style: AppTextStyles.bodyMedium),
@@ -696,12 +725,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                 curve: Curves.easeInOut,
                                 child: _showChangeInput
                                     ? Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          const SizedBox(height: 8),
+                                          const SizedBox(height: 6),
                                           Container(
-                                            height: 44,
                                             decoration: BoxDecoration(
-                                              color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBackground : AppColors.neutral50,
+                                              color: Theme.of(context).brightness == Brightness.dark
+                                                  ? AppColors.darkBackground
+                                                  : AppColors.neutral50,
                                               borderRadius: BorderRadius.circular(12),
                                               border: Border.all(
                                                 color: Theme.of(context).brightness == Brightness.dark
@@ -709,30 +740,38 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                                     : AppColors.neutral200,
                                               ),
                                             ),
-                                            child: TextField(
-                                              controller: _changeController,
-                                              keyboardType: TextInputType.number,
-                                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                              autofocus: true,
-                                              onChanged: (_) => setState(() {}),
-                                              decoration: InputDecoration(
-                                                hintText: 'checkout.change_hint'.tr(),
-                                                hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400),
-                                                border: InputBorder.none,
-                                                prefixIcon: const Icon(Icons.money_rounded, color: AppColors.primary, size: 18),
-                                                suffixIcon: Padding(
-                                                  padding: const EdgeInsets.only(right: 8),
-                                                  child: Text(
-                                                    'common.currency'.tr(),
-                                                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500),
+                                            child: Row(
+                                              children: [
+                                                Expanded(
+                                                  child: TextField(
+                                                    controller: _changeController,
+                                                    keyboardType: TextInputType.number,
+                                                    style: AppTextStyles.bodyMedium,
+                                                    textAlignVertical: TextAlignVertical.center,
+                                                    onChanged: (val) => setState(() {}),
+                                                    decoration: InputDecoration(
+                                                      hintText: 'checkout.change_hint'.tr(),
+                                                      hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
+                                                      border: InputBorder.none,
+                                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                                    ),
                                                   ),
                                                 ),
-                                                suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-                                              ),
+                                                Padding(
+                                                  padding: const EdgeInsets.only(right: 12),
+                                                  child: Text(
+                                                    'common.currency'.tr(),
+                                                    style: AppTextStyles.bodyMedium.copyWith(
+                                                      color: AppColors.neutral500,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                           if (change != null) ...[
-                                            const SizedBox(height: 8),
+                                            const SizedBox(height: 6),
                                             Row(
                                               children: [
                                                 const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.success),
@@ -740,7 +779,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                                 Text(
                                                   '${'checkout.change_info'.tr()}: ${NumberFormatter.formatSum(change)} ${'common.currency'.tr()}',
                                                   style: AppTextStyles.bodySmall.copyWith(
-                                                      color: AppColors.success, fontWeight: FontWeight.w600),
+                                                    color: AppColors.success,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
                                                 ),
                                               ],
                                             ),
@@ -752,7 +793,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             ],
                           ),
                         ),
-                        // Divider
                         Divider(
                           height: 1,
                           color: Theme.of(context).brightness == Brightness.dark
@@ -763,7 +803,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
                       // 3. Comment section
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         child: Column(
                           children: [
                             Row(
@@ -789,7 +829,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                               child: _showCommentInput
                                   ? Column(
                                       children: [
-                                        const SizedBox(height: 8),
+                                        const SizedBox(height: 6),
                                         Container(
                                           decoration: BoxDecoration(
                                             color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBackground : AppColors.neutral50,
@@ -802,12 +842,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                           ),
                                           child: TextField(
                                             controller: _commentController,
-                                            maxLines: 3,
+                                            maxLines: 1,
+                                            style: AppTextStyles.bodyMedium,
+                                            textAlignVertical: TextAlignVertical.center,
                                             decoration: InputDecoration(
                                               hintText: '${'checkout.comment'.tr()}...',
-                                              hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400),
+                                              hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
                                               border: InputBorder.none,
-                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                                             ),
                                           ),
                                         ),
@@ -968,7 +1010,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           'longitude': _isDelivery ? _lng : null,
           'payment_method': _getPaymentMethodId(_selectedPaymentMethodKey),
           'products': productsJson,
-          'promo_code': _appliedPromoCode,
+          'promo_code': _showPromoInput ? _appliedPromoCode : null,
           'comment': _showCommentInput ? _commentController.text.trim() : null,
         },
       ));
@@ -1124,6 +1166,16 @@ class CheckoutBranch {
       address: json['address'] as String? ?? json['title'] as String? ?? '',
       latitude: double.tryParse(json['latitude']?.toString() ?? ''),
       longitude: double.tryParse(json['longitude']?.toString() ?? ''),
+    );
+  }
+}
+
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    return TextEditingValue(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
     );
   }
 }
