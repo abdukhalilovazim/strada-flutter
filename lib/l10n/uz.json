@@ -94,5 +94,6 @@
   "orders.reorder_confirm_title": "Savatni yangilash",
   "orders.reorder_confirm_desc": "Savatdagi joriy mahsulotlar o'chirib tashlanadi va ushbu buyurtmadagi mahsulotlar savatga qo'shiladi. Davom etasizmi?",
   "orders.reorder_success": "Mahsulotlar savatga qo'shildi",
-  "orders.reorder_error": "Ayrim mahsulotlar topilmadi yoki sotuvda yo'q"
+  "orders.reorder_error": "Ayrim mahsulotlar topilmadi yoki sotuvda yo'q",
+  "checkout.additional": "Qo'shimcha ma'lumotlar"
 }

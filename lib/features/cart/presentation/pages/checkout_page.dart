@@ -461,295 +461,362 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             ),
                             if (_isLoadingBranches)
                               const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
                               )
                             else
-                              const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.neutral400, size: 20),
+                              const Icon(Icons.chevron_right_rounded, color: AppColors.neutral400),
                           ],
                         ),
                       ),
                     ),
                   ),
                 ],
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
-                // ── Payment method + Qaytim ───────────────────────────────
+                // ── Payment method ────────────────────────────────────────
                 _sectionLabel('checkout.payment'.tr()),
                 const SizedBox(height: 8),
-                SizedBox(
-                  height: 48,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: paymentMethods.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final method = paymentMethods[index];
-                      final isSelected = _selectedPaymentMethodKey == method.key;
-                      final methodId = _getPaymentMethodId(method.key);
-
-                      // Decide which icon to show
-                      IconData icon;
-                      if (methodId == 1) {
-                        icon = Icons.account_balance_wallet_outlined;
-                      } else if (methodId == 2) {
-                        icon = Icons.credit_card_outlined;
-                      } else {
-                        icon = Icons.payments_outlined;
-                      }
-
-                      final isDark = Theme.of(context).brightness == Brightness.dark;
-                      final bg = isSelected
-                          ? (isDark ? AppColors.primary.withOpacity(0.15) : AppColors.primaryLight)
-                          : Theme.of(context).cardColor;
-
-                      final border = Border.all(
-                        color: isSelected
-                            ? AppColors.primary
-                            : (isDark ? AppColors.neutral800 : AppColors.neutral200),
-                        width: 1.5,
-                      );
-
-                      return InkWell(
-                        onTap: () => setState(() => _selectedPaymentMethodKey = method.key),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: bg,
-                            border: border,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                icon,
-                                color: isSelected ? AppColors.primary : (isDark ? AppColors.neutral400 : AppColors.neutral600),
-                                size: 18,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                method.value,
-                                style: AppTextStyles.labelSmall.copyWith(
-                                  color: isSelected ? AppColors.primary : (isDark ? Colors.white : AppColors.neutral800),
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                // Show Qaytim toggle ONLY if Cash (Naqd) is selected!
-                if (_getPaymentMethodId(_selectedPaymentMethodKey) == 0) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.neutral100),
-                    ),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(left: 16, right: 8, top: 4, bottom: 4),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.receipt_long_outlined, color: AppColors.primary, size: 20),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text('checkout.change'.tr(), style: AppTextStyles.bodyMedium),
-                              ),
-                              Switch.adaptive(
-                                value: _showChangeInput,
-                                onChanged: (val) => setState(() {
-                                  _showChangeInput = val;
-                                  if (!val) _changeController.clear();
-                                }),
-                                activeColor: AppColors.primary,
-                              ),
-                            ],
-                          ),
-                        ),
-                        AnimatedSize(
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeInOut,
-                          child: _showChangeInput
-                              ? Column(
-                                  children: [
-                                    const Divider(height: 1, color: AppColors.neutral100),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                                      child: TextField(
-                                        controller: _changeController,
-                                        keyboardType: TextInputType.number,
-                                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                        autofocus: true,
-                                        onChanged: (_) => setState(() {}),
-                                        decoration: InputDecoration(
-                                          hintText: 'checkout.change_hint'.tr(),
-                                          hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
-                                          border: InputBorder.none,
-                                          prefixIcon: const Padding(
-                                            padding: EdgeInsets.only(right: 8),
-                                            child: Icon(Icons.money_rounded, color: AppColors.primary, size: 20),
-                                          ),
-                                          prefixIconConstraints: const BoxConstraints(minWidth: 0),
-                                          suffix: Text('common.currency'.tr(),
-                                              style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
-                                        ),
-                                      ),
-                                    ),
-                                    if (change != null)
-                                      Padding(
-                                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                                        child: Row(
-                                          children: [
-                                            const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.success),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              '${'checkout.change_info'.tr()}: ${NumberFormatter.formatSum(change)} ${'common.currency'.tr()}',
-                                              style: AppTextStyles.bodySmall.copyWith(
-                                                  color: AppColors.success, fontWeight: FontWeight.w600),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                  ],
-                                )
-                              : const SizedBox.shrink(),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 20),
-
-                // ── Promo code ────────────────────────────────────────────
-                _sectionLabel('cart.promo'.tr()),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildCardField(
-                        child: TextField(
-                          controller: _promoController,
-                          textCapitalization: TextCapitalization.characters,
-                          decoration: InputDecoration(
-                            hintText: 'checkout.promo_hint'.tr(),
-                            hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
-                            border: InputBorder.none,
-                            prefixIcon: const Icon(Icons.local_offer_outlined, color: AppColors.primary, size: 20),
-                          ),
-                          onChanged: (_) {
-                            if (_appliedPromoCode != null) {
-                              setState(() {
-                                _appliedPromoCode = null;
-                                _promoType = null;
-                                _promoValue = null;
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      height: 44,
-                      child: ElevatedButton(
-                        onPressed: _loadingPromo ? null : () => _applyPromo(subtotal),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                        ),
-                        child: _loadingPromo
-                            ? const SizedBox(width: 18, height: 18,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : Text('cart.apply'.tr(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
-                      ),
-                    ),
-                  ],
-                ),
-                if (_promoError != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8, left: 4),
-                    child: Text(_promoError!, style: AppTextStyles.bodySmall.copyWith(color: AppColors.error)),
-                  ),
-                if (_appliedPromoCode != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8, left: 4),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 16),
-                        const SizedBox(width: 6),
-                        Text(
-                          '$_appliedPromoCode — -${NumberFormatter.formatSum(_computeDiscount(subtotal))} ${'common.currency'.tr()}',
-                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.success, fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 20),
-
-                // ── Comment ───────────────────────────────────────────────
-                _sectionLabel('checkout.comment'.tr()),
-                const SizedBox(height: 8),
                 Container(
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.neutral100),
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.neutral800
+                          : AppColors.neutral100,
+                    ),
                   ),
-                  child: Column(
+                  child: Row(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16, right: 8, top: 4, bottom: 4),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.comment_outlined, color: AppColors.primary, size: 20),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text('checkout.comment'.tr(), style: AppTextStyles.bodyMedium),
-                            ),
-                            Switch.adaptive(
-                              value: _showCommentInput,
-                              onChanged: (val) => setState(() {
-                                _showCommentInput = val;
-                                if (!val) _commentController.clear();
-                              }),
-                              activeColor: AppColors.primary,
-                            ),
-                          ],
-                        ),
-                      ),
-                      AnimatedSize(
-                        duration: const Duration(milliseconds: 250),
-                        curve: Curves.easeInOut,
-                        child: _showCommentInput
-                            ? Column(
+                      for (int i = 0; i < paymentMethods.take(3).length; i++) ...[
+                        if (i > 0) const SizedBox(width: 8),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => setState(() => _selectedPaymentMethodKey = paymentMethods[i].key),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              height: 48,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: _selectedPaymentMethodKey == paymentMethods[i].key
+                                    ? (Theme.of(context).brightness == Brightness.dark ? AppColors.primary.withOpacity(0.15) : AppColors.primaryLight)
+                                    : (Theme.of(context).brightness == Brightness.dark ? AppColors.darkBackground : AppColors.neutral50),
+                                border: Border.all(
+                                  color: _selectedPaymentMethodKey == paymentMethods[i].key
+                                      ? AppColors.primary
+                                      : (Theme.of(context).brightness == Brightness.dark ? AppColors.neutral800 : AppColors.neutral200),
+                                  width: 1.5,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Divider(height: 1, color: AppColors.neutral100),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                    child: TextField(
-                                      controller: _commentController,
-                                      maxLines: 3,
-                                      decoration: InputDecoration(
-                                        hintText: '${'checkout.comment'.tr()}...',
-                                        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
-                                        border: InputBorder.none,
+                                  Icon(
+                                    _getPaymentMethodId(paymentMethods[i].key) == 1
+                                        ? Icons.account_balance_wallet_outlined
+                                        : (_getPaymentMethodId(paymentMethods[i].key) == 2
+                                            ? Icons.credit_card_outlined
+                                            : Icons.payments_outlined),
+                                    color: _selectedPaymentMethodKey == paymentMethods[i].key
+                                        ? AppColors.primary
+                                        : (Theme.of(context).brightness == Brightness.dark ? AppColors.neutral400 : AppColors.neutral600),
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      paymentMethods[i].value,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTextStyles.labelSmall.copyWith(
+                                        color: _selectedPaymentMethodKey == paymentMethods[i].key
+                                            ? AppColors.primary
+                                            : (Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.neutral800),
+                                        fontWeight: _selectedPaymentMethodKey == paymentMethods[i].key ? FontWeight.bold : FontWeight.w500,
                                       ),
                                     ),
                                   ),
                                 ],
-                              )
-                            : const SizedBox.shrink(),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // ── Unified Extras Group (Promo, Change, Comment) ──────────
+                _sectionLabel('checkout.additional'.tr()),
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.neutral800
+                          : AppColors.neutral100,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      // 1. Promo Code section
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.local_offer_outlined, color: AppColors.primary, size: 20),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'cart.promo'.tr(),
+                                  style: AppTextStyles.labelMedium.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBackground : AppColors.neutral50,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.neutral800 : AppColors.neutral200,
+                                      ),
+                                    ),
+                                    child: TextField(
+                                      controller: _promoController,
+                                      textCapitalization: TextCapitalization.characters,
+                                      decoration: InputDecoration(
+                                        hintText: 'checkout.promo_hint'.tr(),
+                                        hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400),
+                                        border: InputBorder.none,
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                                      ),
+                                      onChanged: (_) {
+                                        if (_appliedPromoCode != null) {
+                                          setState(() {
+                                            _appliedPromoCode = null;
+                                            _promoType = null;
+                                            _promoValue = null;
+                                          });
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                SizedBox(
+                                  height: 44,
+                                  child: ElevatedButton(
+                                    onPressed: _loadingPromo ? null : () => _applyPromo(subtotal),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    ),
+                                    child: _loadingPromo
+                                        ? const SizedBox(width: 18, height: 18,
+                                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                        : Text('cart.apply'.tr(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_promoError != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8, left: 4),
+                                child: Text(_promoError!, style: AppTextStyles.bodySmall.copyWith(color: AppColors.error)),
+                              ),
+                            if (_appliedPromoCode != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8, left: 4),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 16),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '$_appliedPromoCode — -${NumberFormatter.formatSum(_computeDiscount(subtotal))} ${'common.currency'.tr()}',
+                                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.success, fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+
+                      // Divider
+                      Divider(
+                        height: 1,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.neutral800
+                            : AppColors.neutral100,
+                      ),
+
+                      // 2. Qaytim (Change) section
+                      if (_getPaymentMethodId(_selectedPaymentMethodKey) == 0) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.receipt_long_outlined, color: AppColors.primary, size: 20),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text('checkout.change'.tr(), style: AppTextStyles.bodyMedium),
+                                  ),
+                                  Switch.adaptive(
+                                    value: _showChangeInput,
+                                    onChanged: (val) => setState(() {
+                                      _showChangeInput = val;
+                                      if (!val) _changeController.clear();
+                                    }),
+                                    activeColor: AppColors.primary,
+                                  ),
+                                ],
+                              ),
+                              AnimatedSize(
+                                duration: const Duration(milliseconds: 250),
+                                curve: Curves.easeInOut,
+                                child: _showChangeInput
+                                    ? Column(
+                                        children: [
+                                          const SizedBox(height: 8),
+                                          Container(
+                                            height: 44,
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBackground : AppColors.neutral50,
+                                              borderRadius: BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: Theme.of(context).brightness == Brightness.dark
+                                                    ? AppColors.neutral800
+                                                    : AppColors.neutral200,
+                                              ),
+                                            ),
+                                            child: TextField(
+                                              controller: _changeController,
+                                              keyboardType: TextInputType.number,
+                                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                              autofocus: true,
+                                              onChanged: (_) => setState(() {}),
+                                              decoration: InputDecoration(
+                                                hintText: 'checkout.change_hint'.tr(),
+                                                hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400),
+                                                border: InputBorder.none,
+                                                prefixIcon: const Icon(Icons.money_rounded, color: AppColors.primary, size: 18),
+                                                suffixIcon: Padding(
+                                                  padding: const EdgeInsets.only(right: 8),
+                                                  child: Text(
+                                                    'common.currency'.tr(),
+                                                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500),
+                                                  ),
+                                                ),
+                                                suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+                                              ),
+                                            ),
+                                          ),
+                                          if (change != null) ...[
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.success),
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  '${'checkout.change_info'.tr()}: ${NumberFormatter.formatSum(change)} ${'common.currency'.tr()}',
+                                                  style: AppTextStyles.bodySmall.copyWith(
+                                                      color: AppColors.success, fontWeight: FontWeight.w600),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ],
+                                      )
+                                    : const SizedBox.shrink(),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Divider
+                        Divider(
+                          height: 1,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.neutral800
+                              : AppColors.neutral100,
+                        ),
+                      ],
+
+                      // 3. Comment section
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.comment_outlined, color: AppColors.primary, size: 20),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text('checkout.comment'.tr(), style: AppTextStyles.bodyMedium),
+                                ),
+                                Switch.adaptive(
+                                  value: _showCommentInput,
+                                  onChanged: (val) => setState(() {
+                                    _showCommentInput = val;
+                                    if (!val) _commentController.clear();
+                                  }),
+                                  activeColor: AppColors.primary,
+                                ),
+                              ],
+                            ),
+                            AnimatedSize(
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeInOut,
+                              child: _showCommentInput
+                                  ? Column(
+                                      children: [
+                                        const SizedBox(height: 8),
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBackground : AppColors.neutral50,
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: Theme.of(context).brightness == Brightness.dark
+                                                  ? AppColors.neutral800
+                                                  : AppColors.neutral200,
+                                            ),
+                                          ),
+                                          child: TextField(
+                                            controller: _commentController,
+                                            maxLines: 3,
+                                            decoration: InputDecoration(
+                                              hintText: '${'checkout.comment'.tr()}...',
+                                              hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400),
+                                              border: InputBorder.none,
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

@@ -205,150 +205,167 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
           ),
           const SizedBox(height: 20),
 
-          // Product Header Row
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: CachedNetworkImage(
-                  imageUrl: widget.product.thumbnail,
-                  width: 80,
-                  height: 80,
-                  fit: BoxFit.cover,
-                  placeholder: (_, __) => Container(color: isDark ? AppColors.neutral800 : AppColors.neutral100),
-                  errorWidget: (_, __, ___) => const Icon(Icons.image_not_supported_outlined),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.product.title,
-                      style: AppTextStyles.h3.copyWith(
-                        color: theme.textTheme.headlineMedium?.color,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    if (widget.product.description != null && widget.product.description!.isNotEmpty)
-                      Text(
-                        widget.product.description!,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: isDark ? AppColors.neutral500 : AppColors.neutral600,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Title
-          Text(
-            'product.select_variant_title'.tr(),
-            style: AppTextStyles.labelLarge.copyWith(
-              color: theme.textTheme.bodyLarge?.color,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Variants List
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: widget.product.variants.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (context, index) {
-              final v = widget.product.variants[index];
-              final isSelected = selectedVariant?.id == v.id;
-
-              final bg = isSelected
-                  ? (isDark ? AppColors.primary.withOpacity(0.15) : AppColors.primaryLight)
-                  : Colors.transparent;
-
-              final border = Border.all(
-                color: isSelected
-                    ? AppColors.primary
-                    : (isDark ? AppColors.neutral800 : AppColors.neutral200),
-                width: 1.5,
-              );
-
-              return InkWell(
-                onTap: () {
-                  setState(() {
-                    selectedVariant = v;
-                  });
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: bg,
-                    border: border,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Product Header Row
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            v.title,
-                            style: AppTextStyles.labelMedium.copyWith(
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : theme.textTheme.bodyMedium?.color,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${NumberFormatter.formatSum(v.price)} ${'common.currency'.tr()}',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: isSelected
-                                  ? AppColors.primary.withOpacity(0.8)
-                                  : (isDark ? AppColors.neutral500 : AppColors.neutral600),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        width: 22,
-                        height: 22,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isSelected ? AppColors.primary : (isDark ? AppColors.neutral700 : AppColors.neutral300),
-                            width: 2,
-                          ),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: CachedNetworkImage(
+                          imageUrl: widget.product.thumbnail,
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                          placeholder: (_, __) => Container(color: isDark ? AppColors.neutral800 : AppColors.neutral100),
+                          errorWidget: (_, __, ___) => const Icon(Icons.image_not_supported_outlined),
                         ),
-                        child: isSelected
-                            ? Center(
-                                child: Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.primary,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              )
-                            : null,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              widget.product.title,
+                              style: AppTextStyles.h3.copyWith(
+                                color: theme.textTheme.headlineMedium?.color,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${NumberFormatter.formatSum(widget.product.price)} ${'common.currency'.tr()}',
+                              style: AppTextStyles.labelMedium.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-              );
-            },
+                  if (widget.product.description != null && widget.product.description!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      widget.product.description!,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+
+                  // Title
+                  Text(
+                    'product.select_variant_title'.tr(),
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: theme.textTheme.bodyLarge?.color,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Variants List
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: widget.product.variants.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final v = widget.product.variants[index];
+                      final isSelected = selectedVariant?.id == v.id;
+
+                      final bg = isSelected
+                          ? (isDark ? AppColors.primary.withOpacity(0.15) : AppColors.primaryLight)
+                          : Colors.transparent;
+
+                      final border = Border.all(
+                        color: isSelected
+                            ? AppColors.primary
+                            : (isDark ? AppColors.neutral800 : AppColors.neutral200),
+                        width: 1.5,
+                      );
+
+                      return InkWell(
+                        onTap: () {
+                          setState(() {
+                            selectedVariant = v;
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: bg,
+                            border: border,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    v.title,
+                                    style: AppTextStyles.labelMedium.copyWith(
+                                      color: isSelected
+                                          ? AppColors.primary
+                                          : theme.textTheme.bodyMedium?.color,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${NumberFormatter.formatSum(v.price)} ${'common.currency'.tr()}',
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: isSelected
+                                          ? AppColors.primary.withOpacity(0.8)
+                                          : (isDark ? AppColors.neutral500 : AppColors.neutral600),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                width: 22,
+                                height: 22,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isSelected ? AppColors.primary : (isDark ? AppColors.neutral700 : AppColors.neutral300),
+                                    width: 2,
+                                  ),
+                                ),
+                                child: isSelected
+                                    ? Center(
+                                        child: Container(
+                                          width: 12,
+                                          height: 12,
+                                          decoration: const BoxDecoration(
+                                            color: AppColors.primary,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 24),
 
