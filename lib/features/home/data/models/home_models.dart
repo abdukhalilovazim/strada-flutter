@@ -11,18 +11,6 @@ class CategoryModel extends CategoryEntity {
   }
 }
 
-class SliderModel extends SliderEntity {
-  const SliderModel({required super.image, super.caption, super.button, super.buttonUrl});
-
-  factory SliderModel.fromJson(Map<String, dynamic> json) {
-    return SliderModel(
-      image: json['image'] as String? ?? '',
-      caption: json['caption'] as String?,
-      button: json['button'] as String?,
-      buttonUrl: json['button_url'] as String?,
-    );
-  }
-}
 
 class VariantModel extends VariantEntity {
   const VariantModel({required super.id, required super.title, required super.price});

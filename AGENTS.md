@@ -216,7 +216,16 @@ Before making **any** code change, verify:
 
 ---
 
-## 7. Auto-Update Policy
+## 7. Terminal Execution Rules 🚫 MANDATORY
+
+- **NEVER run terminal commands** (`flutter run`, `flutter build`, `dart run`, `build_runner`, etc.).
+- The developer handles **all** command execution manually.
+- The agent's role is strictly limited to **code generation, editing, and analysis**.
+- If a command needs to be run (e.g., `build_runner`), **mention it in the response** but do NOT execute it.
+
+---
+
+## 8. Auto-Update Policy
 
 This `agents.md` file MUST be updated immediately when:
 1. A new technical requirement or constraint is established.

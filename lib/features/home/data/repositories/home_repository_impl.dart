@@ -20,11 +20,6 @@ class HomeRepositoryImpl implements HomeRepository {
   }
 
   @override
-  Future<Either<Failure, List<SliderEntity>>> getSliders() async {
-    return _safeCall(() => _remoteDataSource.getSliders());
-  }
-
-  @override
   Future<Either<Failure, List<ProductEntity>>> getProducts({String? categorySlug}) async {
     return _safeCall(() => _remoteDataSource.getProducts(categorySlug: categorySlug));
   }

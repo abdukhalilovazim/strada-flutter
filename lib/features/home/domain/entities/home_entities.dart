@@ -10,18 +10,6 @@ class CategoryEntity extends Equatable {
   List<Object?> get props => [slug, title];
 }
 
-class SliderEntity extends Equatable {
-  final String image;
-  final String? caption;
-  final String? button;
-  final String? buttonUrl;
-
-  const SliderEntity({required this.image, this.caption, this.button, this.buttonUrl});
-
-  @override
-  List<Object?> get props => [image, caption, button, buttonUrl];
-}
-
 class VariantEntity extends Equatable {
   final int id;
   final String title;

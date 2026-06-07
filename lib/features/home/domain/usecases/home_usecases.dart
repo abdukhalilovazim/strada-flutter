@@ -12,13 +12,6 @@ class GetCategoriesUseCase {
 }
 
 @lazySingleton
-class GetSlidersUseCase {
-  final HomeRepository _repository;
-  GetSlidersUseCase(this._repository);
-  Future<Either<Failure, List<SliderEntity>>> call() => _repository.getSliders();
-}
-
-@lazySingleton
 class GetProductsUseCase {
   final HomeRepository _repository;
   GetProductsUseCase(this._repository);

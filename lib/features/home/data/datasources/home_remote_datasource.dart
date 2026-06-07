@@ -4,7 +4,6 @@ import 'package:pizza_strada/features/home/data/models/home_models.dart';
 
 abstract class HomeRemoteDataSource {
   Future<List<CategoryModel>> getCategories();
-  Future<List<SliderModel>> getSliders();
   Future<List<ProductModel>> getProducts({String? categorySlug});
   Future<SettingsModel> getSettings();
 }
@@ -27,30 +26,11 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     ''';
     final result = await _client.query(QueryOptions(
       document: gql(query),
+      operationName: 'categories',
       fetchPolicy: FetchPolicy.networkOnly,
     ));
     if (result.hasException) throw result.exception!;
     return (result.data?['categories'] as List).map((e) => CategoryModel.fromJson(e)).toList();
-  }
-
-  @override
-  Future<List<SliderModel>> getSliders() async {
-    const String query = r'''
-      query sliders {
-        sliders {
-          image
-          caption
-          button
-          button_url
-        }
-      }
-    ''';
-    final result = await _client.query(QueryOptions(
-      document: gql(query),
-      fetchPolicy: FetchPolicy.networkOnly,
-    ));
-    if (result.hasException) throw result.exception!;
-    return (result.data?['sliders'] as List).map((e) => SliderModel.fromJson(e)).toList();
   }
 
   @override
@@ -107,6 +87,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     ''';
     final result = await _client.query(QueryOptions(
       document: gql(query),
+      operationName: 'settings',
       fetchPolicy: FetchPolicy.networkOnly,
     ));
     if (result.hasException) throw result.exception!;

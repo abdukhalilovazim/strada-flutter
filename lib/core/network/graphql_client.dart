@@ -9,9 +9,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:gql/ast.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
-import 'package:http/io_client.dart';
 import 'package:pizza_strada/core/constants/api_constants.dart';
 import 'package:pizza_strada/core/constants/app_constants.dart';
+import 'package:pizza_strada/core/network/cookie_aware_client.dart';
 import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/utils/device_info_helper.dart';
 
@@ -25,18 +25,14 @@ const _orderOperations = {
 
 /// GraphQL client yaratish. Token har bir so'rovda dynamic olinadi.
 GraphQLClient buildGraphQLClient() {
-  // --- HTTP Client: 30 soniyalik timeout ---
-  final ioClient = IOClient(
-    HttpClient()
-      ..connectionTimeout = const Duration(seconds: 60)
-      ..idleTimeout = const Duration(seconds: 60),
-  );
+  // --- Cookie-aware HTTP Client: Imunify360 warm-up + 60s timeout ---
+  final cookieClient = CookieAwareClient();
 
   // --- HTTP Link: order vs common routing ---
   final httpLink = Link.split(
     (req) => _orderOperations.contains(req.operation.operationName),
-    HttpLink(ApiConstants.orderEndpoint, httpClient: ioClient),
-    HttpLink(ApiConstants.commonEndpoint, httpClient: ioClient),
+    HttpLink(ApiConstants.orderEndpoint, httpClient: cookieClient),
+    HttpLink(ApiConstants.commonEndpoint, httpClient: cookieClient),
   );
 
   // --- Birlashtirilgan Link: Auth + Signature + Logging ---
@@ -55,11 +51,22 @@ GraphQLClient buildGraphQLClient() {
     var req = request.updateContextEntry<HttpLinkHeaders>(
       (h) => HttpLinkHeaders(headers: {
         ...(h?.headers ?? {}),
-        'Accept': 'application/json',
+        // Standard browser headers — Imunify360 bot-protection bypass
+        'Accept': 'application/json, text/plain, */*',
         'Content-Type': 'application/json',
+        'Accept-Language': '$lang,en;q=0.9,ru;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Origin': ApiConstants.baseUrl,
+        'Referer': '${ApiConstants.baseUrl}/',
+        'Sec-Fetch-Site': 'same-origin',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Dest': 'empty',
+        'Connection': 'keep-alive',
+        'Cache-Control': 'no-cache',
         'User-Agent': Platform.isIOS
-            ? 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1'
-            : 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+            ? 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'
+            : 'Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro Build/UQ1A.240205.002) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.113 Mobile Safari/537.36',
+        // App-specific headers
         if (token != null) 'Authorization': 'Bearer $token',
         'language': lang,
         'device-id': DeviceInfoHelper.deviceId,
@@ -172,26 +179,28 @@ void _sendErrorToTelegram({
     final url = Uri.parse('https://api.telegram.org/bot$botToken/sendMessage');
     final environment = dotenv.get('ENVIRONMENT', fallback: 'dev');
 
-    final message = '''
-🚨 *Pizza Strada Mobile API Error*
-🌐 *Env:* $environment
-📌 *Type:* $type
-🔍 *Operation:* $operationName
-⚙️ *Variables:* `${jsonEncode(variables)}`
+    // HTML-safe escape: Telegram Markdown special chars crash'ini oldini oladi
+    String escapeHtml(String text) =>
+        text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
-⚠️ *Error Details:*
-```
-$errorDetails
-```
-''';
+    final safeVars = escapeHtml(jsonEncode(variables));
+    final safeError = escapeHtml(errorDetails);
+
+    final message = '🚨 <b>Pizza Strada Mobile API Error</b>\n'
+        '🌐 <b>Env:</b> $environment\n'
+        '📌 <b>Type:</b> $type\n'
+        '🔍 <b>Operation:</b> $operationName\n'
+        '⚙️ <b>Variables:</b> <code>$safeVars</code>\n\n'
+        '⚠️ <b>Error Details:</b>\n'
+        '<pre>$safeError</pre>';
 
     final client = HttpClient();
     final request = await client.postUrl(url);
-    request.headers.set('Content-Type', 'application/json');
+    request.headers.set('Content-Type', 'application/json; charset=utf-8');
     request.write(jsonEncode({
       'chat_id': chatId,
       'text': message,
-      'parse_mode': 'Markdown',
+      'parse_mode': 'HTML',
     }));
     
     final response = await request.close();

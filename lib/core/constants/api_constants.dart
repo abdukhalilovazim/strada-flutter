@@ -9,6 +9,9 @@ class ApiConstants {
   // .env dagi ENVIRONMENT o'zgaruvchisiga qarab (prod yoki dev) bazaviy URL tanlanadi
   static String get _base => _environment == 'prod' ? _prodBase : _devBase;
 
+  /// Bazaviy URL — Origin/Referer headerlar uchun
+  static String get baseUrl => _base;
+
   // AGENTS.md ga muvofiq schema path segment orqali beriladi
   static String get commonEndpoint => '$_base/graphql/common';
   static String get orderEndpoint  => '$_base/graphql/order';
