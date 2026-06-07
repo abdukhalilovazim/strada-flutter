@@ -7,6 +7,7 @@ import 'package:pizza_strada/core/utils/number_formatter.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:pizza_strada/core/widgets/app_button.dart';
 
 class ProductCard extends StatelessWidget {
   final ProductEntity product;
@@ -24,7 +25,7 @@ class ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -95,7 +96,9 @@ class ProductCard extends StatelessWidget {
                     product.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.bold),
+                    style: AppTextStyles.labelLarge.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -104,7 +107,7 @@ class ProductCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.bodyExtraSmall.copyWith(color: AppColors.neutral500),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -148,7 +151,7 @@ class ProductCard extends StatelessWidget {
               ),
             );
           } else {
-            context.read<CartCubit>().addToCart(product, variant: product.variants.first);
+            context.read<CartCubit>().addToCart(product, variant: product.variants.isNotEmpty ? product.variants.first : null);
           }
         },
         borderRadius: BorderRadius.circular(10),
@@ -175,96 +178,171 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
   VariantEntity? selectedVariant;
 
   @override
-  void initState() {
-    super.initState();
-    // Dastlab hech bir variant tanlanmagan bo'ladi
-    selectedVariant = null;
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Drag handle (premium tortgich)
+          // Drag handle
           Center(
             child: Container(
-              width: 36,
+              width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.neutral300,
+                color: isDark ? AppColors.neutral700 : AppColors.neutral300,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          // Sarlavha paneli
+          const SizedBox(height: 20),
+
+          // Product Header Row
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'product.select_variant_title'.tr(), 
-                style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.bold),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: CachedNetworkImage(
+                  imageUrl: widget.product.thumbnail,
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) => Container(color: isDark ? AppColors.neutral800 : AppColors.neutral100),
+                  errorWidget: (_, __, ___) => const Icon(Icons.image_not_supported_outlined),
+                ),
               ),
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: const Icon(Icons.close_rounded, size: 20, color: AppColors.neutral500),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.product.title,
+                      style: AppTextStyles.h3.copyWith(
+                        color: theme.textTheme.headlineMedium?.color,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    if (widget.product.description != null && widget.product.description!.isNotEmpty)
+                      Text(
+                        widget.product.description!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark ? AppColors.neutral500 : AppColors.neutral600,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 24),
+
+          // Title
+          Text(
+            'product.select_variant_title'.tr(),
+            style: AppTextStyles.labelLarge.copyWith(
+              color: theme.textTheme.bodyLarge?.color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 12),
-          // Ixcham variantlar paneli
-          GridView.builder(
+
+          // Variants List
+          ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 2.5,
-            ),
             itemCount: widget.product.variants.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final v = widget.product.variants[index];
               final isSelected = selectedVariant?.id == v.id;
+
+              final bg = isSelected
+                  ? (isDark ? AppColors.primary.withOpacity(0.15) : AppColors.primaryLight)
+                  : Colors.transparent;
+
+              final border = Border.all(
+                color: isSelected
+                    ? AppColors.primary
+                    : (isDark ? AppColors.neutral800 : AppColors.neutral200),
+                width: 1.5,
+              );
+
               return InkWell(
-                onTap: () => setState(() => selectedVariant = v),
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                onTap: () {
+                  setState(() {
+                    selectedVariant = v;
+                  });
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primaryLight : AppColors.neutral50,
-                    border: Border.all(
-                      color: isSelected ? AppColors.primary : AppColors.neutral200,
-                      width: 1.5,
-                    ),
-                    borderRadius: BorderRadius.circular(10),
+                    color: bg,
+                    border: border,
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        v.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: isSelected ? AppColors.primary : AppColors.neutral800,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            v.title,
+                            style: AppTextStyles.labelMedium.copyWith(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : theme.textTheme.bodyMedium?.color,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${NumberFormatter.formatSum(v.price)} ${'common.currency'.tr()}',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: isSelected
+                                  ? AppColors.primary.withOpacity(0.8)
+                                  : (isDark ? AppColors.neutral500 : AppColors.neutral600),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${NumberFormatter.formatSum(v.price)} ${'common.currency'.tr()}',
-                        style: AppTextStyles.bodyExtraSmall.copyWith(
-                          color: isSelected ? AppColors.primary.withOpacity(0.8) : AppColors.neutral500,
+                      Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected ? AppColors.primary : (isDark ? AppColors.neutral700 : AppColors.neutral300),
+                            width: 2,
+                          ),
                         ),
+                        child: isSelected
+                            ? Center(
+                                child: Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              )
+                            : null,
                       ),
                     ],
                   ),
@@ -272,27 +350,20 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
               );
             },
           ),
-          // Agar variant tanlangan bo'lsa, chiroyli "Qo'shish" tugmasini ko'rsatamiz
-          if (selectedVariant != null) ...[
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                widget.onPick(selectedVariant!);
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                elevation: 0,
-              ),
-              child: Text(
-                '${'cart.add'.tr()} - ${NumberFormatter.formatSum(selectedVariant!.price)} ${'common.currency'.tr()}',
-                style: AppTextStyles.labelMedium.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
+          const SizedBox(height: 24),
+
+          // Add to Cart Button
+          AppButton(
+            text: selectedVariant == null
+                ? 'product.select_variant'.tr()
+                : '${'cart.add'.tr()} — ${NumberFormatter.formatSum(selectedVariant!.price)} ${'common.currency'.tr()}',
+            onTap: selectedVariant == null
+                ? null
+                : () {
+                    widget.onPick(selectedVariant!);
+                    Navigator.pop(context);
+                  },
+          ),
         ],
       ),
     );

@@ -20,8 +20,13 @@ class OrdersPage extends StatelessWidget {
       child: Scaffold(
         backgroundColor: AppColors.surface,
         appBar: AppBar(
-          title: Text('orders.title'.tr(), style: AppTextStyles.h2.copyWith(color: AppColors.neutral900)),
-          backgroundColor: Colors.white,
+          title: Text(
+            'orders.title'.tr(), 
+            style: AppTextStyles.h2.copyWith(
+              color: Theme.of(context).textTheme.headlineMedium?.color,
+            ),
+          ),
+          backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
           elevation: 0,
           centerTitle: true,
         ),
@@ -77,7 +82,7 @@ class OrderCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -104,7 +109,9 @@ class OrderCard extends StatelessWidget {
                     children: [
                       Text(
                         '#${order.id}',
-                        style: AppTextStyles.h4.copyWith(color: AppColors.neutral900),
+                        style: AppTextStyles.h4.copyWith(
+                          color: Theme.of(context).textTheme.headlineMedium?.color,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -143,7 +150,9 @@ class OrderCard extends StatelessWidget {
                     children: [
                       Text(
                         'orders.items_count'.tr(namedArgs: {'count': order.products.length.toString()}),
-                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral700),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Theme.of(context).brightness == Brightness.dark ? AppColors.neutral400 : AppColors.neutral700,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(

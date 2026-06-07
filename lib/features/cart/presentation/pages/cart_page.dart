@@ -17,7 +17,7 @@ class CartPage extends StatelessWidget {
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: Text("cart.title".tr()),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         centerTitle: true,
       ),
@@ -56,7 +56,7 @@ class CartPage extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
@@ -112,10 +112,10 @@ class CartPage extends StatelessWidget {
               ),
               Container(
                 padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                  boxShadow: [
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  boxShadow: const [
                     BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4)),
                   ],
                 ),

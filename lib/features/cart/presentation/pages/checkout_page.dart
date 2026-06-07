@@ -43,6 +43,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   // Qaytim (change)
   bool _showChangeInput = false;
+  bool _showCommentInput = false;
 
   // Location
   double? _lat;
@@ -76,7 +77,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
           branches {
             id
             title
-            address
             latitude
             longitude
           }
@@ -112,7 +112,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -154,7 +154,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         branch.title,
                         style: AppTextStyles.labelMedium.copyWith(
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                          color: isSelected ? AppColors.primary : AppColors.neutral800,
+                          color: isSelected ? AppColors.primary : Theme.of(context).textTheme.bodyMedium?.color,
                         ),
                       ),
                       subtitle: Text(
@@ -279,6 +279,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         _promoType = data?['type'] as int?;
         _promoValue = double.tryParse(data?['value']?.toString() ?? '0');
         _promoError = null;
+        FocusManager.instance.primaryFocus?.unfocus();
       }
     });
   }
@@ -315,7 +316,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: Text('checkout.title'.tr()),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
@@ -477,66 +478,84 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 // ── Payment method + Qaytim ───────────────────────────────
                 _sectionLabel('checkout.payment'.tr()),
                 const SizedBox(height: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.neutral100),
-                  ),
-                  child: Column(
-                    children: [
-                      // Dynamic payment methods list
-                      ...paymentMethods.map((method) {
-                        final isSelected = _selectedPaymentMethodKey == method.key;
-                        final methodId = _getPaymentMethodId(method.key);
-                        
-                        // Decide which icon to show
-                        IconData icon;
-                        if (methodId == 1) {
-                          icon = Icons.account_balance_wallet_outlined;
-                        } else if (methodId == 2) {
-                          icon = Icons.credit_card_outlined;
-                        } else {
-                          icon = Icons.payments_outlined;
-                        }
+                SizedBox(
+                  height: 48,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: paymentMethods.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final method = paymentMethods[index];
+                      final isSelected = _selectedPaymentMethodKey == method.key;
+                      final methodId = _getPaymentMethodId(method.key);
 
-                        return InkWell(
-                          onTap: () => setState(() => _selectedPaymentMethodKey = method.key),
-                          child: Column(
+                      // Decide which icon to show
+                      IconData icon;
+                      if (methodId == 1) {
+                        icon = Icons.account_balance_wallet_outlined;
+                      } else if (methodId == 2) {
+                        icon = Icons.credit_card_outlined;
+                      } else {
+                        icon = Icons.payments_outlined;
+                      }
+
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                      final bg = isSelected
+                          ? (isDark ? AppColors.primary.withOpacity(0.15) : AppColors.primaryLight)
+                          : Theme.of(context).cardColor;
+
+                      final border = Border.all(
+                        color: isSelected
+                            ? AppColors.primary
+                            : (isDark ? AppColors.neutral800 : AppColors.neutral200),
+                        width: 1.5,
+                      );
+
+                      return InkWell(
+                        onTap: () => setState(() => _selectedPaymentMethodKey = method.key),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: bg,
+                            border: border,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                child: Row(
-                                  children: [
-                                    Icon(icon, color: isSelected ? AppColors.primary : AppColors.neutral500, size: 20),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        method.value, 
-                                        style: AppTextStyles.bodyMedium.copyWith(
-                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                          color: isSelected ? AppColors.neutral900 : AppColors.neutral700,
-                                        ),
-                                      ),
-                                    ),
-                                    if (isSelected)
-                                      const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 20)
-                                    else
-                                      const Icon(Icons.radio_button_off_rounded, color: AppColors.neutral300, size: 20),
-                                  ],
+                              Icon(
+                                icon,
+                                color: isSelected ? AppColors.primary : (isDark ? AppColors.neutral400 : AppColors.neutral600),
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                method.value,
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: isSelected ? AppColors.primary : (isDark ? Colors.white : AppColors.neutral800),
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                                 ),
                               ),
-                              if (method != paymentMethods.last)
-                                const Divider(height: 1, color: AppColors.neutral100),
                             ],
                           ),
-                        );
-                      }).toList(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
 
-                      // Show Qaytim toggle ONLY if Cash (Naqd) is selected!
-                      if (_getPaymentMethodId(_selectedPaymentMethodKey) == 0) ...[
-                        const Divider(height: 1, color: AppColors.neutral100),
-                        // Qaytim toggle row
+                // Show Qaytim toggle ONLY if Cash (Naqd) is selected!
+                if (_getPaymentMethodId(_selectedPaymentMethodKey) == 0) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.neutral100),
+                    ),
+                    child: Column(
+                      children: [
                         Padding(
                           padding: const EdgeInsets.only(left: 16, right: 8, top: 4, bottom: 4),
                           child: Row(
@@ -557,7 +576,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             ],
                           ),
                         ),
-                        // Animated input expansion
                         AnimatedSize(
                           duration: const Duration(milliseconds: 250),
                           curve: Curves.easeInOut,
@@ -607,9 +625,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                               : const SizedBox.shrink(),
                         ),
                       ],
-                    ],
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: 20),
 
                 // ── Promo code ────────────────────────────────────────────
@@ -682,16 +700,58 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 // ── Comment ───────────────────────────────────────────────
                 _sectionLabel('checkout.comment'.tr()),
                 const SizedBox(height: 8),
-                _buildCardField(
-                  child: TextField(
-                    controller: _commentController,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      hintText: '${'checkout.comment'.tr()}...',
-                      hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.neutral100),
+                  ),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16, right: 8, top: 4, bottom: 4),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.comment_outlined, color: AppColors.primary, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text('checkout.comment'.tr(), style: AppTextStyles.bodyMedium),
+                            ),
+                            Switch.adaptive(
+                              value: _showCommentInput,
+                              onChanged: (val) => setState(() {
+                                _showCommentInput = val;
+                                if (!val) _commentController.clear();
+                              }),
+                              activeColor: AppColors.primary,
+                            ),
+                          ],
+                        ),
+                      ),
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeInOut,
+                        child: _showCommentInput
+                            ? Column(
+                                children: [
+                                  const Divider(height: 1, color: AppColors.neutral100),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    child: TextField(
+                                      controller: _commentController,
+                                      maxLines: 3,
+                                      decoration: InputDecoration(
+                                        hintText: '${'checkout.comment'.tr()}...',
+                                        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
+                                        border: InputBorder.none,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -700,7 +760,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
@@ -735,9 +795,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4))],
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4))],
         ),
         child: SafeArea(
           child: SizedBox(
@@ -842,7 +902,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           'payment_method': _getPaymentMethodId(_selectedPaymentMethodKey),
           'products': productsJson,
           'promo_code': _appliedPromoCode,
-          'comment': _commentController.text.trim(),
+          'comment': _showCommentInput ? _commentController.text.trim() : null,
         },
       ));
 
@@ -914,7 +974,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isActive ? Colors.white : Colors.transparent,
+            color: isActive ? Theme.of(context).cardColor : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             boxShadow: isActive
                 ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
@@ -944,7 +1004,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.neutral100),
       ),
@@ -994,7 +1054,7 @@ class CheckoutBranch {
     return CheckoutBranch(
       id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       title: json['title'] as String? ?? '',
-      address: json['address'] as String? ?? '',
+      address: json['address'] as String? ?? json['title'] as String? ?? '',
       latitude: double.tryParse(json['latitude']?.toString() ?? ''),
       longitude: double.tryParse(json['longitude']?.toString() ?? ''),
     );

@@ -42,8 +42,8 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: Text('profile.title'.tr(), style: AppTextStyles.h2.copyWith(color: AppColors.neutral900)),
-        backgroundColor: Colors.white,
+        title: Text('profile.title'.tr(), style: AppTextStyles.h2.copyWith(color: Theme.of(context).textTheme.headlineMedium?.color)),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         centerTitle: true,
       ),
@@ -55,7 +55,7 @@ class _ProfilePageState extends State<ProfilePage> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: AppColors.neutral200),
               ),
@@ -75,7 +75,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_name, style: AppTextStyles.labelLarge.copyWith(color: AppColors.neutral900)),
+                        Text(_name, style: AppTextStyles.labelLarge.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)),
                         const SizedBox(height: 4),
                         Text(_phone, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600)),
                       ],
@@ -127,14 +127,61 @@ class _ProfilePageState extends State<ProfilePage> {
             // Logout
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.neutral200),
               ),
               child: ListTile(
-                onTap: () async {
-                  await SecureStorage.clearAll();
-                  if (mounted) context.go('/auth/login');
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (dialogContext) {
+                      return AlertDialog(
+                        backgroundColor: Theme.of(dialogContext).cardColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        title: Text(
+                          'profile.logout'.tr(),
+                          style: AppTextStyles.h3.copyWith(
+                            color: Theme.of(dialogContext).textTheme.headlineMedium?.color,
+                          ),
+                        ),
+                        content: Text(
+                          'profile.logout_confirm'.tr(),
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(dialogContext).textTheme.bodyMedium?.color,
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogContext),
+                            child: Text(
+                              'common.no'.tr(),
+                              style: AppTextStyles.labelMedium.copyWith(
+                                color: AppColors.neutral600,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              Navigator.pop(dialogContext);
+                              await SecureStorage.clearAll();
+                              if (mounted) {
+                                context.go('/auth/login');
+                              }
+                            },
+                            child: Text(
+                              'common.yes'.tr(),
+                              style: AppTextStyles.labelMedium.copyWith(
+                                color: AppColors.error,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  );
                 },
                 leading: const Icon(Icons.logout_rounded, color: AppColors.error, size: 22),
                 title: Text('profile.logout'.tr(), style: AppTextStyles.labelLarge.copyWith(color: AppColors.error)),
@@ -150,7 +197,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void _showLanguagePicker() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20))),
       builder: (context) {
         return SafeArea(
@@ -177,7 +224,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: ListTile(
-        title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: isSelected ? AppColors.primary : AppColors.neutral900)),
+        title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: isSelected ? AppColors.primary : Theme.of(context).textTheme.bodyMedium?.color)),
         trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
         onTap: () async {
           await context.setLocale(locale);
@@ -199,7 +246,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -219,7 +266,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           child: Icon(icon, color: AppColors.neutral700, size: 20),
         ),
-        title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: AppColors.neutral900)),
+        title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color)),
         subtitle: subtitle != null ? Text(subtitle, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400)) : null,
         trailing: const Icon(AppIcons.arrowRight, color: AppColors.neutral400, size: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

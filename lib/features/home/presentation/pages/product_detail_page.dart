@@ -45,46 +45,69 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final hasVariants = product.variants.length > 1;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 300,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              background: CachedNetworkImage(
-                imageUrl: product.photo,
-                fit: BoxFit.cover,
-                placeholder: (_, __) => Container(color: AppColors.neutral100),
-                errorWidget: (_, __, ___) => const Icon(AppIcons.pizza, size: 64, color: AppColors.neutral200),
-              ),
-            ),
-            backgroundColor: AppColors.primary,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => context.pop(),
-            ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(
+          'product.info'.tr(),
+          style: AppTextStyles.h3.copyWith(
+            color: Theme.of(context).textTheme.headlineMedium?.color,
           ),
-          SliverToBoxAdapter(
-            child: Padding(
+        ),
+        centerTitle: true,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.neutral900,
+            size: 20,
+          ),
+          onPressed: () => context.pop(),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image below header
+            CachedNetworkImage(
+              imageUrl: product.photo,
+              width: double.infinity,
+              height: 260,
+              fit: BoxFit.cover,
+              placeholder: (_, __) => Container(color: AppColors.neutral100),
+              errorWidget: (_, __, ___) => const Icon(AppIcons.pizza, size: 64, color: AppColors.neutral200),
+            ),
+            Padding(
               padding: const EdgeInsets.all(AppDim.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(product.title, style: AppTextStyles.h2),
+                  Text(
+                    product.title, 
+                    style: AppTextStyles.h2.copyWith(
+                      color: Theme.of(context).textTheme.headlineMedium?.color,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  if (product.description != null)
+                  if (product.description != null && product.description!.isNotEmpty)
                     Text(
                       product.description!,
-                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.neutral400 : AppColors.neutral600,
+                      ),
                     ),
                   const SizedBox(height: 24),
                   
                   // Variants (Size selection) - Point 5: 1 tadan ko'p bo'lsa ko'rsatamiz
                   if (hasVariants) ...[
-                    Text('product.size'.tr(), style: AppTextStyles.labelLarge),
+                    Text(
+                      'product.size'.tr(), 
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
                     const SizedBox(height: 12),
-                    // Point 1 & 7: Scroll bo'lmasligi kerak va kichikroq UI
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -96,10 +119,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
-                              color: isSelected ? AppColors.primary : AppColors.neutral100,
+                              color: isSelected ? AppColors.primary : Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: isSelected ? AppColors.primary : AppColors.neutral200,
+                                color: isSelected ? AppColors.primary : (Theme.of(context).brightness == Brightness.dark ? AppColors.neutral800 : AppColors.neutral200),
                               ),
                             ),
                             child: Column(
@@ -108,11 +131,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                 Text(
                                   v.title,
                                   style: AppTextStyles.labelSmall.copyWith(
-                                    color: isSelected ? Colors.white : AppColors.neutral900,
+                                    color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyMedium?.color,
                                   ),
                                 ),
                                 Text(
-                                  "${NumberFormatter.formatSum(v.price)} ${'product.currency'.tr()}",
+                                  "${NumberFormatter.formatSum(v.price)} ${'common.currency'.tr()}",
                                   style: AppTextStyles.bodySmall.copyWith(
                                     color: isSelected ? Colors.white70 : AppColors.neutral400,
                                   ),
@@ -128,7 +151,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
                   // Additional info
                   if (product.values.isNotEmpty) ...[
-                    Text('product.info'.tr(), style: AppTextStyles.labelLarge),
+                    Text(
+                      'product.info'.tr(), 
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     ...product.values.map((kv) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
@@ -136,7 +164,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(kv.key, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400)),
-                          Text(kv.value, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral900)),
+                          Text(kv.value, style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color)),
                         ],
                       ),
                     )),
@@ -144,13 +172,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(horizontal: AppDim.lg, vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           boxShadow: [
             BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4)),
           ],

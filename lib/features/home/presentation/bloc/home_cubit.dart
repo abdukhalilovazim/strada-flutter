@@ -13,7 +13,6 @@ abstract class HomeState extends Equatable {
 class HomeInitial extends HomeState {}
 class HomeLoading extends HomeState {}
 class HomeLoaded extends HomeState {
-  final List<SliderEntity> sliders;
   final List<CategoryEntity> categories;
   final List<ProductEntity> fullProducts;
   final List<ProductEntity> products;
@@ -21,7 +20,6 @@ class HomeLoaded extends HomeState {
   final String? selectedCategory;
 
   const HomeLoaded({
-    required this.sliders,
     required this.categories,
     required this.fullProducts,
     required this.products,
@@ -30,7 +28,7 @@ class HomeLoaded extends HomeState {
   });
 
   @override
-  List<Object?> get props => [sliders, categories, fullProducts, products, settings, selectedCategory];
+  List<Object?> get props => [categories, fullProducts, products, settings, selectedCategory];
 }
 class HomeFailure extends HomeState {
   final String message;
@@ -42,40 +40,33 @@ class HomeFailure extends HomeState {
 @injectable
 class HomeCubit extends Cubit<HomeState> {
   final GetCategoriesUseCase _getCategoriesUseCase;
-  final GetSlidersUseCase _getSlidersUseCase;
   final GetProductsUseCase _getProductsUseCase;
   final GetSettingsUseCase _getSettingsUseCase;
 
   HomeCubit(
     this._getCategoriesUseCase,
-    this._getSlidersUseCase,
     this._getProductsUseCase,
     this._getSettingsUseCase,
   ) : super(HomeInitial());
 
   Future<void> init() async {
     emit(HomeLoading());
-    final slidersCol    = await _getSlidersUseCase();
     final categoriesCol = await _getCategoriesUseCase();
     final productsCol   = await _getProductsUseCase();
     final settingsCol   = await _getSettingsUseCase();
 
-    slidersCol.fold(
+    categoriesCol.fold(
       (f) => emit(HomeFailure(f.messageKey)),
-      (sliders) => categoriesCol.fold(
+      (categories) => productsCol.fold(
         (f) => emit(HomeFailure(f.messageKey)),
-        (categories) => productsCol.fold(
+        (products) => settingsCol.fold(
           (f) => emit(HomeFailure(f.messageKey)),
-          (products) => settingsCol.fold(
-            (f) => emit(HomeFailure(f.messageKey)),
-            (settings) => emit(HomeLoaded(
-              sliders: sliders,
-              categories: categories,
-              fullProducts: products,
-              products: products,
-              settings: settings,
-            )),
-          ),
+          (settings) => emit(HomeLoaded(
+            categories: categories,
+            fullProducts: products,
+            products: products,
+            settings: settings,
+          )),
         ),
       ),
     );
@@ -87,7 +78,6 @@ class HomeCubit extends Cubit<HomeState> {
       if (currentState.selectedCategory == slug) {
         // Unselect if same category clicked (optional, but requested "filter sifatida ishlash")
         emit(HomeLoaded(
-          sliders: currentState.sliders,
           categories: currentState.categories,
           fullProducts: currentState.fullProducts,
           products: currentState.fullProducts,
@@ -104,7 +94,6 @@ class HomeCubit extends Cubit<HomeState> {
       }).toList();
 
       emit(HomeLoaded(
-        sliders: currentState.sliders,
         categories: currentState.categories,
         fullProducts: currentState.fullProducts,
         products: filteredProducts,

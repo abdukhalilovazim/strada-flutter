@@ -81,8 +81,6 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i788.AuthRepositoryImpl(gh<_i724.AuthRemoteDataSource>()));
     gh.lazySingleton<_i918.GetCategoriesUseCase>(
         () => _i918.GetCategoriesUseCase(gh<_i929.HomeRepository>()));
-    gh.lazySingleton<_i918.GetSlidersUseCase>(
-        () => _i918.GetSlidersUseCase(gh<_i929.HomeRepository>()));
     gh.lazySingleton<_i918.GetProductsUseCase>(
         () => _i918.GetProductsUseCase(gh<_i929.HomeRepository>()));
     gh.lazySingleton<_i918.GetSettingsUseCase>(
@@ -93,16 +91,15 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i576.GetOrdersUseCase(gh<_i414.OrderRepository>()));
     gh.factory<_i528.HomeCubit>(() => _i528.HomeCubit(
           gh<_i918.GetCategoriesUseCase>(),
-          gh<_i918.GetSlidersUseCase>(),
           gh<_i918.GetProductsUseCase>(),
           gh<_i918.GetSettingsUseCase>(),
         ));
     gh.factory<_i539.OrderCubit>(
         () => _i539.OrderCubit(gh<_i576.GetOrdersUseCase>()));
-    gh.lazySingleton<_i746.ConfirmOtpUseCase>(
-        () => _i746.ConfirmOtpUseCase(gh<_i307.AuthRepository>()));
     gh.lazySingleton<_i223.LoginUseCase>(
         () => _i223.LoginUseCase(gh<_i307.AuthRepository>()));
+    gh.lazySingleton<_i746.ConfirmOtpUseCase>(
+        () => _i746.ConfirmOtpUseCase(gh<_i307.AuthRepository>()));
     gh.factory<_i100.AuthCubit>(() => _i100.AuthCubit(
           gh<_i223.LoginUseCase>(),
           gh<_i746.ConfirmOtpUseCase>(),

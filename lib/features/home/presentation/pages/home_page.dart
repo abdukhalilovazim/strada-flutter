@@ -10,6 +10,7 @@ import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_card.dart';
+import 'package:pizza_strada/core/widgets/app_shimmer.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -72,11 +73,8 @@ class _HomePageState extends State<HomePage> {
   ) {
     double currentOffset = 0.0;
     
-    // Sliders height (200px height + 40px paddings)
-    currentOffset += 240.0; 
-    
     final double gridItemWidth = (screenWidth - 48) / 2;
-    final double rowHeight = (gridItemWidth / 0.68) + 16; // 0.68 is childAspectRatio, 16 is spacing
+    final double rowHeight = (gridItemWidth / 0.60) + 16; // 0.60 is childAspectRatio, 16 is spacing
     
     for (final cat in categories) {
       if (cat.slug == targetSlug) {
@@ -100,14 +98,14 @@ class _HomePageState extends State<HomePage> {
     List<CategoryEntity> categories,
     List<ProductEntity> allProducts,
   ) {
-    double currentOffset = 240.0; // Slidersdan keyin birinchi kategoriya boshlanadi
+    double currentOffset = 0.0;
     
     if (scrollOffset < currentOffset) {
       return categories.firstOrNull?.slug ?? '';
     }
 
     final double gridItemWidth = (screenWidth - 48) / 2;
-    final double rowHeight = (gridItemWidth / 0.68) + 16;
+    final double rowHeight = (gridItemWidth / 0.60) + 16;
     
     for (final cat in categories) {
       final catProducts = allProducts.where((p) => p.category?.slug == cat.slug).toList();
@@ -158,7 +156,7 @@ class _HomePageState extends State<HomePage> {
                 // App Bar
                 SliverAppBar(
                   pinned: true,
-                  backgroundColor: Colors.white,
+                  backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
                   surfaceTintColor: Colors.transparent,
                   elevation: 0,
                   title: Row(
@@ -210,10 +208,131 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
 
-                if (state is HomeLoading)
-                  const SliverFillRemaining(
-                    child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
-                  )
+                if (state is HomeLoading) ...[
+                  // Sticky Category chips Shimmer
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 52,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        itemCount: 6,
+                        itemBuilder: (_, __) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: AppShimmer(
+                            width: 80,
+                            height: 36,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Mock Categories shimmer
+                  for (int section = 0; section < 2; section++) ...[
+                    // Category Title Shimmer
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                      sliver: SliverToBoxAdapter(
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: AppShimmer(
+                            width: 120,
+                            height: 24,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Product Card Shimmers Grid
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverGrid(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                          childAspectRatio: 0.68,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (ctx, i) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.04),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Image skeleton
+                                  AspectRatio(
+                                    aspectRatio: 1.2,
+                                    child: AppShimmer(
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                                    ),
+                                  ),
+                                  // Content skeleton
+                                  Padding(
+                                    padding: const EdgeInsets.all(8),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Title Shimmer
+                                        AppShimmer(
+                                          width: 100,
+                                          height: 16,
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        // Description Shimmer
+                                        AppShimmer(
+                                          width: 130,
+                                          height: 12,
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        // Price + Add Button Shimmer
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            AppShimmer(
+                                              width: 60,
+                                              height: 14,
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            AppShimmer(
+                                              width: 28,
+                                              height: 28,
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          childCount: 4,
+                        ),
+                      ),
+                    ),
+                  ],
+                  // Bottom spacer
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: 120),
+                  ),
+                ]
                 else if (state is HomeFailure)
                   SliverFillRemaining(
                     child: Center(
@@ -228,83 +347,13 @@ class _HomePageState extends State<HomePage> {
                     ),
                   )
                 else if (state is HomeLoaded) ...[
-                  // Sliders
-                  if (state.sliders.isNotEmpty)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 20),
-                        child: SizedBox(
-                          height: 200,
-                          child: PageView.builder(
-                            itemCount: state.sliders.length,
-                            controller: PageController(viewportFraction: 0.92),
-                            itemBuilder: (_, i) {
-                              final slider = state.sliders[i];
-                              return Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 8),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 15,
-                                      offset: const Offset(0, 8),
-                                    ),
-                                  ],
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      CachedNetworkImage(
-                                        imageUrl: slider.image,
-                                        fit: BoxFit.cover,
-                                        placeholder: (_, __) => Container(color: AppColors.neutral100),
-                                        errorWidget: (_, __, ___) => Container(
-                                          color: AppColors.neutral100,
-                                          child: const Icon(Icons.image_not_supported_outlined),
-                                        ),
-                                      ),
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            begin: Alignment.topCenter,
-                                            end: Alignment.bottomCenter,
-                                            colors: [
-                                              Colors.transparent,
-                                              Colors.black.withOpacity(0.6),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      if (slider.caption != null)
-                                        Positioned(
-                                          left: 20,
-                                          bottom: 20,
-                                          right: 20,
-                                          child: Text(
-                                            slider.caption!,
-                                            style: AppTextStyles.h3.copyWith(color: Colors.white),
-                                          ),
-                                        ),
-                                      // Completely non-clickable sliders
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
 
                   // Sticky Category chips
                   SliverPersistentHeader(
                     pinned: true,
                     delegate: _StickyCategoryDelegate(
                       child: Container(
-                        color: Colors.white,
+                        color: Theme.of(context).appBarTheme.backgroundColor,
                         alignment: Alignment.centerLeft,
                         child: ListView.builder(
                           controller: _categoryScrollController,
@@ -342,15 +391,15 @@ class _HomePageState extends State<HomePage> {
                                   });
                                 },
                                 selectedColor: AppColors.primary,
-                                backgroundColor: Colors.white,
-                                disabledColor: Colors.white,
+                                backgroundColor: Theme.of(context).cardColor,
+                                disabledColor: Theme.of(context).cardColor,
                                 showCheckmark: false,
                                 side: BorderSide(
-                                  color: selected ? AppColors.primary : AppColors.neutral200,
+                                  color: selected ? AppColors.primary : (Theme.of(context).brightness == Brightness.dark ? AppColors.neutral800 : AppColors.neutral200),
                                   width: 1,
                                 ),
                                 labelStyle: AppTextStyles.labelSmall.copyWith(
-                                  color: selected ? Colors.white : AppColors.neutral700,
+                                  color: selected ? Colors.white : Theme.of(context).textTheme.bodySmall?.color,
                                   fontWeight: FontWeight.w600,
                                 ),
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -372,7 +421,7 @@ class _HomePageState extends State<HomePage> {
                         child: Text(
                           cat.title,
                           style: AppTextStyles.h3.copyWith(
-                            color: AppColors.neutral900,
+                            color: Theme.of(context).textTheme.headlineMedium?.color,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
