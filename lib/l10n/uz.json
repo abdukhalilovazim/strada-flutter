@@ -110,5 +110,6 @@
   "profile.message_hint": "Xabaringizni yozing...",
   "profile.send": "Yuborish",
   "profile.inquiry_success": "Murojaatingiz qabul qilindi. Tez orada siz bilan bog'lanamiz!",
-  "profile.inquiry_validation_error": "Iltimos, murojaat turi va xabarni to'ldiring"
+  "profile.inquiry_validation_error": "Iltimos, murojaat turi va xabarni to'ldiring",
+  "profile.support_inquiry": "Murojaat yuborish"
 }

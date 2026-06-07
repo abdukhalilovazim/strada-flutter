@@ -981,7 +981,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
           $payment_method: Int!,
           $products: [OrderProductInput!]!,
           $promo_code: String,
-          $comment: String
+          $comment: String,
+          $address: String,
+          $change: Int
         ) {
           createOrder(
             type: $type,
@@ -991,7 +993,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
             payment_method: $payment_method,
             products: $products,
             promo_code: $promo_code,
-            comment: $comment
+            comment: $comment,
+            address: $address,
+            change: $change
           ) {
             order_id
             status
@@ -1005,13 +1009,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
         operationName: 'createOrder',
         variables: {
           'type': _isDelivery ? 0 : 1,
-           'branch_id': _isDelivery ? null : _selectedBranch?.id,
+          'branch_id': _isDelivery ? null : _selectedBranch?.id,
           'latitude': _isDelivery ? _lat : null,
           'longitude': _isDelivery ? _lng : null,
           'payment_method': _getPaymentMethodId(_selectedPaymentMethodKey),
           'products': productsJson,
           'promo_code': _showPromoInput ? _appliedPromoCode : null,
           'comment': _showCommentInput ? _commentController.text.trim() : null,
+          'address': _isDelivery ? _addressController.text.trim() : null,
+          'change': _showChangeInput ? (int.tryParse(_changeController.text.trim()) ?? 0) : null,
         },
       ));
 

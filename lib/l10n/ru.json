@@ -108,5 +108,6 @@
   "profile.message_hint": "Напишите ваше сообщение...",
   "profile.send": "Отправить",
   "profile.inquiry_success": "Ваше обращение принято. Мы свяжемся с вами в ближайшее время!",
-  "profile.inquiry_validation_error": "Пожалуйста, выберите цель обращения и напишите сообщение"
+  "profile.inquiry_validation_error": "Пожалуйста, выберите цель обращения и напишите сообщение",
+  "profile.support_inquiry": "Отправить обращение"
 }
