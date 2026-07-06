@@ -113,20 +113,6 @@ class CookieAwareClient extends http.BaseClient {
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    // Birinchi so'rovdan oldin warm-up
-    await _warmUp();
-
-    // Olingan cookie'larni so'rovga qo'shish
-    if (_cookies != null) {
-      // Mavjud Cookie headeri bilan birlashtirish
-      final existing = request.headers['Cookie'];
-      if (existing != null && existing.isNotEmpty) {
-        request.headers['Cookie'] = '$existing; $_cookies';
-      } else {
-        request.headers['Cookie'] = _cookies!;
-      }
-    }
-
     return _inner.send(request);
   }
 
