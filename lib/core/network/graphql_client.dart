@@ -19,7 +19,7 @@ import 'package:pizza_strada/core/utils/device_info_helper.dart';
 const _orderOperations = {
   'orders', 'Orders',
   'order', 'Order',
-  'createOrder',
+  'createOrder', 'CreateOrder',
   'checkPromoCode', 'CheckPromoCode',
 };
 

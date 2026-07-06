@@ -62,15 +62,23 @@ class _MapPickerPageState extends State<MapPickerPage> {
         final p = placemarks.first;
         final street = p.street ?? '';
         final name = p.name ?? '';
+        final thoroughfare = p.thoroughfare ?? '';
         final subLocality = p.subLocality ?? '';
+        final locality = p.locality ?? '';
         
         String addressLine = '';
-        if (street.isNotEmpty) {
+        if (thoroughfare.isNotEmpty && p.subThoroughfare != null) {
+          addressLine = "$thoroughfare, ${p.subThoroughfare}";
+        } else if (thoroughfare.isNotEmpty) {
+          addressLine = thoroughfare;
+        } else if (street.isNotEmpty) {
           addressLine = street;
         } else if (name.isNotEmpty) {
           addressLine = name;
         } else if (subLocality.isNotEmpty) {
           addressLine = subLocality;
+        } else if (locality.isNotEmpty) {
+          addressLine = locality;
         } else {
           addressLine = "${point.latitude.toStringAsFixed(6)}, ${point.longitude.toStringAsFixed(6)}";
         }
