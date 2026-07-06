@@ -8,6 +8,7 @@ import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/theme/app_icons.dart';
 import 'package:pizza_strada/core/theme/theme_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
+import 'package:pizza_strada/features/loyalty/presentation/bloc/loyalty_cubit.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/inquiry_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -90,12 +91,80 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const SizedBox(height: 24),
+            // Loyalty Card
+            BlocBuilder<LoyaltyCubit, LoyaltyState>(
+              builder: (context, state) {
+                if (state is LoyaltyLoaded) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppColors.primary, AppColors.error],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
+                        )
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('profile.your_points'.tr(), style: AppTextStyles.labelMedium.copyWith(color: Colors.white.withValues(alpha: 0.8))),
+                            const SizedBox(height: 4),
+                            Text('${state.loyalty.points}', style: AppTextStyles.display.copyWith(color: Colors.white)),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.stars_rounded, color: Colors.white, size: 32),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
 
             // Settings Items
-            _buildItem(
-              icon: Icons.notifications_none_rounded,
-              title: 'profile.notifications'.tr(),
-              onTap: () {},
+            BlocBuilder<LoyaltyCubit, LoyaltyState>(
+              builder: (context, state) {
+                Widget? trailing;
+                if (state is LoyaltyLoaded && state.loyalty.expiringPoints != null && state.loyalty.expiringPoints! > 0) {
+                  trailing = Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.error,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      'profile.points_expiring'.tr(namedArgs: {'points': state.loyalty.expiringPoints.toString()}),
+                      style: AppTextStyles.bodySmall.copyWith(color: Colors.white, fontSize: 10),
+                    ),
+                  );
+                }
+                
+                return _buildItem(
+                  icon: Icons.notifications_none_rounded,
+                  title: 'profile.notifications'.tr(),
+                  trailing: trailing,
+                  onTap: () {},
+                );
+              },
             ),
             _buildItem(
               icon: Icons.language_rounded,
@@ -272,6 +341,7 @@ class _ProfilePageState extends State<ProfilePage> {
     required IconData icon,
     required String title,
     String? subtitle,
+    Widget? trailing,
     required VoidCallback onTap,
   }) {
     return Container(
@@ -279,27 +349,22 @@ class _ProfilePageState extends State<ProfilePage> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: AppColors.neutral200),
       ),
       child: ListTile(
         onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
         leading: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppColors.neutral50,
-            borderRadius: BorderRadius.circular(10),
+            color: AppColors.primaryLight,
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: AppColors.neutral700, size: 20),
+          child: Icon(icon, color: AppColors.primary, size: 24),
         ),
         title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color)),
-        subtitle: subtitle != null ? Text(subtitle, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400)) : null,
-        trailing: const Icon(AppIcons.arrowRight, color: AppColors.neutral400, size: 16),
+        subtitle: subtitle != null ? Text(subtitle, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)) : null,
+        trailing: trailing ?? const Icon(Icons.chevron_right_rounded, color: AppColors.neutral400),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );

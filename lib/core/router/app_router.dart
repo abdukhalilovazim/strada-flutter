@@ -10,6 +10,8 @@ import 'package:pizza_strada/features/auth/presentation/pages/login_page.dart';
 import 'package:pizza_strada/features/auth/presentation/pages/otp_page.dart';
 import 'package:pizza_strada/features/cart/presentation/pages/cart_page.dart';
 import 'package:pizza_strada/features/cart/presentation/pages/checkout_page.dart';
+import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pizza_strada/features/cart/presentation/pages/map_picker_page.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/pages/home_page.dart';
@@ -136,7 +138,13 @@ final appRouter = GoRouter(
         product: s.extra as ProductEntity?,
       ),
     ),
-    GoRoute(path: '/checkout',   builder: (_, __) => const CheckoutPage()),
+    GoRoute(
+      path: '/checkout',   
+      builder: (_, __) => BlocProvider(
+        create: (_) => CheckoutCubit(),
+        child: const CheckoutPage(),
+      ),
+    ),
     GoRoute(path: '/map-picker', builder: (_, __) => const MapPickerPage()),
     GoRoute(
       path: '/order/:id',

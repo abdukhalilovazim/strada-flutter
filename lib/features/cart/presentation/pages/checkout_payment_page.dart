@@ -1,0 +1,548 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pizza_strada/core/theme/app_colors.dart';
+import 'package:pizza_strada/core/theme/app_text_styles.dart';
+import 'package:pizza_strada/core/utils/number_formatter.dart';
+import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
+import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
+import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
+import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
+import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
+import 'package:pizza_strada/features/loyalty/presentation/bloc/loyalty_cubit.dart';
+import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+class CheckoutPaymentPage extends StatefulWidget {
+  const CheckoutPaymentPage({super.key});
+
+  @override
+  State<CheckoutPaymentPage> createState() => _CheckoutPaymentPageState();
+}
+
+class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
+  final _commentController = TextEditingController();
+  final _promoController = TextEditingController();
+  final _changeController = TextEditingController();
+
+  bool _showPromoInput = false;
+  bool _showChangeInput = false;
+  bool _showCommentInput = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final state = context.read<CheckoutCubit>().state;
+    if (state.comment.isNotEmpty) {
+      _showCommentInput = true;
+      _commentController.text = state.comment;
+    }
+    if (state.appliedPromoCode != null) {
+      _showPromoInput = true;
+      _promoController.text = state.appliedPromoCode!;
+    }
+    if (state.changeAmount != null && state.changeAmount! > 0) {
+      _showChangeInput = true;
+      _changeController.text = state.changeAmount!.toInt().toString();
+    }
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    _promoController.dispose();
+    _changeController.dispose();
+    super.dispose();
+  }
+
+  int _getPaymentMethodId(String key) {
+    final cleanKey = key.toLowerCase().trim();
+    if (cleanKey == 'payme' || cleanKey == '1') return 1;
+    if (cleanKey == 'click' || cleanKey == '2') return 2;
+    return 0; // Default Cash
+  }
+
+  double _computeDiscount(CheckoutState state, double subtotal) {
+    if (!state.useLoyaltyPoints && state.appliedPromoCode == null) return 0;
+    
+    double discount = 0;
+    if (state.appliedPromoCode != null && state.promoValue != null) {
+      if (state.promoType == 1) {
+        discount += subtotal * state.promoValue! / 100;
+      } else {
+        discount += state.promoValue!;
+      }
+    }
+    return discount;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final homeState = context.watch<HomeCubit>().state;
+    List<PaymentMethodEntity> paymentMethods = [];
+    if (homeState is HomeLoaded) {
+      paymentMethods = homeState.settings?.paymentMethods ?? [];
+    }
+
+    return BlocConsumer<CheckoutCubit, CheckoutState>(
+      listener: (context, state) {
+        if (state.submitError != null) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(state.submitError!),
+            backgroundColor: AppColors.error,
+          ));
+          context.read<CheckoutCubit>().clearSubmitError();
+        } else if (state.successData != null) {
+          _handleSuccess(state.successData!);
+        }
+      },
+      builder: (context, checkoutState) {
+        final cartState = context.watch<CartCubit>().state;
+        final subtotal = cartState.totalPrice;
+        final discount = _computeDiscount(checkoutState, subtotal);
+        
+        // Loyalty calculation
+        int usedPoints = 0;
+        final loyaltyState = context.read<LoyaltyCubit>().state;
+        if (checkoutState.useLoyaltyPoints && loyaltyState is LoyaltyLoaded) {
+          final maxAllowed = (subtotal + checkoutState.deliveryPrice - discount).toInt();
+          usedPoints = loyaltyState.loyalty.points > maxAllowed ? maxAllowed : loyaltyState.loyalty.points;
+        }
+
+        final finalTotal = (subtotal + checkoutState.deliveryPrice - discount - usedPoints).clamp(0, double.infinity);
+
+        return Scaffold(
+          backgroundColor: AppColors.surface,
+          appBar: AppBar(
+            title: Text('checkout.title'.tr(), style: AppTextStyles.h2.copyWith(color: Theme.of(context).textTheme.headlineMedium?.color)),
+            centerTitle: true,
+            backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back_ios_new_rounded, color: Theme.of(context).iconTheme.color),
+              onPressed: () => context.pop(),
+            ),
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Progress Indicator 2/2
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle)),
+                    Container(width: 40, height: 2, color: AppColors.primary, margin: const EdgeInsets.symmetric(horizontal: 4)),
+                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Center(child: Text('checkout.step_two_title'.tr(), style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral600))),
+                const SizedBox(height: 24),
+
+                // Order short summary
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.neutral200),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${cartState.items.length} ${'checkout.items_count'.tr()} • ${checkoutState.isDelivery ? 'checkout.delivery'.tr() : 'checkout.pickup'.tr()}',
+                          style: AppTextStyles.labelMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('checkout.edit'.tr(), style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Loyalty Points
+                BlocBuilder<LoyaltyCubit, LoyaltyState>(
+                  builder: (context, state) {
+                    if (state is LoyaltyLoaded && state.loyalty.points > 0) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('checkout.loyalty_points'.tr(), style: AppTextStyles.h3.copyWith(color: Theme.of(context).textTheme.headlineMedium?.color)),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.stars_rounded, color: AppColors.primary, size: 28),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('${state.loyalty.points} ${'checkout.points_available'.tr()}', style: AppTextStyles.labelMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color)),
+                                      Text('checkout.use_points_for_discount'.tr(), style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
+                                    ],
+                                  ),
+                                ),
+                                Switch.adaptive(
+                                  value: checkoutState.useLoyaltyPoints,
+                                  onChanged: (val) => context.read<CheckoutCubit>().toggleLoyaltyPoints(val),
+                                  activeColor: AppColors.primary,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+
+                // Promo Code
+                Text('checkout.additional'.tr(), style: AppTextStyles.h3.copyWith(color: Theme.of(context).textTheme.headlineMedium?.color)),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.neutral200),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.local_offer_outlined, color: AppColors.primary, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(child: Text('cart.promo'.tr(), style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color))),
+                          Switch.adaptive(
+                            value: _showPromoInput,
+                            onChanged: (val) {
+                              setState(() => _showPromoInput = val);
+                              if (!val) {
+                                _promoController.clear();
+                                context.read<CheckoutCubit>().clearPromo();
+                              }
+                            },
+                            activeColor: AppColors.primary,
+                          ),
+                        ],
+                      ),
+                      if (_showPromoInput) ...[
+                        const Divider(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _promoController,
+                                style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color),
+                                decoration: InputDecoration(
+                                  hintText: 'cart.enter_promo'.tr(),
+                                  border: InputBorder.none,
+                                  errorText: checkoutState.promoError,
+                                ),
+                              ),
+                            ),
+                            if (checkoutState.loadingPromo)
+                              const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                            else
+                              TextButton(
+                                onPressed: () {
+                                  context.read<CheckoutCubit>().applyPromo(_promoController.text.trim(), subtotal);
+                                  FocusScope.of(context).unfocus();
+                                },
+                                child: Text('cart.apply'.tr(), style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary)),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Payment method
+                Text('checkout.payment'.tr(), style: AppTextStyles.h3.copyWith(color: Theme.of(context).textTheme.headlineMedium?.color)),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.neutral200),
+                  ),
+                  child: Row(
+                    children: [
+                      for (int i = 0; i < paymentMethods.take(3).length; i++) ...[
+                        if (i > 0) const SizedBox(width: 8),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              context.read<CheckoutCubit>().setPaymentMethod(paymentMethods[i].key);
+                              if (paymentMethods[i].key != '0') {
+                                setState(() {
+                                  _showChangeInput = false;
+                                  _changeController.clear();
+                                });
+                                context.read<CheckoutCubit>().setChangeAmount(null);
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              height: 48,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: checkoutState.selectedPaymentMethodKey == paymentMethods[i].key
+                                    ? AppColors.primaryLight
+                                    : Colors.transparent,
+                                border: Border.all(
+                                  color: checkoutState.selectedPaymentMethodKey == paymentMethods[i].key
+                                      ? AppColors.primary
+                                      : AppColors.neutral200,
+                                  width: 1.5,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    _getPaymentMethodId(paymentMethods[i].key) == 1
+                                        ? Icons.account_balance_wallet_outlined
+                                        : (_getPaymentMethodId(paymentMethods[i].key) == 2
+                                            ? Icons.credit_card_outlined
+                                            : Icons.payments_outlined),
+                                    color: checkoutState.selectedPaymentMethodKey == paymentMethods[i].key
+                                        ? AppColors.primary
+                                        : AppColors.neutral600,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      paymentMethods[i].value,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTextStyles.labelSmall.copyWith(
+                                        color: checkoutState.selectedPaymentMethodKey == paymentMethods[i].key
+                                            ? AppColors.primary
+                                            : Theme.of(context).textTheme.bodyMedium?.color,
+                                        fontWeight: checkoutState.selectedPaymentMethodKey == paymentMethods[i].key ? FontWeight.bold : FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                
+                if (checkoutState.selectedPaymentMethodKey == '0') ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.neutral200),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.payments_outlined, color: AppColors.primary, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(child: Text('checkout.change_from'.tr(), style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color))),
+                            Switch.adaptive(
+                              value: _showChangeInput,
+                              onChanged: (val) {
+                                setState(() => _showChangeInput = val);
+                                if (!val) {
+                                  _changeController.clear();
+                                  context.read<CheckoutCubit>().setChangeAmount(null);
+                                }
+                              },
+                              activeColor: AppColors.primary,
+                            ),
+                          ],
+                        ),
+                        if (_showChangeInput) ...[
+                          const Divider(height: 16),
+                          TextField(
+                            controller: _changeController,
+                            keyboardType: TextInputType.number,
+                            style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color),
+                            onChanged: (val) => context.read<CheckoutCubit>().setChangeAmount(double.tryParse(val)),
+                            decoration: InputDecoration(
+                              hintText: 'checkout.enter_amount'.tr(),
+                              border: InputBorder.none,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.neutral200),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.primary, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(child: Text('checkout.comment'.tr(), style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color))),
+                          Switch.adaptive(
+                            value: _showCommentInput,
+                            onChanged: (val) {
+                              setState(() => _showCommentInput = val);
+                              if (!val) {
+                                _commentController.clear();
+                                context.read<CheckoutCubit>().setComment('');
+                              }
+                            },
+                            activeColor: AppColors.primary,
+                          ),
+                        ],
+                      ),
+                      if (_showCommentInput) ...[
+                        const Divider(height: 16),
+                        TextField(
+                          controller: _commentController,
+                          maxLines: 3,
+                          style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color),
+                          onChanged: (val) => context.read<CheckoutCubit>().setComment(val),
+                          decoration: InputDecoration(
+                            hintText: 'checkout.comment_hint'.tr(),
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+                
+                // Detailed Breakdown
+                _buildPriceRow('cart.subtotal'.tr(), subtotal, isTotal: false),
+                if (checkoutState.isDelivery) ...[
+                  const SizedBox(height: 8),
+                  _buildPriceRow('cart.delivery'.tr(), checkoutState.deliveryPrice, isTotal: false),
+                ],
+                if (discount > 0) ...[
+                  const SizedBox(height: 8),
+                  _buildPriceRow('cart.promo'.tr(), -discount, isTotal: false, isDiscount: true),
+                ],
+                if (usedPoints > 0) ...[
+                  const SizedBox(height: 8),
+                  _buildPriceRow('checkout.loyalty_discount'.tr(), -usedPoints.toDouble(), isTotal: false, isDiscount: true),
+                ],
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(),
+                ),
+                _buildPriceRow('cart.total'.tr(), finalTotal, isTotal: true),
+                const SizedBox(height: 80),
+              ],
+            ),
+          ),
+          bottomNavigationBar: Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4))],
+            ),
+            child: SafeArea(
+              child: ElevatedButton(
+                onPressed: checkoutState.isSubmitting
+                    ? null
+                    : () {
+                        final products = cartState.items.map((item) {
+                          final variantId = item.variant?.id ?? item.product.variants.firstOrNull?.id;
+                          return {
+                            'variant_id': variantId ?? 0,
+                            'quantity': item.quantity,
+                          };
+                        }).toList();
+                        context.read<CheckoutCubit>().submitOrder(products: products, usedPoints: usedPoints);
+                      },
+                child: checkoutState.isSubmitting
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text('checkout.submit_order'.tr()),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPriceRow(String label, double value, {bool isTotal = false, bool isDiscount = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: isTotal
+              ? AppTextStyles.h3.copyWith(color: Theme.of(context).textTheme.headlineMedium?.color)
+              : AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
+        ),
+        Text(
+          value == 0 && !isTotal ? 'checkout.free'.tr() : NumberFormatter.formatSum(value.toInt()),
+          style: isTotal
+              ? AppTextStyles.h3.copyWith(color: Theme.of(context).textTheme.headlineMedium?.color)
+              : AppTextStyles.labelMedium.copyWith(color: isDiscount ? AppColors.error : Theme.of(context).textTheme.bodyMedium?.color),
+        ),
+      ],
+    );
+  }
+
+  void _handleSuccess(Map<String, dynamic> data) async {
+    final paymentUrl = data['payment_url'] as String?;
+    if (paymentUrl != null && paymentUrl.isNotEmpty) {
+      final uri = Uri.tryParse(paymentUrl);
+      if (uri != null) {
+        try {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (e) {
+          debugPrint('Could not launch payment URL: $e');
+        }
+      }
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('checkout.order_placed'.tr()),
+        backgroundColor: AppColors.success,
+      ));
+      context.read<CartCubit>().clear();
+      // Using context.go('/orders') will wipe the back stack and go to orders tab.
+      context.go('/orders');
+    }
+  }
+}

@@ -173,6 +173,10 @@ class OrderDetailPage extends StatelessWidget {
                     _DetailRow(label: 'checkout.branch'.tr(), value: o.branch!),
                     const Divider(height: 24),
                   ],
+                  if (o.estimatedTime != null && o.estimatedTime!.isNotEmpty) ...[
+                    _DetailRow(label: 'orders.estimated_time'.tr(), value: o.estimatedTime!),
+                    const Divider(height: 24),
+                  ],
                   if (o.paymentMethodText != null && o.paymentMethodText!.isNotEmpty) ...[
                     _DetailRow(label: 'checkout.payment'.tr(), value: o.paymentMethodText!),
                     if (o.comment != null && o.comment!.isNotEmpty) const Divider(height: 24),
@@ -212,7 +216,7 @@ class OrderDetailPage extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: (showPayNow || o.status == 6)
+      bottomNavigationBar: (showPayNow || o.status == 6 || (o.phone != null && o.phone!.isNotEmpty))
           ? Container(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
               decoration: BoxDecoration(
@@ -262,25 +266,56 @@ class OrderDetailPage extends StatelessWidget {
                       );
                     }
 
-                    return SizedBox(
-                      height: 50,
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => _handleReorder(context, o),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: Text(
-                          'orders.reorder'.tr(),
-                          style: AppTextStyles.labelMedium.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                    if (o.status != 6 && o.status != 1 && o.phone != null && o.phone!.isNotEmpty) {
+                      return SizedBox(
+                        height: 50,
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            final uri = Uri.tryParse('tel:${o.phone}');
+                            if (uri != null && await canLaunchUrl(uri)) {
+                              await launchUrl(uri);
+                            }
+                          },
+                          icon: const Icon(Icons.phone, color: AppColors.primary),
+                          label: Text(
+                            'orders.call_branch'.tr(),
+                            style: AppTextStyles.labelMedium.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.primary, width: 1.5),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                         ),
-                      ),
-                    );
+                      );
+                    }
+
+                    if (o.status == 6) {
+                      return SizedBox(
+                        height: 50,
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => _handleReorder(context, o),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text(
+                            'orders.reorder'.tr(),
+                            style: AppTextStyles.labelMedium.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    
+                    return const SizedBox.shrink();
                   },
                 ),
               ),

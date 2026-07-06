@@ -122,5 +122,17 @@
   "orders.cancel_success": "Buyurtma bekor qilindi",
   "orders.cancel_error": "Bekor qilishda xatolik yuz berdi",
   "profile.guest": "Mehmon",
-  "checkout.cash_payment": "Naqd pul"
+  "checkout.cash_payment": "Naqd pul",
+  "checkout.step_one_title": "1/2 - Buyurtma va Manzil",
+  "checkout.step_two_title": "2/2 - To'lov va Chegirmalar",
+  "checkout.your_order": "Sizning buyurtmangiz",
+  "checkout.items_count": "ta mahsulot",
+  "checkout.loyalty_points": "Sodiqlik ballari",
+  "checkout.points_available": "ball mavjud",
+  "checkout.use_points_for_discount": "Ballardan chegirma sifatida foydalanish",
+  "checkout.loyalty_discount": "Loyalty ball",
+  "checkout.submit_order": "Buyurtma berish",
+  "orders.estimated_time": "Tahminiy vaqt",
+  "orders.call_branch": "Filial bilan bog'lanish",
+  "profile.points_expiring": "{points} ball kuyadi"
 }
