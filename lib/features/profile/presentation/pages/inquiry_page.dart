@@ -19,7 +19,7 @@ class InquiryPage extends StatefulWidget {
 class _InquiryPageState extends State<InquiryPage> {
   final _messageController = TextEditingController();
   String? _selectedPurpose;
-  bool _isSubmitting = false;
+  final bool _isSubmitting = false;
   int _charCount = 0;
 
   final List<Map<String, String>> _purposes = [

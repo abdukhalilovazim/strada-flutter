@@ -8,7 +8,6 @@ import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_c
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/features/cart/presentation/pages/checkout_payment_page.dart';
-import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:pizza_strada/core/network/graphql_client.dart';
 
@@ -287,7 +286,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     onTap: () async {
                       final result = await context.push<Map<String, dynamic>>('/map-picker');
                       if (result != null) {
-                        if (!mounted) return;
+                        if (!context.mounted) return;
                         final lat = result['lat'] as double;
                         final lng = result['lng'] as double;
                         final address = result['address'] as String;

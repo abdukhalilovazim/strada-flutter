@@ -466,7 +466,7 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
                   padding: EdgeInsets.symmetric(vertical: 12),
                   child: Divider(),
                 ),
-                _buildPriceRow('cart.total'.tr(), finalTotal, isTotal: true),
+                _buildPriceRow('cart.total'.tr(), finalTotal.toDouble(), isTotal: true),
                 const SizedBox(height: 80),
               ],
             ),

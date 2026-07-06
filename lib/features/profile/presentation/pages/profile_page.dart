@@ -266,7 +266,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             onPressed: () async {
                               Navigator.pop(dialogContext);
                               await SecureStorage.clearAll();
-                              if (!mounted) return;
+                              if (!context.mounted) return;
                               context.go('/auth/login');
                             },
                             child: Text(
