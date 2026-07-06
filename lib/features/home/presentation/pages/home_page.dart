@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:async';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
@@ -22,9 +22,16 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final ScrollController _scrollController = ScrollController();
   final ScrollController _categoryScrollController = ScrollController();
-  
+
+  // Category sync
   String? _activeCategory;
   bool _isScrollingToCategory = false;
+
+  // Search
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _isSearchActive = false;
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -36,7 +43,33 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     _scrollController.dispose();
     _categoryScrollController.dispose();
+    _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() => _searchQuery = query.trim().toLowerCase());
+      }
+    });
+  }
+
+  void _openSearch() {
+    setState(() {
+      _isSearchActive = true;
+    });
+  }
+
+  void _closeSearch() {
+    _debounce?.cancel();
+    _searchController.clear();
+    setState(() {
+      _isSearchActive = false;
+      _searchQuery = '';
+    });
   }
 
   // Ekranda ko'rinib turgan scroll offsetiga qarab aktiv kategoriyani aniqlash
@@ -171,7 +204,19 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ],
                   ),
-                  actions: [
+                   actions: [
+                    // Search toggle
+                    if (_isSearchActive)
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: AppColors.neutral900),
+                        onPressed: _closeSearch,
+                      )
+                    else
+                      IconButton(
+                        icon: const Icon(Icons.search_rounded, color: AppColors.neutral900),
+                        onPressed: _openSearch,
+                      ),
+                    // Cart badge
                     BlocBuilder<CartCubit, CartState>(
                       builder: (ctx, cartState) {
                         final count = cartState.items.length;
@@ -206,6 +251,34 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(width: 8),
                   ],
+                  // Search bar (bottom of AppBar when active)
+                  bottom: _isSearchActive
+                      ? PreferredSize(
+                          preferredSize: const Size.fromHeight(56),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                            child: TextField(
+                              controller: _searchController,
+                              autofocus: true,
+                              onChanged: _onSearchChanged,
+                              decoration: InputDecoration(
+                                hintText: 'home.search_hint'.tr(),
+                                hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
+                                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.neutral400, size: 20),
+                                filled: true,
+                                fillColor: Theme.of(context).brightness == Brightness.dark
+                                    ? AppColors.darkSurface
+                                    : AppColors.neutral100,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ),
+                        )
+                      : null,
                 ),
 
                 if (state is HomeLoading) ...[
@@ -262,7 +335,7 @@ class _HomePageState extends State<HomePage> {
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.04),
+                                    color: Colors.black.withValues(alpha: 0.04),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   ),
@@ -348,99 +421,101 @@ class _HomePageState extends State<HomePage> {
                   )
                 else if (state is HomeLoaded) ...[
 
-                  // Sticky Category chips
-                  SliverPersistentHeader(
-                    pinned: true,
-                    delegate: _StickyCategoryDelegate(
-                      child: Container(
-                        color: Theme.of(context).appBarTheme.backgroundColor,
-                        alignment: Alignment.centerLeft,
-                        child: ListView.builder(
-                          controller: _categoryScrollController,
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          itemCount: state.categories.length,
-                          itemBuilder: (_, i) {
-                            final cat = state.categories[i];
-                            final selected = _activeCategory == cat.slug;
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: ChoiceChip(
-                                label: Text(cat.title),
-                                selected: selected,
-                                onSelected: (_) {
-                                  setState(() {
-                                    _activeCategory = cat.slug;
-                                    _isScrollingToCategory = true;
-                                  });
-                                  
-                                  // Chip bosilganda tegishli kategoriyaga silliq scroll qilish
-                                  final targetOffset = _getTargetOffset(
-                                    cat.slug,
-                                    screenWidth,
-                                    state.categories,
-                                    state.fullProducts,
-                                  );
-
-                                  _scrollController.animateTo(
-                                    targetOffset,
-                                    duration: const Duration(milliseconds: 350),
-                                    curve: Curves.easeInOut,
-                                  ).then((_) {
-                                    _isScrollingToCategory = false;
-                                  });
-                                },
-                                selectedColor: AppColors.primary,
-                                backgroundColor: Theme.of(context).cardColor,
-                                disabledColor: Theme.of(context).cardColor,
-                                showCheckmark: false,
-                                side: BorderSide(
-                                  color: selected ? AppColors.primary : (Theme.of(context).brightness == Brightness.dark ? AppColors.neutral800 : AppColors.neutral200),
-                                  width: 1,
+                  // Search aktiv bo'lganda category chips yashiriladi
+                  if (!_isSearchActive)
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _StickyCategoryDelegate(
+                        child: Container(
+                          color: Theme.of(context).appBarTheme.backgroundColor,
+                          alignment: Alignment.centerLeft,
+                          child: ListView.builder(
+                            controller: _categoryScrollController,
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            itemCount: state.categories.length,
+                            itemBuilder: (_, i) {
+                              final cat = state.categories[i];
+                              final selected = _activeCategory == cat.slug;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ChoiceChip(
+                                  label: Text(cat.title),
+                                  selected: selected,
+                                  onSelected: (_) {
+                                    setState(() {
+                                      _activeCategory = cat.slug;
+                                      _isScrollingToCategory = true;
+                                    });
+                                    final targetOffset = _getTargetOffset(
+                                      cat.slug,
+                                      screenWidth,
+                                      state.categories,
+                                      state.fullProducts,
+                                    );
+                                    _scrollController.animateTo(
+                                      targetOffset,
+                                      duration: const Duration(milliseconds: 350),
+                                      curve: Curves.easeInOut,
+                                    ).then((_) {
+                                      _isScrollingToCategory = false;
+                                    });
+                                  },
+                                  selectedColor: AppColors.primary,
+                                  backgroundColor: Theme.of(context).cardColor,
+                                  disabledColor: Theme.of(context).cardColor,
+                                  showCheckmark: false,
+                                  side: BorderSide(
+                                    color: selected ? AppColors.primary : (Theme.of(context).brightness == Brightness.dark ? AppColors.neutral800 : AppColors.neutral200),
+                                    width: 1,
+                                  ),
+                                  labelStyle: AppTextStyles.labelSmall.copyWith(
+                                    color: selected ? Colors.white : Theme.of(context).textTheme.bodySmall?.color,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
-                                labelStyle: AppTextStyles.labelSmall.copyWith(
-                                  color: selected ? Colors.white : Theme.of(context).textTheme.bodySmall?.color,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Har bir kategoriya va uning mahsulotlarini alohida ko'rsatish
-                  for (final cat in state.categories) ...[
-                    // Guruh sarlavhasi (Category Header)
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
-                      sliver: SliverToBoxAdapter(
-                        child: Text(
-                          cat.title,
-                          style: AppTextStyles.h3.copyWith(
-                            color: Theme.of(context).textTheme.headlineMedium?.color,
-                            fontWeight: FontWeight.bold,
+                              );
+                            },
                           ),
                         ),
                       ),
                     ),
 
-                    // Guruhga tegishli mahsulotlar griddi
+                  // Search natijalari (aktiv bo'lganda)
+                  if (_isSearchActive) ...[
                     Builder(
                       builder: (context) {
-                        final catProducts = state.fullProducts
-                            .where((p) => p.category?.slug == cat.slug)
-                            .toList();
+                        final query = _searchQuery;
+                        final results = query.isEmpty
+                            ? state.fullProducts
+                            : state.fullProducts.where((p) {
+                                final title = p.title.toLowerCase();
+                                final desc = (p.description ?? '').toLowerCase();
+                                return title.contains(query) || desc.contains(query);
+                              }).toList();
 
-                        if (catProducts.isEmpty) {
-                          return const SliverToBoxAdapter(child: SizedBox.shrink());
+                        if (results.isEmpty) {
+                          return SliverFillRemaining(
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.search_off_rounded, size: 56, color: AppColors.neutral300),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'home.search_empty'.tr(),
+                                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
                         }
 
                         return SliverPadding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
                           sliver: SliverGrid(
                             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
@@ -450,13 +525,12 @@ class _HomePageState extends State<HomePage> {
                             ),
                             delegate: SliverChildBuilderDelegate(
                               (ctx, i) {
-                                final product = catProducts[i];
+                                final product = results[i];
                                 return BlocBuilder<CartCubit, CartState>(
                                   builder: (context, cartState) {
                                     final quantity = cartState.items
                                         .where((item) => item.product.slug == product.slug)
                                         .fold<int>(0, (sum, item) => sum + item.quantity);
-
                                     return ProductCard(
                                       product: product,
                                       quantityInCart: quantity,
@@ -465,18 +539,69 @@ class _HomePageState extends State<HomePage> {
                                   },
                                 );
                               },
-                              childCount: catProducts.length,
+                              childCount: results.length,
                             ),
                           ),
                         );
                       },
                     ),
+                  ] else ...[
+                    // Har bir kategoriya va uning mahsulotlarini alohida ko'rsatish
+                    for (final cat in state.categories) ...[
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                        sliver: SliverToBoxAdapter(
+                          child: Text(
+                            cat.title,
+                            style: AppTextStyles.h3.copyWith(
+                              color: Theme.of(context).textTheme.headlineMedium?.color,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Builder(
+                        builder: (context) {
+                          final catProducts = state.fullProducts
+                              .where((p) => p.category?.slug == cat.slug)
+                              .toList();
+                          if (catProducts.isEmpty) {
+                            return const SliverToBoxAdapter(child: SizedBox.shrink());
+                          }
+                          return SliverPadding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            sliver: SliverGrid(
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                mainAxisSpacing: 16,
+                                crossAxisSpacing: 16,
+                                childAspectRatio: 0.68,
+                              ),
+                              delegate: SliverChildBuilderDelegate(
+                                (ctx, i) {
+                                  final product = catProducts[i];
+                                  return BlocBuilder<CartCubit, CartState>(
+                                    builder: (context, cartState) {
+                                      final quantity = cartState.items
+                                          .where((item) => item.product.slug == product.slug)
+                                          .fold<int>(0, (sum, item) => sum + item.quantity);
+                                      return ProductCard(
+                                        product: product,
+                                        quantityInCart: quantity,
+                                        onTap: () => context.push('/product/${product.slug}', extra: product),
+                                      );
+                                    },
+                                  );
+                                },
+                                childCount: catProducts.length,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                    const SliverToBoxAdapter(child: SizedBox(height: 120)),
                   ],
-                  
-                  // Pastki bo'shliq
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: 120),
-                  ),
                 ],
               ],
             ),

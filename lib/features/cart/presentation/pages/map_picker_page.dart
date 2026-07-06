@@ -143,7 +143,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
                             height: 20,
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.8),
+                                color: Colors.blue.withValues(alpha: 0.8),
                                 shape: BoxShape.circle,
                                 border: Border.all(color: Colors.white, width: 2),
                               ),
@@ -166,7 +166,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+                          BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4)),
                         ],
                       ),
                       child: Row(

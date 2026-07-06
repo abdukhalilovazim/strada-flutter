@@ -29,7 +29,7 @@ class ProductCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -67,7 +67,7 @@ class ProductCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
+                            color: Colors.black.withValues(alpha: 0.15),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -283,7 +283,7 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
                       final isSelected = selectedVariant?.id == v.id;
 
                       final bg = isSelected
-                          ? (isDark ? AppColors.primary.withOpacity(0.15) : AppColors.primaryLight)
+                          ? (isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight)
                           : Colors.transparent;
 
                       final border = Border.all(
@@ -328,7 +328,7 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
                                     '${NumberFormatter.formatSum(v.price)} ${'common.currency'.tr()}',
                                     style: AppTextStyles.bodySmall.copyWith(
                                       color: isSelected
-                                          ? AppColors.primary.withOpacity(0.8)
+                                          ? AppColors.primary.withValues(alpha: 0.8)
                                           : (isDark ? AppColors.neutral500 : AppColors.neutral600),
                                     ),
                                   ),

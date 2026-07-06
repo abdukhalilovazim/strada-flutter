@@ -111,5 +111,16 @@
   "profile.send": "Send",
   "profile.inquiry_success": "Your inquiry has been received. We will contact you soon!",
   "profile.inquiry_validation_error": "Please select the purpose of inquiry and write a message",
-  "profile.support_inquiry": "Send support inquiry"
+  "profile.support_inquiry": "Send support inquiry",
+  "profile.dark_mode": "Dark mode",
+  "home.search_hint": "Search products...",
+  "home.search_empty": "Nothing found",
+  "map.manual_input": "Enter manually",
+  "map.manual_hint": "Type your address...",
+  "orders.cancel": "Cancel order",
+  "orders.cancel_confirm": "Are you sure you want to cancel this order?",
+  "orders.cancel_success": "Order cancelled",
+  "orders.cancel_error": "Failed to cancel the order",
+  "profile.guest": "Guest",
+  "checkout.cash_payment": "Cash"
 }

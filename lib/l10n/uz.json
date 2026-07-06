@@ -111,5 +111,16 @@
   "profile.send": "Yuborish",
   "profile.inquiry_success": "Murojaatingiz qabul qilindi. Tez orada siz bilan bog'lanamiz!",
   "profile.inquiry_validation_error": "Iltimos, murojaat turi va xabarni to'ldiring",
-  "profile.support_inquiry": "Murojaat yuborish"
+  "profile.support_inquiry": "Murojaat yuborish",
+  "profile.dark_mode": "Tungi rejim",
+  "home.search_hint": "Mahsulot qidiring...",
+  "home.search_empty": "Hech narsa topilmadi",
+  "map.manual_input": "Qo'lda kiriting",
+  "map.manual_hint": "Manzilni yozing...",
+  "orders.cancel": "Bekor qilish",
+  "orders.cancel_confirm": "Buyurtmani bekor qilishni tasdiqlaysizmi?",
+  "orders.cancel_success": "Buyurtma bekor qilindi",
+  "orders.cancel_error": "Bekor qilishda xatolik yuz berdi",
+  "profile.guest": "Mehmon",
+  "checkout.cash_payment": "Naqd pul"
 }

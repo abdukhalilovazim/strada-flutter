@@ -339,7 +339,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           }
           if (paymentMethods.isEmpty) {
             paymentMethods = [
-              const PaymentMethodEntity(key: '0', value: 'Naqd pul'),
+              PaymentMethodEntity(key: '0', value: 'checkout.cash_payment'.tr()),
             ];
           }
 
@@ -357,9 +357,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         margin: const EdgeInsets.only(bottom: 20),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.error.withOpacity(0.1),
+                          color: AppColors.error.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           children: [
@@ -511,7 +511,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 color: _selectedPaymentMethodKey == paymentMethods[i].key
-                                    ? (Theme.of(context).brightness == Brightness.dark ? AppColors.primary.withOpacity(0.15) : AppColors.primaryLight)
+                                    ? (Theme.of(context).brightness == Brightness.dark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight)
                                     : (Theme.of(context).brightness == Brightness.dark ? AppColors.darkBackground : AppColors.neutral50),
                                 border: Border.all(
                                   color: _selectedPaymentMethodKey == paymentMethods[i].key
@@ -872,7 +872,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
                     ],
                   ),
                   child: Column(
@@ -1092,7 +1092,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
             color: isActive ? Theme.of(context).cardColor : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             boxShadow: isActive
-                ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
+                ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
                 : null,
           ),
           alignment: Alignment.center,

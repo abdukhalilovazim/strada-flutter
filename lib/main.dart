@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:pizza_strada/core/di/injection.dart';
 import 'package:pizza_strada/core/router/app_router.dart';
 import 'package:pizza_strada/core/theme/app_theme.dart';
+import 'package:pizza_strada/core/theme/theme_cubit.dart';
 import 'package:pizza_strada/core/utils/device_info_helper.dart';
 import 'package:pizza_strada/core/storage/shared_prefs.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
@@ -44,15 +45,19 @@ void main() async {
         providers: [
           BlocProvider(create: (context) => getIt<CartCubit>()),
           BlocProvider(create: (context) => getIt<HomeCubit>()..init()),
+          BlocProvider(create: (context) => getIt<ThemeCubit>()),
         ],
-        child: const MyApp(),
+        child: BlocBuilder<ThemeCubit, ThemeMode>(
+          builder: (context, themeMode) => MyApp(themeMode: themeMode),
+        ),
       ),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final ThemeMode themeMode;
+  const MyApp({super.key, required this.themeMode});
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +66,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
+      themeMode: themeMode,
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,

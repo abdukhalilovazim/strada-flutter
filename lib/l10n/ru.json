@@ -109,5 +109,16 @@
   "profile.send": "Отправить",
   "profile.inquiry_success": "Ваше обращение принято. Мы свяжемся с вами в ближайшее время!",
   "profile.inquiry_validation_error": "Пожалуйста, выберите цель обращения и напишите сообщение",
-  "profile.support_inquiry": "Отправить обращение"
+  "profile.support_inquiry": "Отправить обращение",
+  "profile.dark_mode": "Тёмный режим",
+  "home.search_hint": "Поиск продуктов...",
+  "home.search_empty": "Ничего не найдено",
+  "map.manual_input": "Ввести вручную",
+  "map.manual_hint": "Введите адрес...",
+  "orders.cancel": "Отменить заказ",
+  "orders.cancel_confirm": "Вы уверены, что хотите отменить заказ?",
+  "orders.cancel_success": "Заказ отменён",
+  "orders.cancel_error": "Ошибка при отмене заказа",
+  "profile.guest": "Гость",
+  "checkout.cash_payment": "Наличные"
 }

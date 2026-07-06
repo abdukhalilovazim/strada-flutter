@@ -234,3 +234,302 @@ This `agents.md` file MUST be updated immediately when:
 3. An existing rule is modified or deprecated.
 
 The file must always reflect the current, ground-truth state of the project.
+
+---
+
+## 9. Feature Documentation (Real Codebase Map)
+
+> Bu bo'lim har bir featurening real ishlash logikasini, sahifalarini va UX xususiyatlarini tavsiflaydi. Har qanday o'zgarish kiritishdan oldin shu bo'limni o'qing.
+
+---
+
+### 9.1 `splash` Feature
+
+**Fayl:** `lib/features/splash/presentation/pages/splash_page.dart`
+
+**Maqsad:** Ilova ishga tushganda token tekshiruvi va yo'naltirish.
+
+**Ishlash logikasi:**
+1. `SplashCubit.init()` chaqiriladi → `SecureStorage.getToken()` tekshiradi.
+2. Token bor → `/home`ga yo'naltiradi (`SplashAuthenticated`).
+3. Token yo'q → `/auth/login`ga yo'naltiradi (`SplashUnauthenticated`).
+4. Xato → `SplashFailure` — "Qayta urinish" tugmasi chiqadi.
+
+**UX:**
+- 800ms `FadeIn` animatsiya bilan logo ko'rinadi.
+- Splash foni har doim `Colors.white` (tema mustaqil).
+- `CircularProgressIndicator` yuklanish vaqtida ko'rinadi.
+- Muvaffaqiyatsizlikda xato matni + retry tugma chiqadi.
+
+> ⚠️ Splash page `HomeCubit.init()` ni CHAQIRMAYDI — bu `main.dart`da global qilingan.
+
+---
+
+### 9.2 `auth` Feature
+
+**Fayllar:**
+- `lib/features/auth/presentation/pages/login_page.dart`
+- `lib/features/auth/presentation/pages/otp_page.dart`
+- `lib/features/auth/presentation/bloc/auth_cubit.dart`
+
+**Login Page (`/auth/login`):**
+- Ishlash: To'liq ism + telefon raqam (9 raqam, `+998` prefiksi avtomatik) kiritiladi.
+- Telefon: `FilteringTextInputFormatter.digitsOnly`, `maxLength: 9`.
+- Tilni almashtirish: UZ / RU / EN tugmachalar logindan yuqorida joylashgan.
+- Yuborish: `AuthCubit.login(fullName:, phone:)` → `AuthOtpSent` → `/auth/otp`ga push.
+
+**OTP Page (`/auth/otp`):**
+- 4 ta alohida input box (68×68px), autofill (`oneTimeCode`) qo'llab-quvvatlanadi.
+- Har bir katakcha to'lganda keyingi fokusga o'tadi; oxirgi to'lganda `confirmOtp` avtomatik chaqiriladi.
+- 60 soniyalik timer → tugagach "Qayta yuborish" tugmasi paydo bo'ladi.
+- `AuthCubit.confirmOtp(phone:, code:)` → `AuthSuccess` → `/home`ga go'ing.
+
+**AuthCubit Scope:** Scoped (`BlocProvider` ichida, featurega xos).
+
+> ⚠️ `BlocProvider` LoginPage va OtpPage har birida alohida — ular `getIt<AuthCubit>()` bilan yaratiladi. Ular bir-biriga state ulashmaydi.
+
+---
+
+### 9.3 `home` Feature
+
+**Fayllar:**
+- `lib/features/home/presentation/pages/home_page.dart`
+- `lib/features/home/presentation/pages/product_detail_page.dart`
+- `lib/features/home/presentation/widgets/product_card.dart`
+- `lib/features/home/presentation/bloc/home_cubit.dart`
+
+**HomePage (`/home`):**
+
+| Element | Tavsif |
+|---|---|
+| AppBar | Logo + savat ikonkasi (badge bilan miqdor ko'rsatadi) |
+| Sticky Category Chips | `SliverPersistentHeader` (pinned), gorizontal scroll |
+| Product Grid | 2 ustun, `childAspectRatio: 0.68`, kategoriya bo'limlarga ajratilgan |
+| Pull-to-Refresh | `RefreshIndicator` → `HomeCubit.init()` |
+| Shimmer skeleton | `HomeLoading` holatda 2 ta bo'lim × 4 karta |
+| Error state | WiFi off ikona + server xabar matni |
+| **Search** | AppBar'da qidiruv ikonkasi yoki SliverAppBar ichida search bar |
+
+**Scroll Sync logikasi:**
+- Foydalanuvchi scroll qilganda `_onScroll()` → har bir kategoriya section balandligi hisoblanadi → aktiv chip belgilanadi.
+- Chip bosilganda `_getTargetOffset()` → `animateTo(350ms, easeInOut)`.
+- `_isScrollingToCategory` flag — programmatic scroll vaqtida `_onScroll` ishlamasligi uchun.
+
+**Kategoriya filtrash:** Client-side — `fullProducts.where((p) => p.category?.slug == cat.slug)`.
+
+**🔍 Search (Rejalashtirilgan):**
+- AppBar'da qidiruv ikonkasi (bosilganda search bar ko'rinadi) yoki `SliverAppBar` ichida doimiy search field.
+- Client-side filter: `fullProducts.where((p) => p.title.contains(query) || p.description?.contains(query) == true)`.
+- Debounce: **300ms** — har harfda API chaqirilmaydi, `Timer`/`debounce` orqali.
+- Search aktiv bo'lganda kategoriya chiplar va scroll sync o'chadi.
+- Bo'sh natija: `'home.search_empty'.tr()` + ikonka.
+- Search bo'sh bo'lsa — oddiy kategoriyali ko'rinishga qaytadi.
+
+> ⚠️ Search natijasida mahsulotlar grid ko'rinishda (kategoriyasiz), umumiy list sifatida ko'rsatiladi.
+
+**HomeCubit States:**
+```
+HomeInitial → HomeLoading → HomeLoaded(categories, fullProducts, products, settings)
+                          ↘ HomeFailure(message)
+```
+
+**ProductDetailPage (`/product/:slug`):**
+- `ProductEntity` `extra:` orqali uzatiladi (API chaqirilmaydi).
+- Variantlar (o'lchamlar): 1 ta bo'lsa avtomatik tanlanadi, 1 tadan ko'p bo'lsa `Wrap` bilan ko'rsatiladi.
+- Variantsiz mahsulot uchun "Savatga qo'shish" har doim ishlaydi.
+- Variantli mahsulotda tanlashsiz bosish — `SnackBar` xatosi.
+- `bottomNavigationBar` da `AppButton` — narx + harakat.
+
+**ProductCard widget:**
+- Savattagi miqdor `quantityInCart > 0` bo'lsa badge ko'rsatadi (qizil to'rtburchak, top-right).
+- `+` / `-` tugmalari to'g'ridan-to'g'ri `CartCubit.updateQuantity()` ni chaqiradi.
+
+---
+
+### 9.4 `cart` Feature
+
+**Fayllar:**
+- `lib/features/cart/presentation/pages/cart_page.dart`
+- `lib/features/cart/presentation/pages/checkout_page.dart`
+- `lib/features/cart/presentation/pages/map_picker_page.dart`
+- `lib/features/cart/presentation/bloc/cart_cubit.dart`
+
+**CartCubit (Global — `@lazySingleton`):**
+
+| Metod | Tavsif |
+|---|---|
+| `addToCart(product, variant?)` | Mavjud bo'lsa miqdor +1, yo'q bo'lsa yangi item |
+| `removeFromCart(item)` | Slug + variantId bo'yicha o'chiradi |
+| `updateQuantity(item, delta)` | +1 yoki -1; 0 yetganda avtomatik o'chiradi |
+| `addMultipleToCart(items)` | Qayta buyurtma uchun bulk qo'shish |
+| `clear()` | Savatni to'liq tozalaydi (order yaratilgandan keyin) |
+
+**CartPage (`/cart`):**
+- Bo'sh holat: katta ikonka + "Savzatga o'ting" tugmasi `/home`ga.
+- Har bir item: rasm + nom + variant + narx + miqdor kontrollar.
+- Bottom panel: subtotal + "Rasmiylashtirish" (`/checkout`ga push).
+
+**CheckoutPage (`/checkout`):**
+
+| Bo'lim | Tavsif |
+|---|---|
+| Yetkazish turi | `_isDelivery` toggle: Yetkazib berish / Olib ketish |
+| Filial tanlash | `_loadBranches()` GraphQL → `showModalBottomSheet` |
+| Manzil + Xarita | "Xaritadan tanlash" → `/map-picker` push, qaytganda `_calculateDelivery()` |
+| **Saqlangan manzillar** | Checkout'da manzil bo'limi tepasida tezkor tanlov ro'yxati (rejalashtirilgan) |
+| Promo kod | `checkPromoCode` mutation; type 0=fixed, 1=percent; xato ko'rsatiladi |
+| To'lov usuli | `HomeLoaded.settings.paymentMethods` dan dynamic; Payme/Click/Naqd |
+| Qaytim (change) | Naqd to'lov tanlanganda ko'rinadigan maydon |
+| Izoh | `_showCommentInput` toggle bilan kengayadigan maydon |
+| Buyurtma berish | `createOrder` mutation; `_isSubmitting` flag — qayta bosishni blokleydi |
+
+> ⚠️ `CheckoutPage` o'z GraphQL clientini yaratadi (`buildGraphQLClient()`). Bu uni `HomeCubit`dan mustaqil qiladi, lekin settings uchun `HomeCubit.state`dan o'qiydi.
+
+**🚚 Delivery ETA (Rejalashtirilgan):**
+- `_calculateDelivery()` natijasida narx bilan birga taxminiy yetkazish vaqti ham ko'rsatiladi (masalan, `"30–40 daqiqa"`).
+- Backend `calculateDeliveryPrice` response'ini kengaytirish kerak (yoki alohida field).
+- UI'da manzil tanlangandan keyin: `"Narx: 15 000 so'm • ~30–40 daqiqa"` formatida chip/info row ko'rsatiladi.
+
+**📍 Saqlangan manzillar (Rejalashtirilgan):**
+- Yangi bo'lim: Profile yoki Checkout ichida `"Mening manzillarim"`.
+- Model: `SavedAddress { id, label (Uy/Ish/Boshqa), lat, lng, text }` — `SharedPrefs` yoki `SecureStorage`da saqlanadi.
+- CRUD: qo'shish (MapPicker orqali), tahrirlash (label), o'chirish (swipe/delete).
+- Checkout'da manzil bo'limida tezkor tanlov: `ListView` + "+ Yangi manzil" tugmasi.
+- Tanlanganda `_lat`, `_lng`, `_addressController` to'ldiriladi va `_calculateDelivery()` chaqiriladi.
+
+**MapPickerPage (`/map-picker`):**
+- `flutter_map` + OpenStreetMap tiles.
+- `Geolocator` → joriy joylashuv → marker va karta shu joyga o'rnatiladi.
+- Xaritaga tap → marker yangi joyga ko'chadi + reverse geocoding (ko'cha nomi kartochkada).
+- "Joylashuvim" FAB → qayta joriy joyga qaytaradi.
+- "Tasdiqlash" → `context.pop({'lat', 'lng', 'address'})` — CheckoutPage olib oladi.
+
+**✏️ MapPicker — Qo'lda yozish fallback (Rejalashtirilgan):**
+- Xarita ustida yoki tagida `"Manzilni qo'lda kiriting"` tugmasi/toggle.
+- Bosilganda `TextField` paydo bo'ladi; foydalanuvchi erkin matn kiritadi.
+- Geocoding shart emas — matn to'g'ridan-to'g'ri `address` sifatida saqlanadi, koordinatalar `null`.
+- `context.pop({'lat': null, 'lng': null, 'address': manualText})` — CheckoutPage `null` koordinatani qabul qilishi kerak.
+
+---
+
+### 9.5 `orders` Feature
+
+**Fayllar:**
+- `lib/features/orders/presentation/pages/orders_page.dart`
+- `lib/features/orders/presentation/pages/order_detail_page.dart`
+- `lib/features/orders/presentation/bloc/order_cubit.dart`
+
+**OrdersPage (`/orders`):**
+- `BlocProvider` ichida `getIt<OrderCubit>()..getOrders()` — sahifa ochilganda avtomatik fetch.
+- `OrderCubit` Scoped (global emas).
+- Bo'sh holat: "Buyurtmalar yo'q" ikonka + matn.
+- Har bir `OrderCard` tapda `/order/:id`ga push, `OrderEntity` `extra:` bilan.
+
+**OrderCard:**
+
+| Status kodi | Rang |
+|---|---|
+| 6 — Yakunlangan | `Colors.green` |
+| 1 — Rad etilgan | `Colors.red` |
+| 4 — Jarayonda | `Colors.orange` |
+| Boshqalar | `AppColors.neutral700` |
+
+- Status matni: `statusText.startsWith('orders.status_')` bo'lsa `.tr()` qo'llanadi, aks holda server matni.
+
+**OrderDetailPage (`/order/:id`):**
+- `OrderEntity` `extra:` orqali keladi — hech qanday API chaqiruvi yo'q.
+- Status kartochkasi tepa qismda.
+- Mahsulotlar ro'yxati: rasm + nom + variant + miqdor × narx.
+- To'lov URL (`paymentUrl`) mavjud va buyurtma tugallanmagan/rad etilmagan bo'lsa "To'lash" tugmasi chiqadi → `launchUrl`.
+- "Qayta buyurtma" tugmasi → `CartCubit.addMultipleToCart()` + `/cart`ga navigate.
+
+**❌ Buyurtmani bekor qilish (Rejalashtirilgan):**
+- "Bekor qilish" tugmasi faqat `order.status` jarayondagi (masalan `status < 4` yoki belgilangan statuslar) bo'lganda ko'rinadi.
+- `AlertDialog` tasdiqlash → `cancelOrder` mutation.
+- `status == 6` (Yakunlangan) yoki `status == 1` (Rad etilgan) bo'lsa tugma **ko'rinmaydi**.
+- Muvaffaqiyatli bekor qilingandan keyin `OrderCubit.getOrders()` qayta chaqiriladi va sahifa yopiladi.
+
+---
+
+### 9.6 `profile` Feature
+
+**Fayl:** `lib/features/profile/presentation/pages/profile_page.dart`
+
+**ProfilePage (`/profile`):** (Presentation only — domain/data qatlamlari yo'q)
+
+| Element | Tavsif |
+|---|---|
+| Foydalanuvchi kartochkasi | `SecureStorage.getUserName()` + `getUserPhone()` |
+| Bildirishnomalar | Placeholder (hozircha bo'sh `onTap`) |
+| Tilni almashtirish | `showModalBottomSheet` → UZ/RU/EN; tanlagach global til sync (pastga qarang) |
+| Qo'llab-quvvatlash qo'ng'irog'i | `HomeLoaded.settings.supportPhone` → `tel:` URL launcher |
+| Murojaat formasi | `AnimatedSize` bilan kengayadigan forma; maqsad tanlash + xabar matni |
+| Chiqish | `AlertDialog` tasdiqlash → `SecureStorage.clearAll()` → `/auth/login` |
+
+**Murojaat maqsadlari:** food, delivery, service, suggestion, complaint, other (6 ta).
+
+**🌐 Til o'zgarganda Sync (Yangilangan qoida):**
+
+> ⚠️ **ESKI (noto'g'ri):** Faqat `HomeCubit.init()` chaqiriladi.
+>
+> ✅ **YANGI (to'g'ri):** Til o'zgarganda quyidagilar ham yangilanishi kerak:
+
+- **`HomeCubit.init()`** — mahsulot/kategoriya nomlarini yangi tilda qayta oladi ✅ (hozir ishlaydi)
+- **`CartCubit`** — item nomlar va variant nomlar `ProductEntity`dan keladi, shuning uchun `HomeCubit` yangilangandan keyin cart UI avtomatik qayta render bo'lishi kerak (tekshirilsin).
+- **`CheckoutPage`** — agar ochiq bo'lsa, `settings.paymentMethods` nomlari yangi tilda emas. Yechim: `CheckoutPage` `HomeCubit.state` ni `BlocBuilder` orqali o'qishi yoki sahifani pop qilish.
+- **Tavsiya:** Global `EventBus`/`Stream<Locale>` yoki `SharedPrefs`-based listener orqali barcha scoped cubitlarga til o'zgarishi signali berish. Yoki eng oddiy yechim — til o'zgarganda `context.go('/home')` bilan stack tozalansin.
+
+---
+
+## 10. UX Contracts (O'zgartirib bo'lmaydigan UX qoidalar)
+
+> Bu qoidalar foydalanuvchi tajribasini buzmaslik uchun majburiydir.
+
+### 10.1 Navigation
+
+- `ShellRoute` = Bottom nav bar faqat `/home`, `/cart`, `/orders`, `/profile` uchun ko'rinadi.
+- Checkout, MapPicker, ProductDetail — bottom nav YO'Q (to'liq sahifa).
+- `go()` faqat tab o'tishda, `push()` modal/detail sahifalarda.
+
+### 10.2 Loading States
+
+- `HomeCubit` loading → shimmer skeleton (hech qachon `CircularProgressIndicator` emas).
+- `OrderCubit` loading → `CircularProgressIndicator` markazda.
+- `AuthCubit` loading → tugma `disabled` + spinner ichida.
+- `CheckoutPage` submit → `_isSubmitting = true` → "Buyurtma berish" tugmasi disabled.
+
+### 10.3 Error States
+
+- `HomeFailure` → WiFi ikonka + server xabari, `RefreshIndicator` orqali retry.
+- `AuthFailure` → `SnackBar` (floating, qizil rang, 12px radius).
+- `SplashFailure` → inline xato + "Qayta urinish" tugmasi.
+- Checkout promo xatosi → maydon ostida qizil matn (SnackBar emas).
+
+### 10.4 Cart Badge
+
+- Savat ikonkasidagi badge: `CartState.items.length` (noyob itemlar soni, miqdor emas).
+- `ProductCard` dagi badge: `quantityInCart` (umumiy miqdor).
+- Badge 0 bo'lsa — ko'rinmaydi.
+
+### 10.5 Price Formatting
+
+- Barcha narxlar: `NumberFormatter.formatSum(price)` + `' so\'m'` yoki `' UZS'`.
+- Locale key: `'common.currency'.tr()` — hardcode QILINMAYDI.
+
+### 10.6 Dark Mode
+
+- `AppTheme.light` va `AppTheme.dark` — ikkala mavzu qo'llab-quvvatlanadi.
+- Widgetlar `Theme.of(context).cardColor`, `Theme.of(context).textTheme.*` ishlatadi.
+- Magic color literals (masalan, `Colors.white`) faqat komponent foni uchun ruxsat (Splash, BottomNav).
+
+### 10.7 Scroll & Category Sync
+
+- `HomePage`da scroll va chip sync **ikki tomonlama**: scroll → chip yangilanadi; chip → scroll animatsiya.
+- `_isScrollingToCategory` flag bu ikkinchi loopni oldini oladi.
+- Yangi kategoriya bo'limi qo'shilsa, `_getTargetOffset()` va `_getActiveCategory()` metodlarida height hisob-kitobi o'zgartirilishi shart.
+
+### 10.8 Variant Selection
+
+- 1 ta variant: sahifa ochilishida avtomatik tanlanadi, variant paneli ko'rsatilmaydi.
+- 2+ variant: paneli ko'rsatiladi, default tanlov yo'q; savatga qo'shishda majburiy.
+- Tanlov yo'q + "Savatga qo'shish" → `SnackBar` xatosi, sahifa yopilmaydi.
