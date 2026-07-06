@@ -5,6 +5,7 @@ class UserEntity {
   final String fullName;
   final String phone;
   final String token;
+  final String? birthdate;
   final UserLoyaltyEntity? loyalty;
 
   const UserEntity({
@@ -12,6 +13,7 @@ class UserEntity {
     required this.fullName,
     required this.phone,
     required this.token,
+    this.birthdate,
     this.loyalty,
   });
 }

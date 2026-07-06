@@ -7,6 +7,7 @@ class UserModel extends UserEntity {
     required super.fullName,
     required super.phone,
     required super.token,
+    super.birthdate,
     super.loyalty,
   });
 
@@ -15,6 +16,7 @@ class UserModel extends UserEntity {
     fullName: json['full_name'] as String,
     phone:    json['phone']     as String,
     token:    json['token']     as String? ?? '',
+    birthdate:json['birthdate'] as String?,
     loyalty:  json['loyalty'] != null 
                 ? UserLoyaltyModel.fromJson(json['loyalty'] as Map<String, dynamic>) 
                 : null,

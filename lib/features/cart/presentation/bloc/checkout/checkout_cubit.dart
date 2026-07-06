@@ -118,50 +118,46 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     try {
       const mutation = r'''
         mutation CreateOrder(
-          $delivery_type: Int!,
-          $branch_id: ID,
-          $lat: Float,
-          $long: Float,
+          $type: Int!,
+          $branch_id: Int,
+          $latitude: Float,
+          $longitude: Float,
           $address: String,
-          $payment_method: String!,
+          $payment_method: Int!,
           $change: Int,
           $comment: String,
           $promo_code: String,
-          $use_points: Int,
           $products: [OrderProductInput!]!
         ) {
           createOrder(
-            delivery_type: $delivery_type,
+            type: $type,
             branch_id: $branch_id,
-            lat: $lat,
-            long: $long,
+            latitude: $latitude,
+            longitude: $longitude,
             address: $address,
             payment_method: $payment_method,
             change: $change,
             comment: $comment,
             promo_code: $promo_code,
-            use_points: $use_points,
             products: $products
           ) {
-            id
+            order_id
             total_price
-            delivery_price
             payment_url
           }
         }
       ''';
 
       final vars = {
-        'delivery_type': state.isDelivery ? 1 : 2, // Check BE rules for delivery type enum
-        'branch_id': state.isDelivery ? null : state.branchId,
-        'lat': state.isDelivery ? state.lat : null,
-        'long': state.isDelivery ? state.lng : null,
+        'type': state.isDelivery ? 1 : 2, 
+        'branch_id': state.isDelivery ? null : int.tryParse(state.branchId ?? ''),
+        'latitude': state.isDelivery ? state.lat : null,
+        'longitude': state.isDelivery ? state.lng : null,
         'address': state.isDelivery ? state.address : null,
-        'payment_method': state.selectedPaymentMethodKey,
+        'payment_method': int.tryParse(state.selectedPaymentMethodKey) ?? 0,
         'change': state.changeAmount?.toInt(),
         'comment': state.comment,
         'promo_code': state.appliedPromoCode,
-        'use_points': usedPoints,
         'products': products,
       };
 
