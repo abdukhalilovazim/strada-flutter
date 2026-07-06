@@ -1,15 +1,19 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/widgets/app_button.dart';
 import 'package:pizza_strada/core/widgets/app_text_field.dart';
-import 'package:pizza_strada/features/auth/presentation/bloc/auth_cubit.dart';
+import 'package:pizza_strada/core/di/injection.dart';
+import 'package:pizza_strada/features/auth/domain/entities/user_entity.dart';
+import 'package:pizza_strada/features/auth/domain/usecases/update_profile_usecase.dart';
+import 'package:pizza_strada/core/storage/secure_storage.dart';
 
 class EditProfilePage extends StatefulWidget {
-  const EditProfilePage({super.key});
+  final UserEntity user;
+  
+  const EditProfilePage({super.key, required this.user});
 
   @override
   State<EditProfilePage> createState() => _EditProfilePageState();
@@ -24,10 +28,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void initState() {
     super.initState();
-    final user = context.read<AuthCubit>().state.user;
-    _nameController = TextEditingController(text: user?.fullName ?? '');
-    _phoneController = TextEditingController(text: user?.phone ?? '');
-    _selectedDate = user?.birthdate;
+    _nameController = TextEditingController(text: widget.user.fullName);
+    _phoneController = TextEditingController(text: widget.user.phone);
+    _selectedDate = widget.user.birthdate;
   }
 
   @override
@@ -73,23 +76,30 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     setState(() => _isLoading = true);
     
-    await context.read<AuthCubit>().updateProfile(
+    final updateProfile = getIt<UpdateProfileUseCase>();
+    final result = await updateProfile(
       fullName: name,
       birthdate: _selectedDate,
     );
     
     if (mounted) {
       setState(() => _isLoading = false);
-      if (context.read<AuthCubit>().state.error == null) {
-        context.pop();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.read<AuthCubit>().state.error!),
-            backgroundColor: Colors.red,
-          )
-        );
-      }
+      result.fold(
+        (failure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(failure.messageKey),
+              backgroundColor: AppColors.error,
+            )
+          );
+        },
+        (user) async {
+          await SecureStorage.saveUserInfo(name: user.fullName, phone: user.phone);
+          if (mounted) {
+            context.pop(user); // Return updated user
+          }
+        },
+      );
     }
   }
 
@@ -99,7 +109,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       appBar: AppBar(
         title: Text('profile.edit'.tr()),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: Theme.of(context).iconTheme.color, size: 20),
           onPressed: () => context.pop(),
         ),
       ),
@@ -130,7 +140,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.neutral300),
                 ),
@@ -152,7 +162,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
             const Spacer(),
             AppButton(
-              onPressed: _isLoading ? null : _save,
+              onPressed: _isLoading ? () {} : _save,
               text: 'profile.save'.tr(),
               isLoading: _isLoading,
             ),
