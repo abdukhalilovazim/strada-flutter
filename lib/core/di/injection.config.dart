@@ -13,6 +13,7 @@ import 'package:get_it/get_it.dart' as _i174;
 import 'package:graphql_flutter/graphql_flutter.dart' as _i128;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:pizza_strada/core/di/network_module.dart' as _i200;
+import 'package:pizza_strada/core/theme/theme_cubit.dart' as _i357;
 import 'package:pizza_strada/features/auth/data/datasources/auth_remote_datasource.dart'
     as _i724;
 import 'package:pizza_strada/features/auth/data/repositories/auth_repository_impl.dart'
@@ -66,6 +67,7 @@ extension GetItInjectableX on _i174.GetIt {
       () => networkModule.client,
       preResolve: true,
     );
+    gh.lazySingleton<_i357.ThemeCubit>(() => _i357.ThemeCubit());
     gh.lazySingleton<_i1058.CartCubit>(() => _i1058.CartCubit());
     gh.lazySingleton<_i972.HomeRemoteDataSource>(
         () => _i972.HomeRemoteDataSourceImpl(gh<_i128.GraphQLClient>()));

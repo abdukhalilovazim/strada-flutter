@@ -214,7 +214,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   // ─── Delivery price mutation ──────────────────────────────────────────────
   Future<void> _calculateDelivery({double? lat, double? lng}) async {
-    if (lat == null || lng == null) return;
+    final targetLat = lat ?? _lat;
+    final targetLng = lng ?? _lng;
+    if (targetLat == null || targetLng == null) return;
+    
     setState(() => _loadingDelivery = true);
     const mutation = r'''
       mutation CalculateDeliveryPrice($latitude: Float!, $longitude: Float!) {
@@ -223,7 +226,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     ''';
     final result = await _gqlClient.mutate(MutationOptions(
       document: gql(mutation),
-      variables: {'latitude': lat, 'longitude': lng},
+      variables: {'latitude': targetLat, 'longitude': targetLng},
       operationName: 'CalculateDeliveryPrice',
     ));
     setState(() {
@@ -841,14 +844,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                           ),
                                           child: TextField(
                                             controller: _commentController,
-                                            maxLines: 1,
+                                            maxLines: 3,
                                             style: AppTextStyles.bodyMedium,
-                                            textAlignVertical: TextAlignVertical.center,
                                             decoration: InputDecoration(
                                               hintText: '${'checkout.comment'.tr()}...',
                                               hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
                                               border: InputBorder.none,
-                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                                              contentPadding: const EdgeInsets.all(12),
                                             ),
                                           ),
                                         ),
