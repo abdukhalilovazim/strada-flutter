@@ -5,6 +5,7 @@ import 'package:pizza_strada/features/auth/data/models/user_model.dart';
 abstract class AuthRemoteDataSource {
   Future<bool> login({required String fullName, required String phone});
   Future<UserModel> confirmOtp({required String phone, required int code});
+  Future<UserModel> getMe();
 }
 
 @LazySingleton(as: AuthRemoteDataSource)
@@ -66,6 +67,34 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw result.exception!;
     }
 
-    return UserModel.fromJson(result.data?['confirmOtp']);
+    return UserModel.fromJson(result.data?['confirmOtp'] as Map<String, dynamic>);
+  }
+
+  @override
+  Future<UserModel> getMe() async {
+    const String query = r'''
+      query Me {
+        me {
+          id
+          full_name
+          phone
+          token
+        }
+      }
+    ''';
+
+    final options = QueryOptions(
+      document: gql(query),
+      fetchPolicy: FetchPolicy.networkOnly,
+      operationName: 'Me',
+    );
+
+    final result = await _client.query(options);
+
+    if (result.hasException) {
+      throw result.exception!;
+    }
+
+    return UserModel.fromJson(result.data?['me'] as Map<String, dynamic>);
   }
 }

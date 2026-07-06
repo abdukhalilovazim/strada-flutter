@@ -48,4 +48,18 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(ServerFailure(message: e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, UserEntity>> getMe() async {
+    try {
+      return Right(await _remoteDataSource.getMe());
+    } on OperationException catch (e) {
+      debugPrint('❌ [AuthRepo] getMe: $e');
+      return Left(GraphQLHelper.toFailure(e));
+    } on SocketException {
+      return Left(const NetworkFailure(message: 'Internet aloqasi yo\'q'));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
 }

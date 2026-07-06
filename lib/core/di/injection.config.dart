@@ -22,6 +22,8 @@ import 'package:pizza_strada/features/auth/domain/repositories/auth_repository.d
     as _i307;
 import 'package:pizza_strada/features/auth/domain/usecases/confirm_otp_usecase.dart'
     as _i746;
+import 'package:pizza_strada/features/auth/domain/usecases/get_me_usecase.dart'
+    as _i619;
 import 'package:pizza_strada/features/auth/domain/usecases/login_usecase.dart'
     as _i223;
 import 'package:pizza_strada/features/auth/presentation/bloc/auth_cubit.dart'
@@ -105,6 +107,8 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i223.LoginUseCase(gh<_i307.AuthRepository>()));
     gh.lazySingleton<_i746.ConfirmOtpUseCase>(
         () => _i746.ConfirmOtpUseCase(gh<_i307.AuthRepository>()));
+    gh.lazySingleton<_i619.GetMeUseCase>(
+        () => _i619.GetMeUseCase(gh<_i307.AuthRepository>()));
     gh.factory<_i100.AuthCubit>(() => _i100.AuthCubit(
           gh<_i223.LoginUseCase>(),
           gh<_i746.ConfirmOtpUseCase>(),

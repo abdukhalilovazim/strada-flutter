@@ -11,7 +11,8 @@ import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/loyalty/presentation/bloc/loyalty_cubit.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/inquiry_page.dart';
 import 'package:url_launcher/url_launcher.dart';
-
+import 'package:pizza_strada/core/di/injection.dart';
+import 'package:pizza_strada/features/auth/domain/usecases/get_me_usecase.dart';
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -38,6 +39,24 @@ class _ProfilePageState extends State<ProfilePage> {
         if (name != null) _name = name;
         if (phone != null) _phone = phone;
       });
+    }
+
+    final token = await SecureStorage.getToken();
+    if (token != null) {
+      final getMe = getIt<GetMeUseCase>();
+      final result = await getMe();
+      result.fold(
+        (failure) => null,
+        (user) async {
+          await SecureStorage.saveUserInfo(name: user.fullName, phone: user.phone);
+          if (mounted) {
+            setState(() {
+              _name = user.fullName;
+              _phone = user.phone;
+            });
+          }
+        },
+      );
     }
   }
 
