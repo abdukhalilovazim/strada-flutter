@@ -37,8 +37,8 @@ class _MapPickerPageState extends State<MapPickerPage> {
         if (permission == LocationPermission.denied) return;
       }
 
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       );
 
       final latLng = LatLng(position.latitude, position.longitude);

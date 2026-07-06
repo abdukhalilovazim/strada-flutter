@@ -44,7 +44,7 @@ GraphQLClient buildGraphQLClient() {
 
     // 1. Headers: Auth, Localization, Device
     final context = AppConstants.navigatorKey.currentContext;
-    final lang = context != null
+    final lang = (context != null && context.mounted)
         ? (EasyLocalization.of(context)?.locale.languageCode ?? 'uz')
         : 'uz';
 

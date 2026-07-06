@@ -338,7 +338,7 @@ class _ProfilePageState extends State<ProfilePage> {
         trailing: Switch.adaptive(
           value: value,
           onChanged: onChanged,
-          activeColor: AppColors.primary,
+          activeTrackColor: AppColors.primary,
         ),
         onTap: () => onChanged(!value),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

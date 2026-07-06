@@ -18,8 +18,10 @@ dependencies:
   get_it: ^8.0.2
   injectable: ^2.4.4
 
-  # GraphQL
+  # GraphQL & Network
   graphql_flutter: ^5.2.0-beta.7
+  gql: ^1.0.1-alpha+1714578505510
+  http: ^1.2.0
 
   # Navigation
   go_router: ^14.6.2

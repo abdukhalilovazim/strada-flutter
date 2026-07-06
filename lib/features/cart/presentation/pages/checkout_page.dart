@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:pizza_strada/core/network/graphql_client.dart';
-import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
@@ -599,7 +598,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                       _promoError = null;
                                     }
                                   }),
-                                  activeColor: AppColors.primary,
+                                  activeTrackColor: AppColors.primary,
                                 ),
                               ],
                             ),
@@ -716,7 +715,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                       _showChangeInput = val;
                                       if (!val) _changeController.clear();
                                     }),
-                                    activeColor: AppColors.primary,
+                                    activeTrackColor: AppColors.primary,
                                   ),
                                 ],
                               ),
@@ -819,7 +818,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                     _showCommentInput = val;
                                     if (!val) _commentController.clear();
                                   }),
-                                  activeColor: AppColors.primary,
+                                  activeTrackColor: AppColors.primary,
                                 ),
                               ],
                             ),
@@ -1045,16 +1044,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
       }
 
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('checkout.order_placed'.tr()),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ));
         context.read<CartCubit>().clear();
         context.go('/orders');
       }
-      
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('checkout.order_placed'.tr()),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ));
     } catch (e) {
       _showError(e.toString());
     } finally {
