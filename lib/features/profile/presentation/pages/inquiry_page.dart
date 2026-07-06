@@ -40,89 +40,61 @@ class _InquiryPageState extends State<InquiryPage> {
   bool get _isFormValid =>
       _selectedPurpose != null && _messageController.text.trim().length >= 5;
 
-  Future<void> _submitInquiry() async {
+  void _submitInquiry() {
     FocusScope.of(context).unfocus();
-    if (!_isFormValid) return;
-
-    setState(() => _isSubmitting = true);
-
-    try {
-      const String mutation = r'''
-        mutation createInquiry($type: String!, $message: String!) {
-          createInquiry(type: $type, message: $message)
-        }
-      ''';
-
-      final client = buildGraphQLClient();
-      final result = await client.mutate(MutationOptions(
-        document: gql(mutation),
-        variables: {
-          'type': _selectedPurpose,
-          'message': _messageController.text.trim(),
-        },
-        operationName: 'createInquiry',
-      ));
-
-      if (result.hasException) throw result.exception!;
-
-      if (!mounted) return;
-
-      // Muvaffaqiyatli — dialog ko'rsatib, sahifani yopamiz
-      await showDialog<void>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          backgroundColor: Theme.of(dialogContext).cardColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
-            children: [
-              const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 28),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'profile.support'.tr(),
-                  style: AppTextStyles.h3.copyWith(
-                    color: Theme.of(dialogContext).textTheme.headlineMedium?.color,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          content: Text(
-            'profile.inquiry_success'.tr(),
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Theme.of(dialogContext).textTheme.bodyMedium?.color,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(
-                'common.yes'.tr(),
-                style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary),
-              ),
-            ),
-          ],
-        ),
-      );
-
-      if (!mounted) return;
-      Navigator.pop(context); // Sahifani yopamiz
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isSubmitting = false);
+    
+    if (_selectedPurpose == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            e.toString().contains('Unauthenticated')
-                ? 'error.unauthorized'.tr()
-                : 'error.server'.tr(),
-          ),
-          backgroundColor: AppColors.error,
+          content: Text('profile.inquiry_purpose'.tr()), // fallback to purpose label
+          backgroundColor: AppColors.warning,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
+      return;
     }
+
+    if (_messageController.text.trim().length < 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("Kamida 5 ta belgi kiriting"),
+          backgroundColor: AppColors.warning,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    // Yuborish (Fire-and-forget, response kutmaymiz)
+    const String mutation = r'''
+      mutation createInquiry($type: String!, $message: String!) {
+        createInquiry(type: $type, message: $message)
+      }
+    ''';
+
+    final client = buildGraphQLClient();
+    client.mutate(MutationOptions(
+      document: gql(mutation),
+      variables: {
+        'type': _selectedPurpose,
+        'message': _messageController.text.trim(),
+      },
+      operationName: 'createInquiry',
+    )); // await yo'q
+
+    // Muvaffaqiyat xabarini chiqarib darhol orqaga qaytamiz
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('profile.inquiry_success'.tr()),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+
+    Navigator.pop(context);
   }
 
   @override

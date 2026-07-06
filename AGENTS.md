@@ -224,9 +224,39 @@ Before making **any** code change, verify:
 - The agent's role is strictly limited to **code generation, editing, and analysis**.
 - If a command needs to be run (e.g., `build_runner`), **mention it in the response** but do NOT execute it.
 
+### 9.7 `loyalty` Feature (Rejalashtirilgan)
+
+**Maqsad:** Faol foydalanuvchilarni rag'batlantirish va uxlab qolgan (lapsed) mijozlarni qaytarish (win-back).
+
+**1. Ball (Point) Tizimi:**
+- Har bir buyurtma summasidan **3%** avtomatik ball sifatida qaytadi.
+- **1 ball = 1 so'm** chegirma.
+- Muddat: **45 kun**. Agar ishlatilmasa ballar avtomatik yonib ketadi.
+- Bonuslar: Birinchi buyurtma (+5,000 ball), Tug'ilgan kun (+10,000 ball), Referral (+10,000 ball).
+- **UX:**
+  - `Profile/Home` sahifalarida "Ballaringiz: X" widgeti va progress bar chiqadi.
+  - Ball tugashiga 7 kun qolganda qizil rangda ogohlantirish ko'rsatiladi: `"X ball 7 kundan keyin tugaydi"`.
+  - `CheckoutPage` da promokod kiritish qismi yonida "Ballardan foydalanish" toggle/checkbox qo'shiladi. (Promo-kod kabi ishlashi kerak).
+
+**2. Win-back Mexanizmi (Client-side, In-app):**
+- Barcha triggerlar mijozning oxirgi xaridi (`lastOrderDate`) asosida `HomeCubit.init()` da tekshiriladi.
+- **Bannerlar (`HomePage` tepasida):**
+  - **7-13 kun o'tsa:** Kichik eslatma — `"Sog'indingizmi? Sevimli taomingiz kutmoqda"`.
+  - **14-29 kun o'tsa:** O'rtacha win-back — Banner + avtomatik 10% chegirma promokod (7 kun amal qiladi).
+  - **30+ kun o'tsa:** Kuchli win-back — Banner + 20% promokod + "Ball muddati tugayapti" ogohlantirishi (agar ball bo'lsa).
+- Bannerlar har doim `Dismissible` (yopish mumkin) bo'lishi kerak.
+
+**3. Bildirishnomalar Markazi (`ProfilePage`):**
+- Profil sahifasidagi "Bildirishnomalar" qismi faollashtiriladi.
+- U yerni in-app notification center ga aylantiramiz: Win-back xabarlari tarixi, ball to'plash holati, order status yangilanishlari shu yerda yig'iladi.
+
+**Arxitektura:**
+- Yangi `LoyaltyCubit` (Global, `@lazySingleton` xuddi `HomeCubit` kabi).
+- Backend tomondan `UserLoyaltyEntity` obyektlari qo'shilishi kutiladi.
+
 ---
 
-## 8. Auto-Update Policy
+## 10. Auto-Update Policy
 
 This `agents.md` file MUST be updated immediately when:
 1. A new technical requirement or constraint is established.
@@ -369,26 +399,31 @@ HomeInitial → HomeLoading → HomeLoaded(categories, fullProducts, products, s
 - Har bir item: rasm + nom + variant + narx + miqdor kontrollar.
 - Bottom panel: subtotal + "Rasmiylashtirish" (`/checkout`ga push).
 
-**CheckoutPage (`/checkout`):**
+**Checkout 2-bosqichli oqim (Rejalashtirilgan):**
 
-| Bo'lim | Tavsif |
-|---|---|
-| Yetkazish turi | `_isDelivery` toggle: Yetkazib berish / Olib ketish |
-| Filial tanlash | `_loadBranches()` GraphQL → `showModalBottomSheet` |
-| Manzil + Xarita | "Xaritadan tanlash" → `/map-picker` push, qaytganda `_calculateDelivery()` |
-| **Saqlangan manzillar** | Checkout'da manzil bo'limi tepasida tezkor tanlov ro'yxati (rejalashtirilgan) |
-| Promo kod | `checkPromoCode` mutation; type 0=fixed, 1=percent; xato ko'rsatiladi |
-| To'lov usuli | `HomeLoaded.settings.paymentMethods` dan dynamic; Payme/Click/Naqd |
-| Qaytim (change) | Naqd to'lov tanlanganda ko'rinadigan maydon |
-| Izoh | `_showCommentInput` toggle bilan kengayadigan maydon |
-| Buyurtma berish | `createOrder` mutation; `_isSubmitting` flag — qayta bosishni blokleydi |
+**Step 1/2: Buyurtma va Manzil (`/checkout`)**
+- Tepada progress indicator (1/2).
+- Savatdagi mahsulotlarni tahrirlash (+/- va o'chirish).
+- Yetkazish turi (Yetkazib berish / Olib ketish).
+- Filial tanlash (Olib ketish uchun) yoki Manzil (Yetkazish uchun).
+- "Davom etish" tugmasi orqali Step 2 ga o'tiladi (faqat manzil/filial to'liq bo'lsa aktiv).
+- Savat bo'shab qolsa, tugma "Savat bo'sh" deb o'zgaradi va bloklanadi.
 
-> ⚠️ `CheckoutPage` o'z GraphQL clientini yaratadi (`buildGraphQLClient()`). Bu uni `HomeCubit`dan mustaqil qiladi, lekin settings uchun `HomeCubit.state`dan o'qiydi.
+**Step 2/2: To'lov va Chegirmalar (`/checkout/payment`)**
+- Tepada progress indicator (2/2). Orqaga tugmasi Step 1 ga qaytaradi.
+- Qisqa buyurtma xulasasi + "Tahrirlash" linki (Step 1 ga qaytaradi).
+- Promo kod va Loyalty ballarni kiritish.
+- To'lov usuli tanlash (Payme/Click/Naqd).
+- Naqd uchun qaytim (change) va izoh maydoni.
+- Kengaytirilgan narx breakdown (Subtotal, promo, ball, yetkazish, jami summa).
+- "Buyurtma berish" tugmasi (`createOrder` mutation).
+- Agar bu yerdan chiqib ketilsa (Cart'ga), promo va ball tanlovlari tozalanadi.
+
+> ⚠️ **State Management:** Ikkala bosqich ham bitta `CheckoutCubit` instansiyasini ulashadi (nested navigator yoki parent route darajasida provide qilinadi). Bottom nav bar ikkala holatda ham yashirilgan.
 
 **🚚 Delivery ETA (Rejalashtirilgan):**
-- `_calculateDelivery()` natijasida narx bilan birga taxminiy yetkazish vaqti ham ko'rsatiladi (masalan, `"30–40 daqiqa"`).
-- Backend `calculateDeliveryPrice` response'ini kengaytirish kerak (yoki alohida field).
-- UI'da manzil tanlangandan keyin: `"Narx: 15 000 so'm • ~30–40 daqiqa"` formatida chip/info row ko'rsatiladi.
+- Yetkazib berish vaqti (ETA) Checkout sahifasida emas, balki buyurtma qabul qilingandan keyin (Order History / Order Detail sahifalarida) ko'rsatiladi.
+- Buning uchun backend `Order` obyektiga `estimatedTime` qo'shib beradi.
 
 **📍 Saqlangan manzillar (Rejalashtirilgan):**
 - Yangi bo'lim: Profile yoki Checkout ichida `"Mening manzillarim"`.
@@ -443,11 +478,14 @@ HomeInitial → HomeLoading → HomeLoaded(categories, fullProducts, products, s
 - To'lov URL (`paymentUrl`) mavjud va buyurtma tugallanmagan/rad etilmagan bo'lsa "To'lash" tugmasi chiqadi → `launchUrl`.
 - "Qayta buyurtma" tugmasi → `CartCubit.addMultipleToCart()` + `/cart`ga navigate.
 
-**❌ Buyurtmani bekor qilish (Rejalashtirilgan):**
-- "Bekor qilish" tugmasi faqat `order.status` jarayondagi (masalan `status < 4` yoki belgilangan statuslar) bo'lganda ko'rinadi.
-- `AlertDialog` tasdiqlash → `cancelOrder` mutation.
-- `status == 6` (Yakunlangan) yoki `status == 1` (Rad etilgan) bo'lsa tugma **ko'rinmaydi**.
-- Muvaffaqiyatli bekor qilingandan keyin `OrderCubit.getOrders()` qayta chaqiriladi va sahifa yopiladi.
+**📞 Buyurtma bo'yicha bog'lanish / Bekor qilish:**
+- Ilovada avtomatik tarzda buyurtmani bekor qilish (Cancel) funksiyasi **bo'lmaydi**.
+- Buning o'rniga, Order Detail sahifasida tayyorlayotgan filialning (Branch) telefon raqami ko'rsatiladi. 
+- Foydalanuvchi o'zgarishlar yoki bekor qilish niyati bo'lsa to'g'ridan-to'g'ri filialga qo'ng'iroq qiladi (`tel:+998...`).
+- `Order` obyektidan `branchPhone` yoki filial ma'lumotlari kutiladi.
+
+**🚚 Delivery ETA (Order Detail):**
+- Buyurtma tafsilotlarida (Yoki Orders ro'yxatida) qachon yetib kelishi / tayyor bo'lishi haqida vaqt (`estimatedTime`) ko'rsatiladi.
 
 ---
 
