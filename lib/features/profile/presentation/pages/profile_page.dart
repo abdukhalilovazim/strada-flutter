@@ -160,31 +160,6 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
 
             // Settings Items
-            BlocBuilder<LoyaltyCubit, LoyaltyState>(
-              builder: (context, state) {
-                Widget? trailing;
-                if (state is LoyaltyLoaded && state.loyalty.expiringPoints != null && state.loyalty.expiringPoints! > 0) {
-                  trailing = Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.error,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      'profile.points_expiring'.tr(namedArgs: {'points': state.loyalty.expiringPoints.toString()}),
-                      style: AppTextStyles.bodySmall.copyWith(color: Colors.white, fontSize: 10),
-                    ),
-                  );
-                }
-                
-                return _buildItem(
-                  icon: Icons.notifications_none_rounded,
-                  title: 'profile.notifications'.tr(),
-                  trailing: trailing,
-                  onTap: () {},
-                );
-              },
-            ),
             _buildItem(
               icon: Icons.language_rounded,
               title: 'profile.change_language'.tr(),
