@@ -6,6 +6,7 @@ abstract class AuthRemoteDataSource {
   Future<bool> login({required String fullName, required String phone});
   Future<UserModel> confirmOtp({required String phone, required int code});
   Future<UserModel> getMe();
+  Future<UserModel> updateProfile({required String fullName, String? birthdate});
 }
 
 @LazySingleton(as: AuthRemoteDataSource)
@@ -79,6 +80,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           full_name
           phone
           token
+          birthdate
         }
       }
     ''';
@@ -96,5 +98,37 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
 
     return UserModel.fromJson(result.data?['me'] as Map<String, dynamic>);
+  }
+
+  @override
+  Future<UserModel> updateProfile({required String fullName, String? birthdate}) async {
+    const String mutation = r'''
+      mutation UpdateProfile($full_name: String!, $birthdate: String) {
+        updateProfile(full_name: $full_name, birthdate: $birthdate) {
+          id
+          full_name
+          phone
+          token
+          birthdate
+        }
+      }
+    ''';
+
+    final options = MutationOptions(
+      document: gql(mutation),
+      variables: {
+        'full_name': fullName,
+        if (birthdate != null) 'birthdate': birthdate,
+      },
+      operationName: 'UpdateProfile',
+    );
+
+    final result = await _client.mutate(options);
+
+    if (result.hasException) {
+      throw result.exception!;
+    }
+
+    return UserModel.fromJson(result.data?['updateProfile'] as Map<String, dynamic>);
   }
 }

@@ -59,7 +59,17 @@ class AuthRepositoryImpl implements AuthRepository {
     } on SocketException {
       return Left(const NetworkFailure(message: 'Internet aloqasi yo\'q'));
     } catch (e) {
-      return Left(ServerFailure(message: e.toString()));
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, UserEntity>> updateProfile({required String fullName, String? birthdate}) async {
+    try {
+      final userModel = await _remoteDataSource.updateProfile(fullName: fullName, birthdate: birthdate);
+      return Right(userModel);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
   }
 }

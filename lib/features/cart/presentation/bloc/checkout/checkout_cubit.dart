@@ -127,6 +127,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
           $change: Int,
           $comment: String,
           $promo_code: String,
+          $loyalty_points_used: Int,
           $products: [OrderProductInput!]!
         ) {
           createOrder(
@@ -139,6 +140,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
             change: $change,
             comment: $comment,
             promo_code: $promo_code,
+            loyalty_points_used: $loyalty_points_used,
             products: $products
           ) {
             order_id
@@ -149,7 +151,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       ''';
 
       final vars = {
-        'type': state.isDelivery ? 1 : 2, 
+        'type': state.isDelivery ? 0 : 1, 
         'branch_id': state.isDelivery ? null : int.tryParse(state.branchId ?? ''),
         'latitude': state.isDelivery ? state.lat : null,
         'longitude': state.isDelivery ? state.lng : null,
@@ -158,6 +160,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         'change': state.changeAmount?.toInt(),
         'comment': state.comment,
         'promo_code': state.appliedPromoCode,
+        'loyalty_points_used': usedPoints,
         'products': products,
       };
 
