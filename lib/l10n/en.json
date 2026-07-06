@@ -122,5 +122,17 @@
   "orders.cancel_success": "Order cancelled",
   "orders.cancel_error": "Failed to cancel the order",
   "profile.guest": "Guest",
-  "checkout.cash_payment": "Cash"
+  "checkout.cash_payment": "Cash",
+  "checkout.step_one_title": "1/2 - Order and Address",
+  "checkout.step_two_title": "2/2 - Payment and Discounts",
+  "checkout.your_order": "Your order",
+  "checkout.items_count": "items",
+  "checkout.loyalty_points": "Loyalty points",
+  "checkout.points_available": "points available",
+  "checkout.use_points_for_discount": "Use points for discount",
+  "checkout.loyalty_discount": "Loyalty points",
+  "checkout.submit_order": "Submit order",
+  "orders.estimated_time": "Estimated time",
+  "orders.call_branch": "Call branch",
+  "profile.points_expiring": "{points} points expiring"
 }

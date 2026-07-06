@@ -120,5 +120,17 @@
   "orders.cancel_success": "Заказ отменён",
   "orders.cancel_error": "Ошибка при отмене заказа",
   "profile.guest": "Гость",
-  "checkout.cash_payment": "Наличные"
+  "checkout.cash_payment": "Наличные",
+  "checkout.step_one_title": "1/2 - Заказ и Адрес",
+  "checkout.step_two_title": "2/2 - Оплата и Скидки",
+  "checkout.your_order": "Ваш заказ",
+  "checkout.items_count": "товаров",
+  "checkout.loyalty_points": "Баллы лояльности",
+  "checkout.points_available": "баллов доступно",
+  "checkout.use_points_for_discount": "Использовать баллы для скидки",
+  "checkout.loyalty_discount": "Баллы лояльности",
+  "checkout.submit_order": "Оформить заказ",
+  "orders.estimated_time": "Примерное время",
+  "orders.call_branch": "Связаться с филиалом",
+  "profile.points_expiring": "{points} баллов сгорит"
 }
