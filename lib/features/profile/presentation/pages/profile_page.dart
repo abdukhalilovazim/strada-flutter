@@ -266,9 +266,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             onPressed: () async {
                               Navigator.pop(dialogContext);
                               await SecureStorage.clearAll();
-                              if (mounted) {
-                                context.go('/auth/login');
-                              }
+                              if (!mounted) return;
+                              context.go('/auth/login');
                             },
                             child: Text(
                               'common.yes'.tr(),
@@ -328,10 +327,9 @@ class _ProfilePageState extends State<ProfilePage> {
         trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
         onTap: () async {
           await context.setLocale(locale);
-          if (context.mounted) {
-            context.read<HomeCubit>().init();
-            Navigator.pop(context);
-          }
+          if (!mounted) return;
+          context.read<HomeCubit>().init();
+          Navigator.pop(context);
         },
       ),
     );
