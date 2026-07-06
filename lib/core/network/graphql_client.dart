@@ -11,7 +11,7 @@ import 'package:gql/ast.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:pizza_strada/core/constants/api_constants.dart';
 import 'package:pizza_strada/core/constants/app_constants.dart';
-import 'package:pizza_strada/core/network/cookie_aware_client.dart';
+import 'package:http/http.dart' as http;
 import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/utils/device_info_helper.dart';
 
@@ -25,14 +25,13 @@ const _orderOperations = {
 
 /// GraphQL client yaratish. Token har bir so'rovda dynamic olinadi.
 GraphQLClient buildGraphQLClient() {
-  // --- Cookie-aware HTTP Client: Imunify360 warm-up + 60s timeout ---
-  final cookieClient = CookieAwareClient();
+  final httpClient = http.Client();
 
   // --- HTTP Link: order vs common routing ---
   final httpLink = Link.split(
     (req) => _orderOperations.contains(req.operation.operationName),
-    HttpLink(ApiConstants.orderEndpoint, httpClient: cookieClient),
-    HttpLink(ApiConstants.commonEndpoint, httpClient: cookieClient),
+    HttpLink(ApiConstants.orderEndpoint, httpClient: httpClient),
+    HttpLink(ApiConstants.commonEndpoint, httpClient: httpClient),
   );
 
   // --- Birlashtirilgan Link: Auth + Signature + Logging ---
