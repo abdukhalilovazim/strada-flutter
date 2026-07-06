@@ -59,7 +59,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } on SocketException {
       return Left(const NetworkFailure(message: 'Internet aloqasi yo\'q'));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure(message: e.toString()));
     }
   }
 
@@ -69,7 +69,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final userModel = await _remoteDataSource.updateProfile(fullName: fullName, birthdate: birthdate);
       return Right(userModel);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure(message: e.toString()));
     }
   }
 }

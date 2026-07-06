@@ -83,6 +83,7 @@
   "orders.status_rejected": "Rad etilgan",
   "orders.status_pending": "Kutilmoqda",
   "profile.title": "Profil",
+  "profile.birthdate": "Tug'ilgan sana",
   "profile.edit": "Profilni tahrirlash",
   "profile.language": "Til",
   "profile.change_language": "Tilni o'zgartirish",

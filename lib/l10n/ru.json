@@ -79,6 +79,7 @@
   "orders.status_rejected": "Отклонено",
   "orders.status_pending": "В ожидании",
   "profile.title": "Профиль",
+  "profile.birthdate": "Дата рождения",
   "profile.edit": "Редактировать профиль",
   "profile.language": "Язык",
   "profile.change_language": "Сменить язык",

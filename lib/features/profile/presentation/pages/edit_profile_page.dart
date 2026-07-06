@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/widgets/app_button.dart';
-import 'package:pizza_strada/core/widgets/app_text_field.dart';
 import 'package:pizza_strada/core/di/injection.dart';
 import 'package:pizza_strada/features/auth/domain/entities/user_entity.dart';
 import 'package:pizza_strada/features/auth/domain/usecases/update_profile_usecase.dart';
@@ -120,17 +119,37 @@ class _EditProfilePageState extends State<EditProfilePage> {
           children: [
             Text('auth.full_name'.tr(), style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
             const SizedBox(height: 8),
-            AppTextField(
+            TextField(
               controller: _nameController,
-              hintText: 'auth.name_hint'.tr(),
+              decoration: InputDecoration(
+                hintText: 'auth.name_hint'.tr(),
+                filled: true,
+                fillColor: Theme.of(context).cardColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+              style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color),
             ),
             const SizedBox(height: 16),
             Text('auth.phone'.tr(), style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
             const SizedBox(height: 8),
-            AppTextField(
+            TextField(
               controller: _phoneController,
-              hintText: '',
               enabled: false,
+              decoration: InputDecoration(
+                hintText: '',
+                filled: true,
+                fillColor: Theme.of(context).cardColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500),
             ),
             const SizedBox(height: 16),
             Text('profile.birthdate'.tr(), style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
@@ -162,7 +181,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
             const Spacer(),
             AppButton(
-              onPressed: _isLoading ? () {} : _save,
+              onTap: _isLoading ? null : _save,
               text: 'profile.save'.tr(),
               isLoading: _isLoading,
             ),

@@ -10,8 +10,10 @@ import 'package:pizza_strada/core/theme/theme_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/loyalty/presentation/bloc/loyalty_cubit.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/inquiry_page.dart';
+import 'package:pizza_strada/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pizza_strada/core/di/injection.dart';
+import 'package:pizza_strada/features/auth/domain/entities/user_entity.dart';
 import 'package:pizza_strada/features/auth/domain/usecases/get_me_usecase.dart';
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -21,8 +23,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String _name = 'profile.guest'.tr();
-  String _phone = '';
+  UserEntity? _user;
 
   @override
   void initState() {
@@ -34,10 +35,9 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadUserInfo() async {
     final name = await SecureStorage.getUserName();
     final phone = await SecureStorage.getUserPhone();
-    if (mounted) {
+    if (mounted && name != null && phone != null) {
       setState(() {
-        if (name != null) _name = name;
-        if (phone != null) _phone = phone;
+        _user = UserEntity(id: 0, fullName: name, phone: phone, token: '');
       });
     }
 
@@ -51,8 +51,7 @@ class _ProfilePageState extends State<ProfilePage> {
           await SecureStorage.saveUserInfo(name: user.fullName, phone: user.phone);
           if (mounted) {
             setState(() {
-              _name = user.fullName;
-              _phone = user.phone;
+              _user = user;
             });
           }
         },
@@ -100,12 +99,28 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_name, style: AppTextStyles.labelLarge.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)),
+                        Text(_user?.fullName ?? 'profile.guest'.tr(), style: AppTextStyles.labelLarge.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)),
                         const SizedBox(height: 4),
-                        Text(_phone, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600)),
+                        Text(_user?.phone ?? '', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600)),
+                        if (_user?.birthdate != null) ...[
+                          const SizedBox(height: 4),
+                          Text(_user!.birthdate!, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
+                        ]
                       ],
                     ),
                   ),
+                  if (_user != null)
+                    IconButton(
+                      icon: const Icon(Icons.edit_rounded, color: AppColors.primary),
+                      onPressed: () async {
+                        final updated = await Navigator.push(context, MaterialPageRoute(
+                          builder: (_) => EditProfilePage(user: _user!),
+                        ));
+                        if (updated != null && updated is UserEntity && mounted) {
+                          setState(() => _user = updated);
+                        }
+                      },
+                    ),
                 ],
               ),
             ),
