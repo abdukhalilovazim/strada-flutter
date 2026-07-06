@@ -65,6 +65,8 @@
   "checkout.change_from": "Change from amount",
   "checkout.comment_hint": "Enter your comment...",
   "checkout.free": "Free",
+  "checkout.enter_amount": "Enter amount",
+  "checkout.select_branch": "Select branch",
   "orders.title": "My Orders",
   "orders.items": "Products",
   "orders.items_count": "{count} items",

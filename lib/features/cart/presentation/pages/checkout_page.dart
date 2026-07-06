@@ -89,6 +89,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       
       final result = await client.query(QueryOptions(
         document: gql(query),
+        operationName: 'Branches',
         fetchPolicy: FetchPolicy.networkOnly,
       ));
 
@@ -760,8 +761,8 @@ class CheckoutBranch {
 
   factory CheckoutBranch.fromJson(Map<String, dynamic> json) {
     return CheckoutBranch(
-      id: json['id'] as String,
-      title: json['title'] as String,
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
       latitude: double.tryParse(json['latitude']?.toString() ?? '0') ?? 0,
       longitude: double.tryParse(json['longitude']?.toString() ?? '0') ?? 0,
     );

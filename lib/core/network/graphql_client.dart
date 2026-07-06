@@ -51,21 +51,6 @@ GraphQLClient buildGraphQLClient() {
     var req = request.updateContextEntry<HttpLinkHeaders>(
       (h) => HttpLinkHeaders(headers: {
         ...(h?.headers ?? {}),
-        // Standard browser headers — Imunify360 bot-protection bypass
-        'Accept': 'application/json, text/plain, */*',
-        'Content-Type': 'application/json',
-        'Accept-Language': '$lang,en;q=0.9,ru;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Origin': ApiConstants.baseUrl,
-        'Referer': '${ApiConstants.baseUrl}/',
-        'Sec-Fetch-Site': 'same-origin',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Dest': 'empty',
-        'Connection': 'keep-alive',
-        'Cache-Control': 'no-cache',
-        'User-Agent': Platform.isIOS
-            ? 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'
-            : 'Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro Build/UQ1A.240205.002) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.113 Mobile Safari/537.36',
         // App-specific headers
         if (token != null) 'Authorization': 'Bearer $token',
         'language': lang,
