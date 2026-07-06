@@ -415,69 +415,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   },
                 ),
 
-                // Promo Code
-                Text('checkout.additional'.tr(), style: AppTextStyles.h3.copyWith(color: Theme.of(context).textTheme.headlineMedium?.color)),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.neutral200),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.local_offer_outlined, color: AppColors.primary, size: 20),
-                          const SizedBox(width: 12),
-                          Expanded(child: Text('cart.promo'.tr(), style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color))),
-                          Switch.adaptive(
-                            value: _showPromoInput,
-                            onChanged: (val) {
-                              setState(() => _showPromoInput = val);
-                              if (!val) {
-                                _promoController.clear();
-                                context.read<CheckoutCubit>().clearPromo();
-                              }
-                            },
-                            activeTrackColor: AppColors.primary,
-                          ),
-                        ],
-                      ),
-                      if (_showPromoInput) ...[
-                        const Divider(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _promoController,
-                                style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color),
-                                decoration: InputDecoration(
-                                  hintText: 'cart.enter_promo'.tr(),
-                                  border: InputBorder.none,
-                                  errorText: checkoutState.promoError,
-                                ),
-                              ),
-                            ),
-                            if (checkoutState.loadingPromo)
-                              const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                            else
-                              TextButton(
-                                onPressed: () {
-                                  context.read<CheckoutCubit>().applyPromo(_promoController.text.trim(), subtotal);
-                                  FocusScope.of(context).unfocus();
-                                },
-                                child: Text('cart.apply'.tr(), style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary)),
-                              ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
                 // Payment method
                 Text('checkout.payment'.tr(), style: AppTextStyles.h3.copyWith(color: Theme.of(context).textTheme.headlineMedium?.color)),
                 const SizedBox(height: 8),
@@ -557,18 +494,77 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     ],
                   ),
                 ),
-                
-                if (checkoutState.selectedPaymentMethodKey == '0') ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.neutral200),
-                    ),
-                    child: Column(
-                      children: [
+                const SizedBox(height: 24),
+
+                // Additional Information (Promo, Change, Comment)
+                Text('checkout.additional'.tr(), style: AppTextStyles.h3.copyWith(color: Theme.of(context).textTheme.headlineMedium?.color)),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.neutral200),
+                  ),
+                  child: Column(
+                    children: [
+                      // Promo Code
+                      Row(
+                        children: [
+                          const Icon(Icons.local_offer_outlined, color: AppColors.primary, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(child: Text('cart.promo'.tr(), style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color))),
+                          Switch.adaptive(
+                            value: _showPromoInput,
+                            onChanged: (val) {
+                              setState(() => _showPromoInput = val);
+                              if (!val) {
+                                _promoController.clear();
+                                context.read<CheckoutCubit>().clearPromo();
+                              }
+                            },
+                            activeTrackColor: AppColors.primary,
+                          ),
+                        ],
+                      ),
+                      if (_showPromoInput) ...[
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _promoController,
+                                style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color),
+                                textCapitalization: TextCapitalization.characters,
+                                decoration: InputDecoration(
+                                  hintText: 'cart.enter_promo'.tr(),
+                                  filled: true,
+                                  fillColor: AppColors.surface,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  errorText: checkoutState.promoError,
+                                ),
+                              ),
+                            ),
+                            if (checkoutState.loadingPromo)
+                              const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                            else
+                              TextButton(
+                                onPressed: () {
+                                  context.read<CheckoutCubit>().applyPromo(_promoController.text.trim().toUpperCase(), subtotal);
+                                  FocusScope.of(context).unfocus();
+                                },
+                                child: Text('cart.apply'.tr(), style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary)),
+                              ),
+                          ],
+                        ),
+                      ],
+                      const Divider(height: 16),
+
+                      // Change Amount (Only if Cash is selected)
+                      if (checkoutState.selectedPaymentMethodKey == '0') ...[
                         Row(
                           children: [
                             const Icon(Icons.payments_outlined, color: AppColors.primary, size: 20),
@@ -588,7 +584,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           ],
                         ),
                         if (_showChangeInput) ...[
-                          const Divider(height: 16),
                           TextField(
                             controller: _changeController,
                             keyboardType: TextInputType.number,
@@ -596,25 +591,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             onChanged: (val) => context.read<CheckoutCubit>().setChangeAmount(double.tryParse(val)),
                             decoration: InputDecoration(
                               hintText: 'checkout.enter_amount'.tr(),
-                              border: InputBorder.none,
+                              filled: true,
+                              fillColor: AppColors.surface,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                             ),
                           ),
                         ],
+                        const Divider(height: 16),
                       ],
-                    ),
-                  ),
-                ],
 
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.neutral200),
-                  ),
-                  child: Column(
-                    children: [
+                      // Comment
                       Row(
                         children: [
                           const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.primary, size: 20),
@@ -634,7 +624,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         ],
                       ),
                       if (_showCommentInput) ...[
-                        const Divider(height: 16),
                         TextField(
                           controller: _commentController,
                           maxLines: 3,
@@ -642,9 +631,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           onChanged: (val) => context.read<CheckoutCubit>().setComment(val),
                           decoration: InputDecoration(
                             hintText: 'checkout.comment_hint'.tr(),
-                            border: InputBorder.none,
+                            filled: true,
+                            fillColor: AppColors.surface,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           ),
                         ),
+                        const SizedBox(height: 8),
                       ],
                     ],
                   ),

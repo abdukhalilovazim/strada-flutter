@@ -27,6 +27,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       final result = await _gqlClient.mutate(MutationOptions(
         document: gql(mutation),
         variables: {'latitude': lat, 'longitude': lng},
+        operationName: 'CalculateDeliveryPrice',
       ));
       if (!result.hasException) {
         final price = double.tryParse(result.data?['calculateDeliveryPrice']?.toString() ?? '0') ?? 0;
@@ -74,6 +75,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       final result = await _gqlClient.mutate(MutationOptions(
         document: gql(mutation),
         variables: {'promo_code': code, 'total_price': subtotal.toInt()},
+        operationName: 'CheckPromoCode',
       ));
       if (result.hasException) {
         final msg = result.exception?.graphqlErrors.firstOrNull?.message ?? 'Promo xato';
@@ -166,6 +168,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       final result = await _gqlClient.mutate(MutationOptions(
         document: gql(mutation),
         variables: vars,
+        operationName: 'CreateOrder',
       ));
 
       if (result.hasException) {
