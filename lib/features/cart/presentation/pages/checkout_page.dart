@@ -182,7 +182,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                 height: 60,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(12),
-                                  image: DecorationImage(image: NetworkImage(item.product.image), fit: BoxFit.cover),
+                                  image: DecorationImage(image: NetworkImage(item.product.thumbnail), fit: BoxFit.cover),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -286,7 +286,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   InkWell(
                     onTap: () async {
                       final result = await context.push<Map<String, dynamic>>('/map-picker');
-                      if (result != null && mounted) {
+                      if (result != null) {
+                        if (!mounted) return;
                         final lat = result['lat'] as double;
                         final lng = result['lng'] as double;
                         final address = result['address'] as String;
@@ -384,6 +385,29 @@ class _CheckoutPageState extends State<CheckoutPage> {
           ),
         );
       },
+    );
+  }
+}
+
+class CheckoutBranch {
+  final String id;
+  final String title;
+  final double latitude;
+  final double longitude;
+
+  CheckoutBranch({
+    required this.id,
+    required this.title,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  factory CheckoutBranch.fromJson(Map<String, dynamic> json) {
+    return CheckoutBranch(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      latitude: double.tryParse(json['latitude']?.toString() ?? '0') ?? 0,
+      longitude: double.tryParse(json['longitude']?.toString() ?? '0') ?? 0,
     );
   }
 }

@@ -51,6 +51,10 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     emit(state.copyWith(comment: comment));
   }
 
+  void clearSubmitError() {
+    emit(state.clearSubmitError());
+  }
+
   void toggleLoyaltyPoints(bool use) {
     emit(state.copyWith(useLoyaltyPoints: use));
   }

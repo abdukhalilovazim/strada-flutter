@@ -98,7 +98,7 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
       },
       builder: (context, checkoutState) {
         final cartState = context.watch<CartCubit>().state;
-        final subtotal = cartState.totalPrice;
+        final subtotal = cartState.subtotal;
         final discount = _computeDiscount(checkoutState, subtotal);
         
         // Loyalty calculation
@@ -199,7 +199,7 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
                                 Switch.adaptive(
                                   value: checkoutState.useLoyaltyPoints,
                                   onChanged: (val) => context.read<CheckoutCubit>().toggleLoyaltyPoints(val),
-                                  activeColor: AppColors.primary,
+                                  activeTrackColor: AppColors.primary,
                                 ),
                               ],
                             ),
@@ -238,7 +238,7 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
                                 context.read<CheckoutCubit>().clearPromo();
                               }
                             },
-                            activeColor: AppColors.primary,
+                            activeTrackColor: AppColors.primary,
                           ),
                         ],
                       ),
@@ -380,7 +380,7 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
                                   context.read<CheckoutCubit>().setChangeAmount(null);
                                 }
                               },
-                              activeColor: AppColors.primary,
+                              activeTrackColor: AppColors.primary,
                             ),
                           ],
                         ),
@@ -426,7 +426,7 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
                                 context.read<CheckoutCubit>().setComment('');
                               }
                             },
-                            activeColor: AppColors.primary,
+                            activeTrackColor: AppColors.primary,
                           ),
                         ],
                       ),
