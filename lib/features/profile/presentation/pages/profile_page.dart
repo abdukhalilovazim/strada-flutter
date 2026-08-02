@@ -311,15 +311,18 @@ class _ProfilePageState extends State<ProfilePage> {
     final isSelected = context.locale == locale;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: ListTile(
-        title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: isSelected ? AppColors.primary : Theme.of(context).textTheme.bodyMedium?.color)),
-        trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
-        onTap: () async {
-          await context.setLocale(locale);
-          if (!mounted) return;
-          context.read<HomeCubit>().init();
-          Navigator.pop(context);
-        },
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: isSelected ? AppColors.primary : Theme.of(context).textTheme.bodyMedium?.color)),
+          trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
+          onTap: () async {
+            await context.setLocale(locale);
+            if (!mounted) return;
+            context.read<HomeCubit>().init();
+            Navigator.pop(context);
+          },
+        ),
       ),
     );
   }

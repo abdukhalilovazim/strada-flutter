@@ -27,9 +27,13 @@ class _InquiryPageState extends State<InquiryPage> {
     if (!_isInitialized) {
       _isInitialized = true;
       final lang = context.locale.languageCode;
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final themeMode = isDark ? 'dark' : 'light';
+      final bgColor = isDark ? const Color(0xFF121217) : const Color(0xFFF9FAFB);
+
       _controller = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..setBackgroundColor(const Color(0xFF121217))
+        ..setBackgroundColor(bgColor)
         ..setNavigationDelegate(
           NavigationDelegate(
             onPageStarted: (_) {
@@ -44,8 +48,11 @@ class _InquiryPageState extends State<InquiryPage> {
           ),
         )
         ..loadRequest(
-          Uri.parse('$_inquiryUrl?lang=$lang'),
-          headers: {'Accept-Language': lang},
+          Uri.parse('$_inquiryUrl?lang=$lang&theme=$themeMode'),
+          headers: {
+            'Accept-Language': lang,
+            'X-App-Theme': themeMode,
+          },
         );
     }
   }
