@@ -5,7 +5,6 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:pizza_strada/core/constants/api_constants.dart';
 import 'package:pizza_strada/core/constants/app_constants.dart';
@@ -82,61 +81,41 @@ class ApiClient {
 
   Future<dynamic> get(String path, {Map<String, dynamic>? queryParameters}) async {
     final uri = _buildUri(path, queryParameters);
-    try {
-      final headers = await _buildHeaders(isMutation: false);
-      _logRequest('GET', uri, headers);
+    final headers = await _buildHeaders(isMutation: false);
+    _logRequest('GET', uri, headers);
 
-      final response = await _client.get(uri, headers: headers);
-      return _processResponse('GET', uri.toString(), response);
-    } catch (e) {
-      _handleError('GET', uri.toString(), null, e);
-      rethrow;
-    }
+    final response = await _client.get(uri, headers: headers);
+    return _processResponse('GET', uri.toString(), response);
   }
 
   Future<dynamic> post(String path, {dynamic body}) async {
     final uri = _buildUri(path);
-    try {
-      final headers = await _buildHeaders(isMutation: true, body: body);
-      final jsonBody = body != null ? jsonEncode(body) : null;
-      _logRequest('POST', uri, headers, body: jsonBody);
+    final headers = await _buildHeaders(isMutation: true, body: body);
+    final jsonBody = body != null ? jsonEncode(body) : null;
+    _logRequest('POST', uri, headers, body: jsonBody);
 
-      final response = await _client.post(uri, headers: headers, body: jsonBody);
-      return _processResponse('POST', uri.toString(), response);
-    } catch (e) {
-      _handleError('POST', uri.toString(), body, e);
-      rethrow;
-    }
+    final response = await _client.post(uri, headers: headers, body: jsonBody);
+    return _processResponse('POST', uri.toString(), response);
   }
 
   Future<dynamic> put(String path, {dynamic body}) async {
     final uri = _buildUri(path);
-    try {
-      final headers = await _buildHeaders(isMutation: true, body: body);
-      final jsonBody = body != null ? jsonEncode(body) : null;
-      _logRequest('PUT', uri, headers, body: jsonBody);
+    final headers = await _buildHeaders(isMutation: true, body: body);
+    final jsonBody = body != null ? jsonEncode(body) : null;
+    _logRequest('PUT', uri, headers, body: jsonBody);
 
-      final response = await _client.put(uri, headers: headers, body: jsonBody);
-      return _processResponse('PUT', uri.toString(), response);
-    } catch (e) {
-      _handleError('PUT', uri.toString(), body, e);
-      rethrow;
-    }
+    final response = await _client.put(uri, headers: headers, body: jsonBody);
+    return _processResponse('PUT', uri.toString(), response);
   }
 
   Future<dynamic> delete(String path, {dynamic body}) async {
     final uri = _buildUri(path);
-    try {
-      final headers = await _buildHeaders(isMutation: true, body: body);
-      final jsonBody = body != null ? jsonEncode(body) : null;
-      _logRequest('DELETE', uri, headers, body: jsonBody);
+    final headers = await _buildHeaders(isMutation: true, body: body);
+    final jsonBody = body != null ? jsonEncode(body) : null;
+    _logRequest('DELETE', uri, headers, body: jsonBody);
 
-      final response = await _client.delete(uri, headers: headers, body: jsonBody);
-      return _processResponse('DELETE', uri.toString(), response);
-    } catch (e) {
-      _handleError('DELETE', uri.toString(), body, e);
-      rethrow;
-    }
+    final response = await _client.delete(uri, headers: headers, body: jsonBody);
+    return _processResponse('DELETE', uri.toString(), response);
   }
 
   dynamic _processResponse(String method, String url, http.Response response) {
@@ -201,68 +180,6 @@ class ApiClient {
         debugPrint('│ Body: $body');
       }
       debugPrint('└──────────────────────────────────────────────────────────────────');
-    }
-  }
-
-  void _handleError(String method, String url, dynamic body, Object error) {
-    String errorDetails = error.toString();
-    if (error is ApiException) {
-      errorDetails = 'ApiException: ${error.message} (Status: ${error.statusCode})';
-    }
-
-    _sendErrorToTelegram(
-      type: 'REST API Error',
-      endpoint: '$method $url',
-      payload: body != null ? jsonEncode(body) : '',
-      errorDetails: errorDetails,
-    );
-  }
-
-  void _sendErrorToTelegram({
-    required String type,
-    required String endpoint,
-    required String payload,
-    required String errorDetails,
-  }) async {
-    try {
-      final botToken = dotenv.maybeGet('TELEGRAM_BOT_TOKEN');
-      final chatId = dotenv.maybeGet('TELEGRAM_CHAT_ID');
-
-      if (botToken == null || chatId == null || botToken.isEmpty || chatId.isEmpty) {
-        return;
-      }
-
-      final url = Uri.parse('https://api.telegram.org/bot$botToken/sendMessage');
-      final environment = dotenv.get('ENVIRONMENT', fallback: 'dev');
-
-      String escapeHtml(String text) =>
-          text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-
-      final safePayload = escapeHtml(payload);
-      final safeError = escapeHtml(errorDetails);
-
-      final message = '🚨 <b>Pizza Strada Mobile REST API Error</b>\n'
-          '🌐 <b>Env:</b> $environment\n'
-          '📌 <b>Type:</b> $type\n'
-          '🔍 <b>Endpoint:</b> $endpoint\n'
-          '⚙️ <b>Payload:</b> <code>$safePayload</code>\n\n'
-          '⚠️ <b>Error Details:</b>\n'
-          '<pre>$safeError</pre>';
-
-      final client = HttpClient();
-      final request = await client.postUrl(url);
-      request.headers.set('Content-Type', 'application/json; charset=utf-8');
-      request.write(jsonEncode({
-        'chat_id': chatId,
-        'text': message,
-        'parse_mode': 'HTML',
-      }));
-
-      final response = await request.close();
-      await response.transform(utf8.decoder).join();
-      client.close();
-    } catch (e) {
-      debugPrint('Failed to send error to Telegram: $e');
     }
   }
 
