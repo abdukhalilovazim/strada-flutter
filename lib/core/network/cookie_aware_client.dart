@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -18,12 +19,14 @@ class CookieAwareClient extends http.BaseClient {
   final HttpClient _httpClient;
   late final IOClient _inner;
   String? _cookies;
-  bool _warmedUp = false;
+  Future<void>? _warmUpFuture;
 
   CookieAwareClient()
       : _httpClient = HttpClient()
           ..connectionTimeout = const Duration(seconds: 60)
-          ..idleTimeout = const Duration(seconds: 60) {
+          ..idleTimeout = const Duration(seconds: 60)
+          ..badCertificateCallback =
+              ((X509Certificate cert, String host, int port) => true) {
     _inner = IOClient(_httpClient);
   }
 
@@ -42,53 +45,86 @@ class CookieAwareClient extends http.BaseClient {
   /// Set-Cookie headerlarni oladi. Shundan keyin API so'rovlar
   /// shu cookie bilan yuboriladi va WAF blokmaydi.
   ///
-  /// **5 soniyalik** qattiq timeout — ilova ishga tushishini bloklamasligi uchun.
+  /// **30 soniyalik** timeout — ilova ishga tushishini bloklamasligi uchun.
   /// Muvaffaqiyatsiz bo'lsa ham ilova cookie'siz davom etadi.
-  Future<void> _warmUp() async {
-    if (_warmedUp) return;
-    _warmedUp = true; // Takroriy chaqiruvlarni oldini olish
+  Future<void> _warmUp() {
+    return _warmUpFuture ??= _doWarmUp();
+  }
 
-    // Alohida qisqa umrli HttpClient — faqat warm-up uchun (5s timeout)
+  Future<void> _doWarmUp() async {
     final warmUpClient = HttpClient()
-      ..connectionTimeout = const Duration(seconds: 5)
-      ..idleTimeout = const Duration(seconds: 5);
+      ..connectionTimeout = const Duration(seconds: 30)
+      ..idleTimeout = const Duration(seconds: 30)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
 
-    try {
-      final uri = Uri.parse(ApiConstants.baseUrl);
-      final request = await warmUpClient.getUrl(uri);
+    final cookieMap = <String, String>{};
 
-      // Browser-like GET headers
-      request.headers.set('User-Agent', _browserUA);
-      request.headers.set('Accept',
-          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8');
-      request.headers.set('Accept-Language', 'uz,en;q=0.9,ru;q=0.8');
-      request.headers.set('Accept-Encoding', 'gzip, deflate, br');
-      request.headers.set('Connection', 'keep-alive');
-      request.headers.set('Sec-Fetch-Site', 'none');
-      request.headers.set('Sec-Fetch-Mode', 'navigate');
-      request.headers.set('Sec-Fetch-Dest', 'document');
-      request.headers.set('Upgrade-Insecure-Requests', '1');
+    Future<void> fetchCookies(String urlStr, {int maxRedirects = 5}) async {
+      if (maxRedirects <= 0) return;
+      try {
+        final uri = Uri.parse(urlStr);
+        final request = await warmUpClient.getUrl(uri);
+        request.followRedirects = false; // Redirect cookie'larini yo'qotmaslik uchun!
 
-      final response = await request.close().timeout(
-        const Duration(seconds: 5),
-      );
+        request.headers.set('User-Agent', _browserUA);
+        request.headers.set(
+          'Accept',
+          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        );
+        request.headers.set('Accept-Language', 'uz,en;q=0.9,ru;q=0.8');
+        request.headers.set('Accept-Encoding', 'gzip, deflate, br');
+        request.headers.set('Connection', 'keep-alive');
+        request.headers.set('Sec-Fetch-Site', 'none');
+        request.headers.set('Sec-Fetch-Mode', 'navigate');
+        request.headers.set('Sec-Fetch-Dest', 'document');
+        request.headers.set('Upgrade-Insecure-Requests', '1');
 
-      // Set-Cookie headerlarni yig'ish
-      final cookieStrings = <String>[];
-      response.headers.forEach((name, values) {
-        if (name.toLowerCase() == 'set-cookie') {
-          for (final value in values) {
-            // Faqat cookie nomi=qiymati qismini olish (path, domain, etc. olib tashlanadi)
-            final cookiePart = value.split(';').first.trim();
-            if (cookiePart.isNotEmpty) {
-              cookieStrings.add(cookiePart);
+        if (cookieMap.isNotEmpty) {
+          final cookieHeader =
+              cookieMap.entries.map((e) => '${e.key}=${e.value}').join('; ');
+          request.headers.set('Cookie', cookieHeader);
+        }
+
+        final response = await request.close().timeout(
+          const Duration(seconds: 30),
+        );
+
+        response.headers.forEach((name, values) {
+          if (name.toLowerCase() == 'set-cookie') {
+            for (final value in values) {
+              final cookiePart = value.split(';').first.trim();
+              if (cookiePart.isNotEmpty) {
+                final parts = cookiePart.split('=');
+                if (parts.length >= 2) {
+                  cookieMap[parts[0].trim()] =
+                      parts.sublist(1).join('=').trim();
+                }
+              }
             }
           }
-        }
-      });
+        });
 
-      if (cookieStrings.isNotEmpty) {
-        _cookies = cookieStrings.join('; ');
+        final location = response.headers.value('location');
+        await response.drain<void>();
+
+        if (response.statusCode >= 300 &&
+            response.statusCode < 400 &&
+            location != null) {
+          final nextUri = uri.resolve(location);
+          await fetchCookies(nextUri.toString(),
+              maxRedirects: maxRedirects - 1);
+        }
+      } catch (_) {}
+    }
+
+    try {
+      await fetchCookies(ApiConstants.baseUrl);
+      await fetchCookies(ApiConstants.commonEndpoint);
+
+      if (cookieMap.isNotEmpty) {
+        _cookies =
+            cookieMap.entries.map((e) => '${e.key}=${e.value}').join('; ');
         if (kDebugMode) {
           debugPrint('🍪 [CookieAwareClient] Warm-up cookies: $_cookies');
         }
@@ -97,15 +133,10 @@ class CookieAwareClient extends http.BaseClient {
           debugPrint('🍪 [CookieAwareClient] Warm-up OK, cookie yo\'q');
         }
       }
-
-      // Response body ni drain qilish (resurslarni bo'shatish)
-      await response.drain<void>();
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('⚠️ [CookieAwareClient] Warm-up failed (5s): $e');
+        debugPrint('⚠️ [CookieAwareClient] Warm-up failed: $e');
       }
-      // Warm-up muvaffaqiyatsiz bo'lsa ham davom etamiz — 
-      // shunchaki cookie'siz so'rov yuboriladi
     } finally {
       warmUpClient.close();
     }
@@ -113,7 +144,37 @@ class CookieAwareClient extends http.BaseClient {
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    return _inner.send(request);
+    // Birinchi so'rovdan oldin warm-up
+    await _warmUp();
+
+    // Standard browser & CORS headerlarini o'rnatish
+    request.headers['Origin'] ??= ApiConstants.baseUrl;
+    request.headers['Referer'] ??= '${ApiConstants.baseUrl}/';
+    request.headers['Accept'] ??= 'application/json, text/plain, */*';
+
+    if (!request.headers.containsKey('user-agent') &&
+        !request.headers.containsKey('User-Agent')) {
+      request.headers['User-Agent'] = _browserUA;
+    }
+
+    // Olingan cookie'larni so'rovga qo'shish
+    if (_cookies != null && _cookies!.isNotEmpty) {
+      final existing = request.headers['Cookie'] ?? request.headers['cookie'];
+      if (existing != null && existing.isNotEmpty) {
+        request.headers['Cookie'] = '$existing; $_cookies';
+      } else {
+        request.headers['Cookie'] = _cookies!;
+      }
+    }
+
+    // 60 soniyalik explicit timeout — gql_http_link stream default'ini override qilish
+    return _inner.send(request).timeout(
+      const Duration(seconds: 60),
+      onTimeout: () => throw TimeoutException(
+        'Server 60 soniya ichida javob bermadi',
+        const Duration(seconds: 60),
+      ),
+    );
   }
 
   @override

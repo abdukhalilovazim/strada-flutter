@@ -11,7 +11,7 @@ import 'package:gql/ast.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:pizza_strada/core/constants/api_constants.dart';
 import 'package:pizza_strada/core/constants/app_constants.dart';
-import 'package:http/http.dart' as http;
+import 'package:pizza_strada/core/network/cookie_aware_client.dart';
 import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/utils/device_info_helper.dart';
 
@@ -25,7 +25,7 @@ const _orderOperations = {
 
 /// GraphQL client yaratish. Token har bir so'rovda dynamic olinadi.
 GraphQLClient buildGraphQLClient() {
-  final httpClient = http.Client();
+  final httpClient = CookieAwareClient();
 
   // --- HTTP Link: order vs common routing ---
   final httpLink = Link.split(
@@ -53,10 +53,10 @@ GraphQLClient buildGraphQLClient() {
         // App-specific headers
         if (token != null) 'Authorization': 'Bearer $token',
         'language': lang,
-        'device-id': DeviceInfoHelper.deviceId,
-        'device-name': DeviceInfoHelper.deviceName,
+        'device-id': _sanitizeHeader(DeviceInfoHelper.deviceId),
+        'device-name': _sanitizeHeader(DeviceInfoHelper.deviceName),
         'device': Platform.isIOS ? 'ios' : 'android',
-        'app-version-code': DeviceInfoHelper.appVersionCode,
+        'app-version-code': _sanitizeHeader(DeviceInfoHelper.appVersionCode),
       }),
     );
 
@@ -127,12 +127,23 @@ GraphQLClient buildGraphQLClient() {
 
       return response;
     }).handleError((error) {
+      String details = error.toString();
+      try {
+        final dynamic err = error;
+        final response = err.response;
+        if (response != null) {
+          final int statusCode = response.statusCode ?? 0;
+          final String body = response.body?.toString() ?? '';
+          details = 'HTTP Status: $statusCode\nResponse Body:\n${body.length > 1000 ? "${body.substring(0, 1000)}..." : body}\n\nOriginal Exception:\n$error';
+        }
+      } catch (_) {}
+
       // 2. Tarmoq va Ulanish xatolarini (Timeout, SocketException va b.) Telegramga yuborish
       _sendErrorToTelegram(
         type: 'Network / Connection Error',
         operationName: req.operation.operationName ?? 'unnamed',
         variables: req.variables,
-        errorDetails: error.toString(),
+        errorDetails: details,
       );
       throw error;
     });
@@ -202,4 +213,9 @@ String _randomStr(int length) {
       'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   final rng = Random.secure();
   return List.generate(length, (_) => chars[rng.nextInt(chars.length)]).join();
+}
+
+/// HTTP Header qiymatidagi ruxsat berilmagan va no-ASCII belgilarni tozalash
+String _sanitizeHeader(String value) {
+  return value.replaceAll(RegExp(r'[^\x20-\x7E]'), '').trim();
 }
