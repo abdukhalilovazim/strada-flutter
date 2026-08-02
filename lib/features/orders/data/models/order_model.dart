@@ -101,7 +101,7 @@ class OrderItemModel extends OrderItemEntity {
         title: json['title'] as String? ?? '',
         image: json['image'] as String? ?? '',
         variantName: json['variant'] as String?,
-        quantity: json['quantity'] as int? ?? 1,
+        quantity: int.tryParse(json['quantity']?.toString() ?? '1') ?? 1,
         price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
         totalAmount: double.tryParse(json['total_amount']?.toString() ?? '0') ?? 0.0,
       );

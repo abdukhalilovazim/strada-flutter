@@ -11,15 +11,16 @@ class UserLoyaltyModel extends UserLoyaltyEntity {
 
   factory UserLoyaltyModel.fromJson(Map<String, dynamic> json) {
     final expAt = json['expiringAt'] ?? json['expiry_date'];
+    final rawExpPoints = json['expiringPoints'] ?? json['expiring_points'];
     return UserLoyaltyModel(
-      points: json['points'] as int? ?? 0,
-      totalOrders: json['total_orders'] as int? ?? 0,
+      points: int.tryParse(json['points']?.toString() ?? '0') ?? 0,
+      totalOrders: int.tryParse(json['total_orders']?.toString() ?? '0') ?? 0,
       lastOrderDate: json['last_order_date'] != null
-          ? DateTime.tryParse(json['last_order_date'] as String)
+          ? DateTime.tryParse(json['last_order_date'].toString())
           : null,
-      expiringPoints: (json['expiringPoints'] ?? json['expiring_points']) as int?,
+      expiringPoints: rawExpPoints != null ? int.tryParse(rawExpPoints.toString()) : null,
       expiryDate: expAt != null
-          ? DateTime.tryParse(expAt as String)
+          ? DateTime.tryParse(expAt.toString())
           : null,
     );
   }

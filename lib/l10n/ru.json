@@ -142,5 +142,7 @@
   "checkout.submit_order": "Оформить заказ",
   "orders.estimated_time": "Примерное время",
   "orders.call_branch": "Связаться с филиалом",
-  "profile.points_expiring": "{points} баллов сгорит"
+  "profile.points_expiring": "{points} баллов сгорит",
+  "profile.your_points": "Ваши баллы",
+  "profile.branches": "Филиалы"
 }

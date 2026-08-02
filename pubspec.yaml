@@ -55,6 +55,7 @@ dependencies:
   flutter_svg: ^2.0.17
   google_fonts: ^6.2.1 # Inter font
   url_launcher: ^6.3.1 # tel: link
+  webview_flutter: ^4.10.0
   dartz: ^0.10.1 # Either<Failure, T>
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0

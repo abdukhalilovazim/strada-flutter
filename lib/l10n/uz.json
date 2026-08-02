@@ -142,5 +142,7 @@
   "checkout.submit_order": "Buyurtma berish",
   "orders.estimated_time": "Tahminiy vaqt",
   "orders.call_branch": "Filial bilan bog'lanish",
-  "profile.points_expiring": "{points} ball kuyadi"
+  "profile.points_expiring": "{points} ball kuyadi",
+  "profile.your_points": "Ballaringiz",
+  "profile.branches": "Filiallar"
 }

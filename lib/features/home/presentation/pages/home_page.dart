@@ -11,6 +11,7 @@ import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/loyalty/presentation/bloc/loyalty_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_card.dart';
+import 'package:pizza_strada/features/home/presentation/widgets/home_loyalty_card.dart';
 import 'package:pizza_strada/core/widgets/app_shimmer.dart';
 
 class HomePage extends StatefulWidget {
@@ -114,7 +115,7 @@ class _HomePageState extends State<HomePage> {
       if (cat.slug == targetSlug) {
         return currentOffset;
       }
-      final catProducts = allProducts.where((p) => p.category?.slug == cat.slug).toList();
+      final catProducts = allProducts.where((p) => (p.category?.id != 0 && p.category?.id == cat.id) || (p.category?.slug == cat.slug)).toList();
       if (catProducts.isEmpty) continue;
       
       final int rows = (catProducts.length / 2).ceil();
@@ -142,7 +143,7 @@ class _HomePageState extends State<HomePage> {
     final double rowHeight = (gridItemWidth / 0.60) + 16;
     
     for (final cat in categories) {
-      final catProducts = allProducts.where((p) => p.category?.slug == cat.slug).toList();
+      final catProducts = allProducts.where((p) => (p.category?.id != 0 && p.category?.id == cat.id) || (p.category?.slug == cat.slug)).toList();
       if (catProducts.isEmpty) continue;
       
       final int rows = (catProducts.length / 2).ceil();
@@ -422,6 +423,11 @@ class _HomePageState extends State<HomePage> {
                   )
                 else if (state is HomeLoaded) ...[
 
+                  // Loyalty Progress Card
+                  const SliverToBoxAdapter(
+                    child: HomeLoyaltyCard(),
+                  ),
+
                   // Win-back Banners
                   SliverToBoxAdapter(
                     child: BlocBuilder<LoyaltyCubit, LoyaltyState>(
@@ -627,7 +633,7 @@ class _HomePageState extends State<HomePage> {
                       Builder(
                         builder: (context) {
                           final catProducts = state.fullProducts
-                              .where((p) => p.category?.slug == cat.slug)
+                              .where((p) => (p.category?.id != 0 && p.category?.id == cat.id) || (p.category?.slug == cat.slug))
                               .toList();
                           if (catProducts.isEmpty) {
                             return const SliverToBoxAdapter(child: SizedBox.shrink());

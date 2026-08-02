@@ -3,23 +3,23 @@ import 'package:flutter/material.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-/// Web View [InquiryPage] for submitting inquiries.
+/// Web View [BranchesWebViewPage] displaying list of branches.
 ///
-/// Loads the Blade template rendered by Laravel backend with app's active locale.
+/// Loads the Blade template rendered by Laravel backend.
 /// AppBar has NO menu icons, only back button and clean title.
-class InquiryPage extends StatefulWidget {
-  const InquiryPage({super.key});
+class BranchesWebViewPage extends StatefulWidget {
+  const BranchesWebViewPage({super.key});
 
   @override
-  State<InquiryPage> createState() => _InquiryPageState();
+  State<BranchesWebViewPage> createState() => _BranchesWebViewPageState();
 }
 
-class _InquiryPageState extends State<InquiryPage> {
+class _BranchesWebViewPageState extends State<BranchesWebViewPage> {
   late final WebViewController _controller;
   bool _isLoading = true;
   bool _isInitialized = false;
 
-  static const String _inquiryUrl = 'https://food.khalilovdev.uz/inquiry';
+  static const String _branchesUrl = 'https://food.khalilovdev.uz/branches-view';
 
   @override
   void didChangeDependencies() {
@@ -39,12 +39,12 @@ class _InquiryPageState extends State<InquiryPage> {
               if (mounted) setState(() => _isLoading = false);
             },
             onWebResourceError: (error) {
-              debugPrint('Inquiry WebView error: ${error.description}');
+              debugPrint('Branches WebView error: ${error.description}');
             },
           ),
         )
         ..loadRequest(
-          Uri.parse('$_inquiryUrl?lang=$lang'),
+          Uri.parse('$_branchesUrl?lang=$lang'),
           headers: {'Accept-Language': lang},
         );
     }
@@ -55,7 +55,7 @@ class _InquiryPageState extends State<InquiryPage> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('profile.support_inquiry'.tr()),
+        title: Text('profile.branches'.tr()),
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         centerTitle: true,
@@ -64,7 +64,7 @@ class _InquiryPageState extends State<InquiryPage> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: const [], // AppBarda hech qanday menu chiqmaydi
+        actions: const [], // AppBarda menu yo'q
       ),
       body: Stack(
         children: [

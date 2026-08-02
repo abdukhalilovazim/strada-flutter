@@ -142,5 +142,7 @@
   "checkout.submit_order": "Submit order",
   "orders.estimated_time": "Estimated time",
   "orders.call_branch": "Call branch",
-  "profile.points_expiring": "{points} points expiring"
+  "profile.points_expiring": "{points} points expiring",
+  "profile.your_points": "Your points",
+  "profile.branches": "Branches"
 }

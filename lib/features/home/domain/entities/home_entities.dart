@@ -1,13 +1,18 @@
 import 'package:equatable/equatable.dart';
 
 class CategoryEntity extends Equatable {
+  final int id;
   final String slug;
   final String title;
 
-  const CategoryEntity({required this.slug, required this.title});
+  const CategoryEntity({
+    this.id = 0,
+    required this.slug,
+    required this.title,
+  });
 
   @override
-  List<Object?> get props => [slug, title];
+  List<Object?> get props => [id, slug, title];
 }
 
 class VariantEntity extends Equatable {
@@ -32,6 +37,7 @@ class KeyValueEntity extends Equatable {
 }
 
 class ProductEntity extends Equatable {
+  final int id;
   final String slug;
   final String title;
   final String? description;
@@ -43,6 +49,7 @@ class ProductEntity extends Equatable {
   final List<KeyValueEntity> values;
 
   const ProductEntity({
+    this.id = 0,
     required this.slug,
     required this.title,
     this.description,
@@ -55,7 +62,7 @@ class ProductEntity extends Equatable {
   });
 
   @override
-  List<Object?> get props => [slug, title, description, thumbnail, photo, price, category, variants, values];
+  List<Object?> get props => [id, slug, title, description, thumbnail, photo, price, category, variants, values];
 }
 
 class SettingsEntity extends Equatable {

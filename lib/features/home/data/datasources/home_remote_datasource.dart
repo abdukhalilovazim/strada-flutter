@@ -4,7 +4,7 @@ import 'package:pizza_strada/features/home/data/models/home_models.dart';
 
 abstract class HomeRemoteDataSource {
   Future<List<CategoryModel>> getCategories();
-  Future<List<ProductModel>> getProducts({String? categorySlug});
+  Future<List<ProductModel>> getProducts({int? categoryId, String? categorySlug});
   Future<SettingsModel> getSettings();
 }
 
@@ -21,10 +21,17 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   }
 
   @override
-  Future<List<ProductModel>> getProducts({String? categorySlug}) async {
+  Future<List<ProductModel>> getProducts({int? categoryId, String? categorySlug}) async {
+    final Map<String, dynamic> params = {};
+    if (categoryId != null && categoryId > 0) {
+      params['category_id'] = categoryId;
+    } else if (categorySlug != null) {
+      params['category_slug'] = categorySlug;
+    }
+
     final response = await _client.get(
       'products',
-      queryParameters: categorySlug != null ? {'category_slug': categorySlug} : null,
+      queryParameters: params.isNotEmpty ? params : null,
     );
     return (response as List).map((e) => ProductModel.fromJson(e as Map<String, dynamic>)).toList();
   }

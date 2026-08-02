@@ -10,6 +10,7 @@ import 'package:pizza_strada/core/theme/theme_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/loyalty/presentation/bloc/loyalty_cubit.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/inquiry_page.dart';
+import 'package:pizza_strada/features/profile/presentation/pages/branches_web_view_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pizza_strada/core/di/injection.dart';
@@ -181,43 +182,18 @@ class _ProfilePageState extends State<ProfilePage> {
               onTap: () => _showLanguagePicker(),
             ),
 
-            // Dark mode toggle
-            BlocBuilder<ThemeCubit, ThemeMode>(
-              builder: (context, themeMode) {
-                final isDark = themeMode == ThemeMode.dark;
-                return _buildToggleItem(
-                  icon: isDark
-                      ? Icons.dark_mode_rounded
-                      : Icons.light_mode_rounded,
-                  title: 'profile.dark_mode'.tr(),
-                  value: isDark,
-                  onChanged: (_) => context.read<ThemeCubit>().toggle(),
-                );
-              },
-            ),
+            // Dark mode toggle (hidden for now)
+            // BlocBuilder<ThemeCubit, ThemeMode>(...),
 
             
-            // Phone call from settings
-            BlocBuilder<HomeCubit, HomeState>(
-              builder: (context, state) {
-                String? supportPhone;
-                if (state is HomeLoaded) {
-                  supportPhone = state.settings?.supportPhone;
-                }
-                return _buildItem(
-                  icon: AppIcons.support,
-                  title: 'profile.call_support'.tr(),
-                  subtitle: supportPhone,
-                  onTap: () async {
-                    if (supportPhone != null) {
-                      final uri = Uri.parse('tel:$supportPhone');
-                      if (await canLaunchUrl(uri)) {
-                        await launchUrl(uri);
-                      }
-                    }
-                  },
-                );
-              },
+            // Filiallar (WebView)
+            _buildItem(
+              icon: Icons.store_rounded,
+              title: 'profile.branches'.tr(),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BranchesWebViewPage()),
+              ),
             ),
             const SizedBox(height: 12),
             _buildItem(
@@ -358,21 +334,25 @@ class _ProfilePageState extends State<ProfilePage> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.neutral200),
       ),
-      child: ListTile(
-        onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight,
-            borderRadius: BorderRadius.circular(12),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: ListTile(
+          onTap: onTap,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          leading: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 24),
           ),
-          child: Icon(icon, color: AppColors.primary, size: 24),
+          title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color)),
+          subtitle: subtitle != null ? Text(subtitle, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)) : null,
+          trailing: trailing ?? const Icon(Icons.chevron_right_rounded, color: AppColors.neutral400),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
-        title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color)),
-        subtitle: subtitle != null ? Text(subtitle, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)) : null,
-        trailing: trailing ?? const Icon(Icons.chevron_right_rounded, color: AppColors.neutral400),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }
