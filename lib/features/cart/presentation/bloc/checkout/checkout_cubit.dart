@@ -1,12 +1,13 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:graphql_flutter/graphql_flutter.dart';
-import 'package:pizza_strada/core/network/graphql_client.dart';
+import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
 
 class CheckoutCubit extends Cubit<CheckoutState> {
-  final GraphQLClient _gqlClient;
+  final ApiClient _apiClient;
 
-  CheckoutCubit() : _gqlClient = buildGraphQLClient(), super(const CheckoutState());
+  CheckoutCubit({ApiClient? apiClient})
+      : _apiClient = apiClient ?? ApiClient(),
+        super(const CheckoutState());
 
   void setDeliveryType(bool isDelivery) {
     emit(state.copyWith(isDelivery: isDelivery));
@@ -19,22 +20,12 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   Future<void> setAddressAndCalculateDelivery(double lat, double lng, String address) async {
     emit(state.copyWith(lat: lat, lng: lng, address: address, loadingDelivery: true));
     try {
-      const mutation = r'''
-        mutation CalculateDeliveryPrice($latitude: Float!, $longitude: Float!) {
-          calculateDeliveryPrice(latitude: $latitude, longitude: $longitude)
-        }
-      ''';
-      final result = await _gqlClient.mutate(MutationOptions(
-        document: gql(mutation),
-        variables: {'latitude': lat, 'longitude': lng},
-        operationName: 'CalculateDeliveryPrice',
-      ));
-      if (!result.hasException) {
-        final price = double.tryParse(result.data?['calculateDeliveryPrice']?.toString() ?? '0') ?? 0;
-        emit(state.copyWith(deliveryPrice: price, loadingDelivery: false));
-      } else {
-        emit(state.copyWith(loadingDelivery: false));
-      }
+      final response = await _apiClient.post(
+        'delivery-price',
+        body: {'latitude': lat, 'longitude': lng},
+      );
+      final price = double.tryParse(response?.toString() ?? '0') ?? 0;
+      emit(state.copyWith(deliveryPrice: price, loadingDelivery: false));
     } catch (_) {
       emit(state.copyWith(loadingDelivery: false));
     }
@@ -63,41 +54,26 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   Future<void> applyPromo(String code, double subtotal) async {
     emit(state.copyWith(loadingPromo: true, promoError: null));
     try {
-      const mutation = r'''
-        mutation CheckPromoCode($promo_code: String!, $total_price: Int!) {
-          checkPromoCode(promo_code: $promo_code, total_price: $total_price) {
-            promo_code
-            type
-            value
-          }
-        }
-      ''';
-      final result = await _gqlClient.mutate(MutationOptions(
-        document: gql(mutation),
-        variables: {'promo_code': code, 'total_price': subtotal.toInt()},
-        operationName: 'CheckPromoCode',
+      final response = await _apiClient.post(
+        'promo-code/check',
+        body: {'promo_code': code, 'total_price': subtotal.toInt()},
+      );
+      final data = response as Map<String, dynamic>?;
+      emit(state.copyWith(
+        loadingPromo: false,
+        appliedPromoCode: (data?['code'] ?? data?['promo_code']) as String?,
+        promoType: data?['type'] as int?,
+        promoValue: double.tryParse(data?['value']?.toString() ?? '0'),
+        promoError: null,
       ));
-      if (result.hasException) {
-        final msg = result.exception?.graphqlErrors.firstOrNull?.message ?? 'Promo xato';
-        emit(state.copyWith(
-          loadingPromo: false,
-          promoError: msg,
-          appliedPromoCode: null,
-          promoType: null,
-          promoValue: null,
-        ));
-      } else {
-        final data = result.data?['checkPromoCode'];
-        emit(state.copyWith(
-          loadingPromo: false,
-          appliedPromoCode: data?['promo_code'] as String?,
-          promoType: data?['type'] as int?,
-          promoValue: double.tryParse(data?['value']?.toString() ?? '0'),
-          promoError: null,
-        ));
-      }
     } catch (e) {
-      emit(state.copyWith(loadingPromo: false, promoError: e.toString()));
+      emit(state.copyWith(
+        loadingPromo: false,
+        promoError: e is ApiException ? e.message : e.toString(),
+        appliedPromoCode: null,
+        promoType: null,
+        promoValue: null,
+      ));
     }
   }
 
@@ -116,40 +92,6 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   }) async {
     emit(state.copyWith(isSubmitting: true, submitError: null));
     try {
-      const mutation = r'''
-        mutation CreateOrder(
-          $type: Int!,
-          $branch_id: Int,
-          $latitude: Float,
-          $longitude: Float,
-          $address: String,
-          $payment_method: Int!,
-          $change: Int,
-          $comment: String,
-          $promo_code: String,
-          $loyalty_points_used: Int,
-          $products: [OrderProductInput!]!
-        ) {
-          createOrder(
-            type: $type,
-            branch_id: $branch_id,
-            latitude: $latitude,
-            longitude: $longitude,
-            address: $address,
-            payment_method: $payment_method,
-            change: $change,
-            comment: $comment,
-            promo_code: $promo_code,
-            loyalty_points_used: $loyalty_points_used,
-            products: $products
-          ) {
-            order_id
-            total_price
-            payment_url
-          }
-        }
-      ''';
-
       final vars = {
         'type': state.isDelivery ? 0 : 1, 
         'branch_id': state.isDelivery ? null : int.tryParse(state.branchId ?? ''),
@@ -164,23 +106,15 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         'products': products,
       };
 
-      final result = await _gqlClient.mutate(MutationOptions(
-        document: gql(mutation),
-        variables: vars,
-        operationName: 'CreateOrder',
+      final response = await _apiClient.post('orders', body: vars);
+      emit(state.copyWith(
+        isSubmitting: false,
+        successData: response,
       ));
-
-      if (result.hasException) {
-        final msg = result.exception?.graphqlErrors.firstOrNull?.message ?? 'Server xatosi';
-        emit(state.copyWith(isSubmitting: false, submitError: msg));
-      } else {
-        emit(state.copyWith(
-          isSubmitting: false,
-          successData: result.data?['createOrder'],
-        ));
-      }
     } catch (e) {
-      emit(state.copyWith(isSubmitting: false, submitError: e.toString()));
+      final msg = e is ApiException ? e.message : e.toString();
+      emit(state.copyWith(isSubmitting: false, submitError: msg));
     }
   }
 }
+

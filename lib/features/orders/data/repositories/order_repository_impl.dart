@@ -1,10 +1,9 @@
 import 'dart:io';
 import 'package:dartz/dartz.dart';
-import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:pizza_strada/core/error/failures.dart';
-import 'package:pizza_strada/core/utils/graphql_helper.dart';
+import 'package:pizza_strada/core/utils/api_helper.dart';
 import 'package:pizza_strada/features/orders/data/datasources/order_remote_datasource.dart';
 import 'package:pizza_strada/features/orders/domain/entities/order_entity.dart';
 import 'package:pizza_strada/features/orders/domain/repositories/order_repository.dart';
@@ -42,14 +41,12 @@ class OrderRepositoryImpl implements OrderRepository {
   Future<Either<Failure, T>> _safeCall<T>(Future<T> Function() call) async {
     try {
       return Right(await call());
-    } on OperationException catch (e) {
-      debugPrint('❌ [OrderRepo] $e');
-      return Left(GraphQLHelper.toFailure(e));
     } on SocketException {
       return Left(const NetworkFailure(message: 'Internet aloqasi yo\'q'));
     } catch (e) {
       debugPrint('❌ [OrderRepo] $e');
-      return Left(ServerFailure(message: e.toString()));
+      return Left(ApiHelper.fromException(e));
     }
   }
 }
+

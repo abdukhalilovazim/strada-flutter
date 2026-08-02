@@ -2,7 +2,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiConstants {
   static final _prodBase = dotenv.get('PROD_BASE_URL', fallback: 'https://pizzastrada.uz');
-  static final _devBase  = dotenv.get('DEV_BASE_URL', fallback: 'https://stradapizza.uz');
+  static final _devBase  = dotenv.get('DEV_BASE_URL', fallback: 'https://food.khalilovdev.uz');
   static final _environment = dotenv.get('ENVIRONMENT', fallback: 'dev');
 
   // .env dagi ENVIRONMENT o'zgaruvchisiga qarab (prod yoki dev) bazaviy URL tanlanadi
@@ -11,9 +11,8 @@ class ApiConstants {
   /// Bazaviy URL — Origin/Referer headerlar uchun
   static String get baseUrl => _base;
 
-  // AGENTS.md ga muvofiq schema path segment orqali beriladi
-  static String get commonEndpoint => '$_base/graphql/common';
-  static String get orderEndpoint  => '$_base/graphql/order';
+  /// REST API v1 bazaviy URL
+  static String get apiBaseUrl => '$_base/api/v1';
 
   // HMAC-SHA256 secret key
   static String get hmacSecret => dotenv.get(

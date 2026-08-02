@@ -1,8 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:graphql_flutter/graphql_flutter.dart';
-import 'package:pizza_strada/core/network/graphql_client.dart';
+import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:pizza_strada/features/loyalty/domain/entities/user_loyalty_entity.dart';
 import 'package:pizza_strada/features/loyalty/data/models/user_loyalty_model.dart';
 import 'package:pizza_strada/core/storage/secure_storage.dart';
@@ -11,7 +10,11 @@ part 'loyalty_state.dart';
 
 @lazySingleton
 class LoyaltyCubit extends Cubit<LoyaltyState> {
-  LoyaltyCubit() : super(LoyaltyInitial());
+  final ApiClient _apiClient;
+
+  LoyaltyCubit({ApiClient? apiClient})
+      : _apiClient = apiClient ?? ApiClient(),
+        super(LoyaltyInitial());
 
   Future<void> init() async {
     final token = await SecureStorage.getToken();
@@ -23,33 +26,9 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
     emit(LoyaltyLoading());
 
     try {
-      const String query = r'''
-        query getLoyalty {
-          me {
-            loyalty {
-              points
-              total_orders
-              last_order_date
-              expiring_points
-              expiry_date
-            }
-          }
-        }
-      ''';
-
-      final client = buildGraphQLClient();
-      final result = await client.query(QueryOptions(
-        document: gql(query),
-        fetchPolicy: FetchPolicy.networkOnly,
-      ));
-
-      if (result.hasException) {
-        throw result.exception!;
-      }
-
-      final loyaltyJson = result.data?['me']?['loyalty'];
-      if (loyaltyJson != null) {
-        final entity = UserLoyaltyModel.fromJson(loyaltyJson as Map<String, dynamic>);
+      final response = await _apiClient.get('loyalty/balance');
+      if (response != null && response is Map<String, dynamic>) {
+        final entity = UserLoyaltyModel.fromJson(response);
         emit(LoyaltyLoaded(entity));
       } else {
         emit(const LoyaltyFailure('Loyalty data not found'));
@@ -59,3 +38,4 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
     }
   }
 }
+

@@ -1,5 +1,5 @@
-import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:injectable/injectable.dart';
+import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:pizza_strada/features/orders/data/models/order_model.dart';
 
 abstract class OrderRemoteDataSource {
@@ -17,90 +17,20 @@ abstract class OrderRemoteDataSource {
 
 @LazySingleton(as: OrderRemoteDataSource)
 class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
-  final GraphQLClient _client;
+  final ApiClient _client;
 
   OrderRemoteDataSourceImpl(this._client);
 
   @override
   Future<List<OrderModel>> getOrders() async {
-    const String query = r'''
-      query Orders {
-        orders {
-          order_id
-          comment
-          status
-          status_text
-          payment_url
-          type
-          branch
-          latitude
-          longitude
-          payment_method_text
-          payment_method
-          subtotal_price
-          discount_amount
-          delivery_price
-          total_price
-          products {
-            slug
-            title
-            image
-            variant
-            price
-            quantity
-            total_amount
-          }
-        }
-      }
-    ''';
-    final result = await _client.query(QueryOptions(
-      document: gql(query),
-      operationName: 'Orders',
-    ));
-    if (result.hasException) throw result.exception!;
-    return (result.data?['orders'] as List).map((e) => OrderModel.fromJson(e)).toList();
+    final response = await _client.get('orders');
+    return (response as List).map((e) => OrderModel.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   @override
   Future<OrderModel> getOrder(int id) async {
-    const String query = r'''
-      query Order($id: Int!) {
-        order(id: $id) {
-          order_id
-          address
-          comment
-          status
-          status_text
-          payment_url
-          type
-          branch
-          latitude
-          longitude
-          payment_method_text
-          payment_method
-          subtotal_price
-          discount_amount
-          delivery_price
-          total_price
-          products {
-            slug
-            title
-            image
-            variant
-            price
-            quantity
-            total_amount
-          }
-        }
-      }
-    ''';
-    final result = await _client.query(QueryOptions(
-      document: gql(query),
-      variables: {'id': id},
-      operationName: 'Order',
-    ));
-    if (result.hasException) throw result.exception!;
-    return OrderModel.fromJson(result.data?['order']);
+    final response = await _client.get('orders/$id');
+    return OrderModel.fromJson(response as Map<String, dynamic>);
   }
 
   @override
@@ -112,24 +42,19 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
     required bool isDelivery,
     required List<Map<String, dynamic>> items,
   }) async {
-    const String mutation = r'''
-      mutation createOrder($full_name: String!, $phone: String!, $address: String!, $branch_id: String!, $is_delivery: Boolean!, $items: [OrderItemInput!]!) {
-        createOrder(full_name: $full_name, phone: $phone, address: $address, branch_id: $branch_id, is_delivery: $is_delivery, items: $items)
-      }
-    ''';
-    final result = await _client.mutate(MutationOptions(
-      document: gql(mutation),
-      variables: {
-        'full_name': fullName,
-        'phone': phone,
-        'address': address,
-        'branch_id': branchId,
-        'is_delivery': isDelivery,
-        'items': items,
+    final response = await _client.post(
+      'orders',
+      body: {
+        'type': isDelivery ? 0 : 1,
+        'branch_id': isDelivery ? null : int.tryParse(branchId),
+        'address': isDelivery ? address : null,
+        'payment_method': 0,
+        'products': items,
       },
-      operationName: 'createOrder',
-    ));
-    if (result.hasException) throw result.exception!;
-    return result.data?['createOrder'] as int;
+    );
+
+    final map = response as Map<String, dynamic>;
+    return int.tryParse(map['order_id']?.toString() ?? map['id']?.toString() ?? '0') ?? 0;
   }
 }
+

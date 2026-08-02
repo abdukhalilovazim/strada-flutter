@@ -1,7 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:graphql_flutter/graphql_flutter.dart';
-import 'package:pizza_strada/core/network/graphql_client.dart';
+import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 
@@ -68,21 +67,10 @@ class _InquiryPageState extends State<InquiryPage> {
     }
 
     // Yuborish (Fire-and-forget, response kutmaymiz)
-    const String mutation = r'''
-      mutation createInquiry($type: String!, $message: String!) {
-        createInquiry(type: $type, message: $message)
-      }
-    ''';
-
-    final client = buildGraphQLClient();
-    client.mutate(MutationOptions(
-      document: gql(mutation),
-      variables: {
-        'type': _selectedPurpose,
-        'message': _messageController.text.trim(),
-      },
-      operationName: 'createInquiry',
-    )); // await yo'q
+    ApiClient().post('inquiry', body: {
+      'type': _selectedPurpose,
+      'message': _messageController.text.trim(),
+    });
 
     // Muvaffaqiyat xabarini chiqarib darhol orqaga qaytamiz
     ScaffoldMessenger.of(context).showSnackBar(

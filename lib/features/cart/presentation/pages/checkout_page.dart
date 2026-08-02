@@ -11,8 +11,7 @@ import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/loyalty/presentation/bloc/loyalty_cubit.dart';
 import 'package:go_router/go_router.dart';
-import 'package:graphql_flutter/graphql_flutter.dart';
-import 'package:pizza_strada/core/network/graphql_client.dart';
+import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class CheckoutPage extends StatefulWidget {
@@ -75,28 +74,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Future<void> _loadBranches() async {
     setState(() => _isLoadingBranches = true);
     try {
-      final client = buildGraphQLClient();
-      const query = r'''
-        query Branches {
-          branches {
-            id
-            title
-            latitude
-            longitude
-          }
-        }
-      ''';
-      
-      final result = await client.query(QueryOptions(
-        document: gql(query),
-        operationName: 'Branches',
-        fetchPolicy: FetchPolicy.networkOnly,
-      ));
-
-      if (!result.hasException && result.data?['branches'] != null) {
-        final list = result.data?['branches'] as List;
+      final response = await ApiClient().get('branches');
+      if (response is List) {
         setState(() {
-          _branches = list.map((e) => CheckoutBranch.fromJson(e)).toList();
+          _branches = response.map((e) => CheckoutBranch.fromJson(e as Map<String, dynamic>)).toList();
           if (_branches.isNotEmpty && context.read<CheckoutCubit>().state.branchId == null) {
             context.read<CheckoutCubit>().setBranch(_branches.first.id);
           }

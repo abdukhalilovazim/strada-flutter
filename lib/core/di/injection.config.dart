@@ -10,9 +10,9 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:get_it/get_it.dart' as _i174;
-import 'package:graphql_flutter/graphql_flutter.dart' as _i128;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:pizza_strada/core/di/network_module.dart' as _i200;
+import 'package:pizza_strada/core/network/api_client.dart' as _i791;
 import 'package:pizza_strada/core/theme/theme_cubit.dart' as _i357;
 import 'package:pizza_strada/features/auth/data/datasources/auth_remote_datasource.dart'
     as _i724;
@@ -67,19 +67,16 @@ extension GetItInjectableX on _i174.GetIt {
       environmentFilter,
     );
     final networkModule = _$NetworkModule();
-    await gh.lazySingletonAsync<_i128.GraphQLClient>(
-      () => networkModule.client,
-      preResolve: true,
-    );
+    gh.lazySingleton<_i791.ApiClient>(() => networkModule.client);
     gh.lazySingleton<_i357.ThemeCubit>(() => _i357.ThemeCubit());
     gh.lazySingleton<_i1058.CartCubit>(() => _i1058.CartCubit());
     gh.lazySingleton<_i421.LoyaltyCubit>(() => _i421.LoyaltyCubit());
     gh.lazySingleton<_i972.HomeRemoteDataSource>(
-        () => _i972.HomeRemoteDataSourceImpl(gh<_i128.GraphQLClient>()));
+        () => _i972.HomeRemoteDataSourceImpl(gh<_i791.ApiClient>()));
     gh.lazySingleton<_i168.OrderRemoteDataSource>(
-        () => _i168.OrderRemoteDataSourceImpl(gh<_i128.GraphQLClient>()));
+        () => _i168.OrderRemoteDataSourceImpl(gh<_i791.ApiClient>()));
     gh.lazySingleton<_i724.AuthRemoteDataSource>(
-        () => _i724.AuthRemoteDataSourceImpl(gh<_i128.GraphQLClient>()));
+        () => _i724.AuthRemoteDataSourceImpl(gh<_i791.ApiClient>()));
     gh.lazySingleton<_i929.HomeRepository>(
         () => _i964.HomeRepositoryImpl(gh<_i972.HomeRemoteDataSource>()));
     gh.lazySingleton<_i414.OrderRepository>(

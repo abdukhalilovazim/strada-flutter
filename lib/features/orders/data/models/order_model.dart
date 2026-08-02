@@ -62,7 +62,7 @@ class OrderModel extends OrderEntity {
     }
 
     return OrderModel(
-      id: int.tryParse(json['order_id']?.toString() ?? '0') ?? 0,
+      id: int.tryParse(json['order_id']?.toString() ?? json['id']?.toString() ?? '0') ?? 0,
       status: statusInt,
       statusText: statusTextStr,
       address: json['address'] as String?,

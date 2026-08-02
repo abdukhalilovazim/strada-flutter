@@ -120,7 +120,7 @@ class CookieAwareClient extends http.BaseClient {
 
     try {
       await fetchCookies(ApiConstants.baseUrl);
-      await fetchCookies(ApiConstants.commonEndpoint);
+      await fetchCookies(ApiConstants.apiBaseUrl);
 
       if (cookieMap.isNotEmpty) {
         _cookies =
