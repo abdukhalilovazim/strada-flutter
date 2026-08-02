@@ -49,7 +49,7 @@ class ProductCard extends StatelessWidget {
                   child: AspectRatio(
                     aspectRatio: 1.2,
                     child: CachedNetworkImage(
-                      imageUrl: product.thumbnail,
+                      imageUrl: product.thumbnail.isNotEmpty ? product.thumbnail : product.photo,
                       fit: BoxFit.cover,
                       placeholder: (_, __) => Container(color: AppColors.neutral100),
                       errorWidget: (_, __, ___) => const Icon(Icons.image_not_supported_outlined),

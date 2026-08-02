@@ -71,7 +71,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           children: [
             // Image below header
             CachedNetworkImage(
-              imageUrl: product.photo,
+              imageUrl: product.photo.isNotEmpty ? product.photo : product.thumbnail,
               width: double.infinity,
               height: 260,
               fit: BoxFit.cover,
