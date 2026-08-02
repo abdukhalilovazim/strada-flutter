@@ -215,60 +215,64 @@ class _ProfilePageState extends State<ProfilePage> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.neutral200),
               ),
-              child: ListTile(
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (dialogContext) {
-                      return AlertDialog(
-                        backgroundColor: Theme.of(dialogContext).cardColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        title: Text(
-                          'profile.logout'.tr(),
-                          style: AppTextStyles.h3.copyWith(
-                            color: Theme.of(dialogContext).textTheme.headlineMedium?.color,
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+                child: ListTile(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (dialogContext) {
+                        return AlertDialog(
+                          backgroundColor: Theme.of(dialogContext).cardColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                        ),
-                        content: Text(
-                          'profile.logout_confirm'.tr(),
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: Theme.of(dialogContext).textTheme.bodyMedium?.color,
-                          ),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(dialogContext),
-                            child: Text(
-                              'common.no'.tr(),
-                              style: AppTextStyles.labelMedium.copyWith(
-                                color: AppColors.neutral600,
-                              ),
+                          title: Text(
+                            'profile.logout'.tr(),
+                            style: AppTextStyles.h3.copyWith(
+                              color: Theme.of(dialogContext).textTheme.headlineMedium?.color,
                             ),
                           ),
-                          TextButton(
-                            onPressed: () async {
-                              Navigator.pop(dialogContext);
-                              await SecureStorage.clearAll();
-                              if (!context.mounted) return;
-                              context.go('/auth/login');
-                            },
-                            child: Text(
-                              'common.yes'.tr(),
-                              style: AppTextStyles.labelMedium.copyWith(
-                                color: AppColors.error,
-                              ),
+                          content: Text(
+                            'profile.logout_confirm'.tr(),
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: Theme.of(dialogContext).textTheme.bodyMedium?.color,
                             ),
                           ),
-                        ],
-                      );
-                    },
-                  );
-                },
-                leading: const Icon(Icons.logout_rounded, color: AppColors.error, size: 22),
-                title: Text('profile.logout'.tr(), style: AppTextStyles.labelLarge.copyWith(color: AppColors.error)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dialogContext),
+                              child: Text(
+                                'common.no'.tr(),
+                                style: AppTextStyles.labelMedium.copyWith(
+                                  color: AppColors.neutral600,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                Navigator.pop(dialogContext);
+                                await SecureStorage.clearAll();
+                                if (!context.mounted) return;
+                                context.go('/auth/login');
+                              },
+                              child: Text(
+                                'common.yes'.tr(),
+                                style: AppTextStyles.labelMedium.copyWith(
+                                  color: AppColors.error,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  leading: const Icon(Icons.logout_rounded, color: AppColors.error, size: 22),
+                  title: Text('profile.logout'.tr(), style: AppTextStyles.labelLarge.copyWith(color: AppColors.error)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
               ),
             ),
           ],
@@ -377,23 +381,27 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppColors.neutral50,
-            borderRadius: BorderRadius.circular(10),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: ListTile(
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.neutral50,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.neutral700, size: 20),
           ),
-          child: Icon(icon, color: AppColors.neutral700, size: 20),
+          title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color)),
+          trailing: Switch.adaptive(
+            value: value,
+            onChanged: onChanged,
+            activeTrackColor: AppColors.primary,
+          ),
+          onTap: () => onChanged(!value),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
-        title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color)),
-        trailing: Switch.adaptive(
-          value: value,
-          onChanged: onChanged,
-          activeTrackColor: AppColors.primary,
-        ),
-        onTap: () => onChanged(!value),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }

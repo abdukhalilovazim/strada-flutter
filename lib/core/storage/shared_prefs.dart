@@ -21,10 +21,10 @@ class SharedPrefs {
       _prefs.setString(_themeKey, mode == ThemeMode.dark ? 'dark' : 'light');
 
   /// Returns the previously saved [ThemeMode].
-  /// Defaults to [ThemeMode.dark] if nothing is saved.
+  /// Defaults to [ThemeMode.light] if nothing is saved.
   static ThemeMode getThemeMode() {
     final val = _prefs.getString(_themeKey);
-    return val == 'light' ? ThemeMode.light : ThemeMode.dark;
+    return val == 'dark' ? ThemeMode.dark : ThemeMode.light;
   }
 }
 

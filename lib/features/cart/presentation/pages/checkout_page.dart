@@ -119,20 +119,23 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     itemBuilder: (_, i) {
                       final branch = _branches[i];
                       final isSelected = context.read<CheckoutCubit>().state.branchId == branch.id;
-                      return ListTile(
-                        contentPadding: EdgeInsets.symmetric(horizontal: 20),
-                        title: Text(
-                          branch.title,
-                          style: AppTextStyles.labelMedium.copyWith(
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                            color: isSelected ? AppColors.primary : Theme.of(context).textTheme.bodyMedium?.color,
+                      return Material(
+                        color: Colors.transparent,
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                          title: Text(
+                            branch.title,
+                            style: AppTextStyles.labelMedium.copyWith(
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                              color: isSelected ? AppColors.primary : Theme.of(context).textTheme.bodyMedium?.color,
+                            ),
                           ),
+                          trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
+                          onTap: () {
+                            context.read<CheckoutCubit>().setBranch(branch.id);
+                            Navigator.pop(context);
+                          },
                         ),
-                        trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
-                        onTap: () {
-                          context.read<CheckoutCubit>().setBranch(branch.id);
-                          Navigator.pop(context);
-                        },
                       );
                     },
                   ),

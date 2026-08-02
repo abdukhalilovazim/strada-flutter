@@ -9,7 +9,7 @@ import 'package:pizza_strada/core/storage/shared_prefs.dart';
 /// Default mode: [ThemeMode.light].
 @lazySingleton
 class ThemeCubit extends Cubit<ThemeMode> {
-  ThemeCubit() : super(ThemeMode.dark) {
+  ThemeCubit() : super(ThemeMode.light) {
     _loadSaved();
   }
 

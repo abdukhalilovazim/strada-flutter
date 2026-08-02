@@ -34,6 +34,7 @@ class OrderCubit extends Cubit<OrderState> {
   Future<void> getOrders() async {
     emit(OrderLoading());
     final result = await _getOrdersUseCase();
+    if (isClosed) return;
     result.fold(
       (f) => emit(OrderFailure(f.messageKey)),
       (orders) => emit(OrderLoaded(orders)),
