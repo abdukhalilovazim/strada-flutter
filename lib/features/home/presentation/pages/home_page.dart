@@ -215,7 +215,7 @@ class _HomePageState extends State<HomePage> {
                             return HeaderLocationPill(
                               orderType: checkoutState.isDelivery ? 0 : 1,
                               addressName: checkoutState.address,
-                              branchTitle: checkoutState.branchId != null ? 'STRADA-${checkoutState.branchId}' : null,
+                              branchTitle: checkoutState.branchTitle,
                               onTap: () {
                                 showModalBottomSheet(
                                   context: context,

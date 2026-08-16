@@ -40,7 +40,7 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
 
           final cubit = context.read<CheckoutCubit>();
           if (_branches.isNotEmpty && cubit.state.branchId == null) {
-            cubit.setBranch(_branches.first.id);
+            cubit.setBranch(_branches.first.id, branchTitle: _branches.first.title);
           }
         });
       }
@@ -217,7 +217,7 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
 
                       return InkWell(
                         onTap: () {
-                          context.read<CheckoutCubit>().setBranch(branch.id);
+                          context.read<CheckoutCubit>().setBranch(branch.id, branchTitle: branch.title);
                         },
                         borderRadius: BorderRadius.circular(12),
                         child: Container(

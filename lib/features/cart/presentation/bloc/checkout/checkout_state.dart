@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 class CheckoutState extends Equatable {
   final bool isDelivery;
   final String? branchId;
+  final String? branchTitle;
   final double? lat;
   final double? lng;
   final String? address;
@@ -29,6 +30,7 @@ class CheckoutState extends Equatable {
   const CheckoutState({
     this.isDelivery = true,
     this.branchId,
+    this.branchTitle,
     this.lat,
     this.lng,
     this.address,
@@ -51,6 +53,7 @@ class CheckoutState extends Equatable {
   CheckoutState copyWith({
     bool? isDelivery,
     String? branchId,
+    String? branchTitle,
     double? lat,
     double? lng,
     String? address,
@@ -72,6 +75,7 @@ class CheckoutState extends Equatable {
     return CheckoutState(
       isDelivery: isDelivery ?? this.isDelivery,
       branchId: branchId ?? this.branchId,
+      branchTitle: branchTitle ?? this.branchTitle,
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
       address: address ?? this.address,
@@ -100,6 +104,7 @@ class CheckoutState extends Equatable {
   List<Object?> get props => [
         isDelivery,
         branchId,
+        branchTitle,
         lat,
         lng,
         address,

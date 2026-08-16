@@ -13,8 +13,8 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     emit(state.copyWith(isDelivery: isDelivery));
   }
 
-  void setBranch(String branchId) {
-    emit(state.copyWith(branchId: branchId));
+  void setBranch(String branchId, {String? branchTitle}) {
+    emit(state.copyWith(branchId: branchId, branchTitle: branchTitle));
   }
 
   Future<void> setAddressAndCalculateDelivery(double lat, double lng, String address) async {
