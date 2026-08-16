@@ -4,14 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
-import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/theme/app_icons.dart';
+import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
+import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
+import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
+import 'package:pizza_strada/features/cart/presentation/widgets/order_type_bottom_sheet.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
-import 'package:pizza_strada/features/loyalty/presentation/bloc/loyalty_cubit.dart';
-import 'package:pizza_strada/features/home/presentation/widgets/product_card.dart';
+import 'package:pizza_strada/features/home/presentation/widgets/header_location_pill.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/home_loyalty_card.dart';
+import 'package:pizza_strada/features/home/presentation/widgets/product_card.dart';
+import 'package:pizza_strada/features/loyalty/presentation/bloc/loyalty_cubit.dart';
 import 'package:pizza_strada/core/widgets/app_shimmer.dart';
 
 class HomePage extends StatefulWidget {
@@ -198,10 +202,30 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       Image.asset(
                         'assets/icons/logo.png',
-                        height: 32,
+                        height: 30,
                         errorBuilder: (_, __, ___) => Text(
                           'Pizza strada',
-                          style: AppTextStyles.h2.copyWith(color: AppColors.primary),
+                          style: AppTextStyles.h3.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: BlocBuilder<CheckoutCubit, CheckoutState>(
+                          builder: (context, checkoutState) {
+                            return HeaderLocationPill(
+                              orderType: checkoutState.isDelivery ? 0 : 1,
+                              addressName: checkoutState.address,
+                              branchTitle: checkoutState.branchId != null ? 'STRADA-${checkoutState.branchId}' : null,
+                              onTap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (_) => const OrderTypeBottomSheet(),
+                                );
+                              },
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -225,7 +249,7 @@ class _HomePageState extends State<HomePage> {
                         return Stack(
                           children: [
                             IconButton(
-                              icon: const Icon(AppIcons.cart, color: AppColors.neutral900),
+                              icon: Icon(AppIcons.cart, color: AppColors.neutral900),
                               onPressed: () => context.push('/cart'),
                             ),
                             if (count > 0)
@@ -414,7 +438,7 @@ class _HomePageState extends State<HomePage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(AppIcons.wifiOff, size: 48, color: AppColors.neutral400),
+                          Icon(AppIcons.wifiOff, size: 48, color: AppColors.neutral400),
                           const SizedBox(height: 12),
                           Text(state.message, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600), textAlign: TextAlign.center),
                         ],
@@ -532,7 +556,7 @@ class _HomePageState extends State<HomePage> {
                                     });
                                   },
                                   selectedColor: AppColors.primary,
-                                  backgroundColor: Theme.of(context).cardColor,
+                                  backgroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.neutral100,
                                   disabledColor: Theme.of(context).cardColor,
                                   showCheckmark: false,
                                   side: BorderSide(
@@ -540,11 +564,11 @@ class _HomePageState extends State<HomePage> {
                                     width: 1,
                                   ),
                                   labelStyle: AppTextStyles.labelSmall.copyWith(
-                                    color: selected ? Colors.white : Theme.of(context).textTheme.bodySmall?.color,
-                                    fontWeight: FontWeight.w600,
+                                    color: selected ? Colors.white : (Theme.of(context).brightness == Brightness.dark ? AppColors.neutral300 : AppColors.neutral700),
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                 ),
                               );
                             },
