@@ -49,7 +49,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
           }
         },
         child: Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: Colors.white, // Splash har doim oq (tema mustaqil)
           body: BlocBuilder<SplashCubit, SplashState>(
             builder: (context, state) {
               return FadeTransition(
@@ -59,33 +59,32 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _buildLogo(),
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 60),
                       if (state is SplashFailure) ...[
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 32),
                           child: Text(
                             state.error,
                             textAlign: TextAlign.center,
-                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error),
+                            style: AppTextStyles.bodyMedium
+                                .copyWith(color: AppColors.error),
                           ),
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton(
-                          onPressed: () => context.read<SplashCubit>().init(),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
+                          onPressed: () =>
+                              context.read<SplashCubit>().init(),
                           child: const Text('Qayta urinish'),
                         ),
                       ] else ...[
-                        const SizedBox(
-                          width: 28,
-                          height: 28,
+                        SizedBox(
+                          width: 32,
+                          height: 32,
                           child: CircularProgressIndicator(
                             color: AppColors.primary,
-                            strokeWidth: 2.5,
+                            strokeWidth: 3,
+                            backgroundColor:
+                                AppColors.primary.withValues(alpha: 0.1),
                           ),
                         ),
                       ],

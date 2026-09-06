@@ -44,10 +44,12 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return BlocProvider(
       create: (_) => getIt<AuthCubit>(),
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: isDark ? AppColors.darkBackground : Colors.white,
         body: BlocConsumer<AuthCubit, AuthState>(
           listener: (ctx, state) {
             if (state is AuthOtpSent) {
@@ -57,7 +59,8 @@ class _LoginPageState extends State<LoginPage> {
                 content: Text(state.message),
                 backgroundColor: AppColors.error,
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ));
             }
           },
@@ -66,76 +69,128 @@ class _LoginPageState extends State<LoginPage> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const SizedBox(height: 16),
-                    // Language Switcher
+
+                    // Til tanlash tugmalar
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _langButton(context, 'UZ', context.locale.languageCode == 'uz'),
+                        _langButton(context, 'UZ',
+                            context.locale.languageCode == 'uz'),
                         const SizedBox(width: 8),
-                        _langButton(context, 'RU', context.locale.languageCode == 'ru'),
+                        _langButton(context, 'RU',
+                            context.locale.languageCode == 'ru'),
                         const SizedBox(width: 8),
-                        _langButton(context, 'EN', context.locale.languageCode == 'en'),
+                        _langButton(context, 'EN',
+                            context.locale.languageCode == 'en'),
                       ],
                     ),
-                    const SizedBox(height: 60),
 
+                    const SizedBox(height: 48),
+
+                    // Logo
+                    Image.asset(
+                      'assets/icons/logo.png',
+                      width: 100,
+                      height: 100,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(Icons.local_pizza,
+                            color: Colors.white, size: 40),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Sarlavha
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: Text('auth.login_title'.tr(), style: AppTextStyles.h1.copyWith(color: AppColors.neutral900, fontSize: 32)),
+                      child: Text(
+                        'auth.login_title'.tr(),
+                        style: AppTextStyles.h1.copyWith(
+                          color: isDark
+                              ? Colors.white
+                              : AppColors.neutral900,
+                          fontSize: 28,
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
                         'auth.login_subtitle'.tr(),
-                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.neutral500,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 40),
 
-                    // Name field
+                    // Ism maydoni
                     TextField(
                       controller: _nameController,
                       focusNode: _nameFocus,
                       textInputAction: TextInputAction.next,
                       onSubmitted: (_) => _phoneFocus.requestFocus(),
-                      style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral900),
-                      decoration: _inputDecoration('auth.name_hint'.tr()),
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: isDark ? Colors.white : AppColors.neutral900,
+                      ),
+                      decoration: _inputDecoration(
+                        'auth.name_hint'.tr(),
+                        Icons.person_outline_rounded,
+                      ),
                     ),
                     const SizedBox(height: 16),
 
-                    // Phone field
+                    // Telefon maydoni
                     TextField(
                       controller: _phoneController,
                       focusNode: _phoneFocus,
                       keyboardType: TextInputType.phone,
                       textInputAction: TextInputAction.done,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly
+                      ],
                       maxLength: 9,
-                      style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral900),
-                      decoration: _inputDecoration('').copyWith(
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: isDark ? Colors.white : AppColors.neutral900,
+                      ),
+                      decoration: _inputDecoration(
+                        '',
+                        Icons.phone_outlined,
+                      ).copyWith(
                         counterText: '',
                         prefixText: '+998 ',
-                        prefixStyle: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral900),
+                        prefixStyle: AppTextStyles.bodyLarge.copyWith(
+                          color: isDark ? Colors.white : AppColors.neutral900,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),
 
-                    // Button
+                    // Kirish tugmasi
                     SizedBox(
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: state is AuthLoading ? null : () => _onContinue(ctx),
+                        onPressed: state is AuthLoading
+                            ? null
+                            : () => _onContinue(ctx),
                         child: state is AuthLoading
-                               ? const SizedBox(
-                                   width: 22,
-                                   height: 22,
-                                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                                 )
-                               : Text('auth.send_sms'.tr()),
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                    color: Colors.white, strokeWidth: 2.5),
+                              )
+                            : Text('auth.send_sms'.tr()),
                       ),
                     ),
                   ],
@@ -153,41 +208,32 @@ class _LoginPageState extends State<LoginPage> {
       onTap: () {
         context.setLocale(Locale(lang.toLowerCase()));
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? AppColors.primary : AppColors.neutral50,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: active ? AppColors.primary : AppColors.neutral200),
+          color: active ? AppColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: active ? AppColors.primary : AppColors.neutral300,
+            width: 1.5,
+          ),
         ),
         child: Text(
           lang,
           style: AppTextStyles.labelSmall.copyWith(
-            color: active ? Colors.white : AppColors.neutral600,
-            fontWeight: FontWeight.w600,
+            color: active ? Colors.white : AppColors.neutral500,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
           ),
         ),
       ),
     );
   }
 
-  InputDecoration _inputDecoration(String hint) => InputDecoration(
+  InputDecoration _inputDecoration(String hint, IconData icon) =>
+      InputDecoration(
         hintText: hint,
-        hintStyle: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400),
-        filled: true,
-        fillColor: AppColors.neutral50,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.neutral200, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-        ),
+        prefixIcon: Icon(icon, color: AppColors.neutral400, size: 20),
       );
 }

@@ -44,6 +44,7 @@ class ProductEntity extends Equatable {
   final String thumbnail;
   final String photo;
   final double price;
+  final double? oldPrice;
   final CategoryEntity? category;
   final List<VariantEntity> variants;
   final List<KeyValueEntity> values;
@@ -56,13 +57,32 @@ class ProductEntity extends Equatable {
     required this.thumbnail,
     required this.photo,
     required this.price,
+    this.oldPrice,
     this.category,
     required this.variants,
     required this.values,
   });
 
   @override
-  List<Object?> get props => [id, slug, title, description, thumbnail, photo, price, category, variants, values];
+  List<Object?> get props => [id, slug, title, description, thumbnail, photo, price, oldPrice, category, variants, values];
+}
+
+/// Banner slider entity (Swiper Slider uchun)
+class SliderEntity extends Equatable {
+  final int id;
+  final String imageUrl;
+  final String? link;
+  final String? title;
+
+  const SliderEntity({
+    required this.id,
+    required this.imageUrl,
+    this.link,
+    this.title,
+  });
+
+  @override
+  List<Object?> get props => [id, imageUrl, link, title];
 }
 
 class SettingsEntity extends Equatable {

@@ -94,20 +94,32 @@ class OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine status color
-    Color statusColor = AppColors.neutral700;
-    if (order.status == 6) statusColor = Colors.green; // Completed
-    if (order.status == 1) statusColor = Colors.red; // Rejected
-    if (order.status == 4) statusColor = Colors.orange; // In Progress
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Status rang — Laravel `status-1`..`status-7` ga mos
+    Color statusColor = AppColors.neutral500;
+    switch (order.status) {
+      case 1: statusColor = const Color(0xFFEF4444); break; // Bekor qilindi — qizil
+      case 2: statusColor = const Color(0xFFF59E0B); break; // Yangi
+      case 3: statusColor = const Color(0xFF3B82F6); break; // Qabul qilindi
+      case 4: statusColor = const Color(0xFFF97316); break; // Tayyorlanmoqda
+      case 5: statusColor = const Color(0xFF8B5CF6); break; // Yetkazilmoqda
+      case 6: statusColor = const Color(0xFF10B981); break; // Bajarildi — yashil
+      case 7: statusColor = AppColors.neutral500; break;    // Arxiv
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

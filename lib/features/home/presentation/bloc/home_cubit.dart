@@ -12,12 +12,15 @@ abstract class HomeState extends Equatable {
 
 class HomeInitial extends HomeState {}
 class HomeLoading extends HomeState {}
+
 class HomeLoaded extends HomeState {
   final List<CategoryEntity> categories;
   final List<ProductEntity> fullProducts;
   final List<ProductEntity> products;
   final SettingsEntity? settings;
   final String? selectedCategory;
+  /// Banner slider'lar (Carousel uchun)
+  final List<SliderEntity> sliders;
 
   const HomeLoaded({
     required this.categories,
@@ -25,11 +28,13 @@ class HomeLoaded extends HomeState {
     required this.products,
     this.settings,
     this.selectedCategory,
+    this.sliders = const [],
   });
 
   @override
-  List<Object?> get props => [categories, fullProducts, products, settings, selectedCategory];
+  List<Object?> get props => [categories, fullProducts, products, settings, selectedCategory, sliders];
 }
+
 class HomeFailure extends HomeState {
   final String message;
   const HomeFailure(this.message);
@@ -66,6 +71,7 @@ class HomeCubit extends Cubit<HomeState> {
             fullProducts: products,
             products: products,
             settings: settings,
+            sliders: const [], // API dan slider endpoint qo'shilganda to'ldiriladi
           )),
         ),
       ),
@@ -76,20 +82,18 @@ class HomeCubit extends Cubit<HomeState> {
     final currentState = state;
     if (currentState is HomeLoaded) {
       if (currentState.selectedCategory == slug) {
-        // Unselect if same category clicked (optional, but requested "filter sifatida ishlash")
         emit(HomeLoaded(
           categories: currentState.categories,
           fullProducts: currentState.fullProducts,
           products: currentState.fullProducts,
           settings: currentState.settings,
           selectedCategory: null,
+          sliders: currentState.sliders,
         ));
         return;
       }
 
       final filteredProducts = currentState.fullProducts.where((p) {
-        // API dan kelgan productlarda category bo'lishi kerak. 
-        // Agar category null bo'lsa yoki slug mos kelsa
         return p.category?.slug == slug;
       }).toList();
 
@@ -99,6 +103,7 @@ class HomeCubit extends Cubit<HomeState> {
         products: filteredProducts,
         settings: currentState.settings,
         selectedCategory: slug,
+        sliders: currentState.sliders,
       ));
     }
   }

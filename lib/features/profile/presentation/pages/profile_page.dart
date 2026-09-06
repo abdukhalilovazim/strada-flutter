@@ -12,7 +12,7 @@ import 'package:pizza_strada/features/loyalty/presentation/bloc/loyalty_cubit.da
 import 'package:pizza_strada/features/profile/presentation/pages/inquiry_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/branches_web_view_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/edit_profile_page.dart';
-import 'package:url_launcher/url_launcher.dart';
+
 import 'package:pizza_strada/core/di/injection.dart';
 import 'package:pizza_strada/features/auth/domain/entities/user_entity.dart';
 import 'package:pizza_strada/features/auth/domain/usecases/get_me_usecase.dart';
@@ -62,15 +62,23 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text('profile.title'.tr(), style: AppTextStyles.h2.copyWith(color: Theme.of(context).textTheme.headlineMedium?.color)),
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -82,7 +90,16 @@ class _ProfilePageState extends State<ProfilePage> {
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.neutral200),
+                border: Border.all(
+                  color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
@@ -182,10 +199,22 @@ class _ProfilePageState extends State<ProfilePage> {
               onTap: () => _showLanguagePicker(),
             ),
 
-            // Dark mode toggle (hidden for now)
-            // BlocBuilder<ThemeCubit, ThemeMode>(...),
+            // Dark mode toggle
+            BlocBuilder<ThemeCubit, ThemeMode>(
+              builder: (context, themeMode) {
+                final isDarkMode = themeMode == ThemeMode.dark;
+                return _buildToggleItem(
+                  icon: isDarkMode
+                      ? Icons.dark_mode_rounded
+                      : Icons.light_mode_rounded,
+                  title: 'profile.dark_mode'.tr(),
+                  value: isDarkMode,
+                  onChanged: (val) =>
+                      context.read<ThemeCubit>().toggle(),
+                );
+              },
+            ),
 
-            
             // Filiallar (WebView)
             _buildItem(
               icon: Icons.store_rounded,
@@ -195,7 +224,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 MaterialPageRoute(builder: (_) => const BranchesWebViewPage()),
               ),
             ),
-            const SizedBox(height: 12),
             _buildItem(
               icon: Icons.chat_bubble_outline_rounded,
               title: 'profile.support_inquiry'.tr(),
@@ -213,7 +241,9 @@ class _ProfilePageState extends State<ProfilePage> {
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.neutral200),
+                border: Border.all(
+                  color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                ),
               ),
               child: Material(
                 color: Colors.transparent,
@@ -334,12 +364,15 @@ class _ProfilePageState extends State<ProfilePage> {
     Widget? trailing,
     required VoidCallback onTap,
   }) {
+    final isDarkItem = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.neutral200),
+        border: Border.all(
+          color: isDarkItem ? AppColors.neutral800 : AppColors.neutral200,
+        ),
       ),
       child: Material(
         color: Colors.transparent,

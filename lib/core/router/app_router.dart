@@ -1,17 +1,17 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/constants/app_constants.dart';
+import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
-import 'package:pizza_strada/core/storage/secure_storage.dart';
-import 'package:pizza_strada/core/theme/app_icons.dart';
 import 'package:pizza_strada/features/auth/presentation/pages/login_page.dart';
 import 'package:pizza_strada/features/auth/presentation/pages/otp_page.dart';
+import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/pages/cart_page.dart';
 import 'package:pizza_strada/features/cart/presentation/pages/checkout_page.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pizza_strada/features/cart/presentation/pages/map_picker_page.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/pages/home_page.dart';
@@ -22,62 +22,76 @@ import 'package:pizza_strada/features/orders/presentation/pages/orders_page.dart
 import 'package:pizza_strada/features/profile/presentation/pages/profile_page.dart';
 import 'package:pizza_strada/features/splash/presentation/pages/splash_page.dart';
 
-// Placeholder pages for minor routes
-
+/// Main scaffold with bottom navigation bar.
+/// Style: Laravel mobile-bottom-appbar — flat white/dark bg, icon+label, active=primary red.
 class MainScaffold extends StatelessWidget {
   final Widget child;
   const MainScaffold({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currentIndex = _calculateSelectedIndex(context);
+
     return Scaffold(
       body: SafeArea(bottom: false, child: child),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? AppColors.darkSurface : Colors.white,
+          border: Border(
+            top: BorderSide(
+              color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+              width: 1,
+            ),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
               blurRadius: 20,
               offset: const Offset(0, -5),
             ),
           ],
         ),
         child: SafeArea(
-          child: BottomNavigationBar(
-            currentIndex: _calculateSelectedIndex(context),
-            onTap: (index) => _onItemTapped(index, context),
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.white,
-            selectedItemColor: AppColors.primary,
-            unselectedItemColor: AppColors.neutral400,
-            elevation: 0,
-            showSelectedLabels: true,
-            showUnselectedLabels: true,
-            selectedLabelStyle: AppTextStyles.labelSmall.copyWith(fontSize: 11, fontWeight: FontWeight.w600),
-            unselectedLabelStyle: AppTextStyles.labelSmall.copyWith(fontSize: 11, fontWeight: FontWeight.w500),
-            items: [
-              BottomNavigationBarItem(
-                icon: const Icon(AppIcons.home, size: 24),
-                activeIcon: const Icon(AppIcons.homeActive, size: 24),
-                label: 'nav.home'.tr(),
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(AppIcons.cart, size: 24),
-                activeIcon: const Icon(AppIcons.cartActive, size: 24),
-                label: 'nav.cart'.tr(),
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(AppIcons.orders, size: 24),
-                activeIcon: const Icon(AppIcons.ordersActive, size: 24),
-                label: 'nav.orders'.tr(),
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(AppIcons.profile, size: 24),
-                activeIcon: const Icon(AppIcons.profileActive, size: 24),
-                label: 'nav.profile'.tr(),
-              ),
-            ],
+          top: false,
+          child: SizedBox(
+            height: 62,
+            child: Row(
+              children: [
+                _NavItem(
+                  index: 0,
+                  currentIndex: currentIndex,
+                  icon: Icons.home_outlined,
+                  activeIcon: Icons.home_rounded,
+                  label: 'nav.home'.tr(),
+                  onTap: () => GoRouter.of(context).go('/home'),
+                ),
+                _NavItemWithBadge(
+                  index: 1,
+                  currentIndex: currentIndex,
+                  icon: Icons.shopping_bag_outlined,
+                  activeIcon: Icons.shopping_bag_rounded,
+                  label: 'nav.cart'.tr(),
+                  onTap: () => GoRouter.of(context).go('/cart'),
+                ),
+                _NavItem(
+                  index: 2,
+                  currentIndex: currentIndex,
+                  icon: Icons.receipt_long_outlined,
+                  activeIcon: Icons.receipt_long_rounded,
+                  label: 'nav.orders'.tr(),
+                  onTap: () => GoRouter.of(context).go('/orders'),
+                ),
+                _NavItem(
+                  index: 3,
+                  currentIndex: currentIndex,
+                  icon: Icons.person_outline_rounded,
+                  activeIcon: Icons.person_rounded,
+                  label: 'nav.profile'.tr(),
+                  onTap: () => GoRouter.of(context).go('/profile'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -92,14 +106,165 @@ class MainScaffold extends StatelessWidget {
     if (location.startsWith('/profile')) return 3;
     return 0;
   }
+}
 
-  void _onItemTapped(int index, BuildContext context) {
-    switch (index) {
-      case 0: GoRouter.of(context).go('/home'); break;
-      case 1: GoRouter.of(context).go('/cart'); break;
-      case 2: GoRouter.of(context).go('/orders'); break;
-      case 3: GoRouter.of(context).go('/profile'); break;
-    }
+/// Single nav item — icon + label, active = primary red.
+class _NavItem extends StatelessWidget {
+  final int index;
+  final int currentIndex;
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.index,
+    required this.currentIndex,
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isActive = index == currentIndex;
+    final color = isActive
+        ? AppColors.primary
+        : (isDark ? AppColors.neutral500 : const Color(0xFF64748B));
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          height: 62,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedSlide(
+                offset: isActive ? const Offset(0, -0.08) : Offset.zero,
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  isActive ? activeIcon : icon,
+                  size: 22,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: AppTextStyles.labelSmall.copyWith(
+                  fontSize: 10.5,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Nav item with cart badge overlay.
+class _NavItemWithBadge extends StatelessWidget {
+  final int index;
+  final int currentIndex;
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _NavItemWithBadge({
+    required this.index,
+    required this.currentIndex,
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isActive = index == currentIndex;
+    final color = isActive
+        ? AppColors.primary
+        : (isDark ? AppColors.neutral500 : const Color(0xFF64748B));
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: SizedBox(
+          height: 62,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              BlocBuilder<CartCubit, CartState>(
+                builder: (context, cartState) {
+                  final count = cartState.items.length;
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      AnimatedSlide(
+                        offset: isActive ? const Offset(0, -0.08) : Offset.zero,
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(
+                          isActive ? activeIcon : icon,
+                          size: 22,
+                          color: color,
+                        ),
+                      ),
+                      if (count > 0)
+                        Positioned(
+                          top: -4,
+                          right: -8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: isDark
+                                    ? AppColors.darkSurface
+                                    : Colors.white,
+                                width: 2,
+                              ),
+                            ),
+                            child: Text(
+                              '$count',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: AppTextStyles.labelSmall.copyWith(
+                  fontSize: 10.5,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -139,7 +304,7 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/checkout',   
+      path: '/checkout',
       builder: (_, __) => BlocProvider(
         create: (_) => CheckoutCubit(),
         child: const CheckoutPage(),
