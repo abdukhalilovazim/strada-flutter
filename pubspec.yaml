@@ -59,6 +59,8 @@ dependencies:
   dartz: ^0.10.1 # Either<Failure, T>
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
+  appmetrica_plugin: ^4.1.0
+  app_links: ^7.2.1
 
 dev_dependencies:
   flutter_test:

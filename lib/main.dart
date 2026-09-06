@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:pizza_strada/core/di/injection.dart';
 import 'package:pizza_strada/core/router/app_router.dart';
+import 'package:pizza_strada/core/services/analytics_service.dart';
+import 'package:pizza_strada/core/services/deep_link_service.dart';
 import 'package:pizza_strada/core/theme/app_theme.dart';
 import 'package:pizza_strada/core/theme/theme_cubit.dart';
 import 'package:pizza_strada/core/utils/device_info_helper.dart';
@@ -20,6 +22,7 @@ void main() async {
   // Catch unhandled asynchronous errors globally (e.g. stream timeouts on background resume)
   PlatformDispatcher.instance.onError = (error, stack) {
     debugPrint('🚨 [Unhandled Async Error]: $error\n$stack');
+    AnalyticsService.instance.logError('Unhandled Async Error', error, stack);
     return true; // Prevents application crash
   };
   
@@ -36,6 +39,10 @@ void main() async {
   await SharedPrefs.init();
   await EasyLocalization.ensureInitialized();
   await configureDependencies();
+
+  // Initialize AppMetrica analytics and Deep linking
+  await AnalyticsService.instance.init();
+  await DeepLinkService.instance.init();
 
   runApp(
     EasyLocalization(

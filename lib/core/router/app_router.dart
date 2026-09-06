@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/constants/app_constants.dart';
+import 'package:pizza_strada/core/services/analytics_service.dart';
 import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
@@ -271,6 +272,7 @@ class _NavItemWithBadge extends StatelessWidget {
 final appRouter = GoRouter(
   navigatorKey: AppConstants.navigatorKey,
   initialLocation: '/splash',
+  observers: [AppAnalyticsObserver()],
   redirect: (context, state) async {
     final token = await SecureStorage.getToken();
     final onAuth = state.matchedLocation.startsWith('/auth');

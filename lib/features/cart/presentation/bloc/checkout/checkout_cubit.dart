@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pizza_strada/core/network/api_client.dart';
+import 'package:pizza_strada/core/services/analytics_service.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
 
 class CheckoutCubit extends Cubit<CheckoutState> {
@@ -59,11 +60,13 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         body: {'promo_code': code, 'total_price': subtotal.toInt()},
       );
       final data = response as Map<String, dynamic>?;
+      final promoVal = double.tryParse(data?['value']?.toString() ?? '0') ?? 0;
+      AnalyticsService.instance.logPromoApplied(code: code, discount: promoVal);
       emit(state.copyWith(
         loadingPromo: false,
         appliedPromoCode: (data?['code'] ?? data?['promo_code']) as String?,
         promoType: data?['type'] as int?,
-        promoValue: double.tryParse(data?['value']?.toString() ?? '0'),
+        promoValue: promoVal,
         promoError: null,
       ));
     } catch (e) {

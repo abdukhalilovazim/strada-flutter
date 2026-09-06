@@ -12,6 +12,7 @@ import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/loyalty/presentation/bloc/loyalty_cubit.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/network/api_client.dart';
+import 'package:pizza_strada/core/services/analytics_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class CheckoutPage extends StatefulWidget {
@@ -794,9 +795,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
             ? ElevatedButton(
                 onPressed: (checkoutState.isDelivery
                         ? (checkoutState.address != null &&
-                            checkoutState.deliveryPrice > 0)
+                            !checkoutState.loadingDelivery)
                         : checkoutState.branchId != null)
-                    ? () => setState(() => _currentStep = 1)
+                    ? () {
+                        AnalyticsService.instance.logCheckoutStarted(
+                          itemCount: cartState.items.length,
+                          totalAmount: finalTotal,
+                          isDelivery: checkoutState.isDelivery,
+                        );
+                        setState(() => _currentStep = 1);
+                      }
                     : null,
                 child: Text('checkout.next'.tr()),
               )
@@ -807,9 +815,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     : () {
                         final products = cartState.items.map((item) {
                           final variantId = item.variant?.id ??
-                              item.product.variants.firstOrNull?.id;
+                              item.product.variants.firstOrNull?.id ??
+                              0;
                           return {
-                            'variant_id': variantId ?? 0,
+                            'id': variantId,
+                            'variant_id': variantId,
                             'quantity': item.quantity,
                           };
                         }).toList();
@@ -829,6 +839,17 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   void _handleSuccess(Map<String, dynamic> data) async {
+    final orderId = data['order_id']?.toString() ?? data['id']?.toString() ?? '';
+    final totalAmount = double.tryParse(data['total_price']?.toString() ?? '') ?? 0;
+    final paymentMethod = data['payment_method_text']?.toString() ?? 'unknown';
+
+    AnalyticsService.instance.logOrderPlaced(
+      orderId: orderId,
+      totalAmount: totalAmount,
+      paymentMethod: paymentMethod,
+      isDelivery: context.read<CheckoutCubit>().state.isDelivery,
+    );
+
     final paymentUrl = data['payment_url'] as String?;
     if (paymentUrl != null && paymentUrl.isNotEmpty) {
       final uri = Uri.tryParse(paymentUrl);
@@ -846,7 +867,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
         backgroundColor: AppColors.success,
       ));
       context.read<CartCubit>().clear();
-      context.go('/orders');
+      if (orderId.isNotEmpty) {
+        context.go('/order/$orderId');
+      } else {
+        context.go('/orders');
+      }
     }
   }
 }

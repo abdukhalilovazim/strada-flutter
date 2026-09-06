@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pizza_strada/core/services/analytics_service.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
@@ -26,8 +27,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.product != null && widget.product!.variants.length == 1) {
-      _selectedVariant = widget.product!.variants.first;
+    if (widget.product != null) {
+      if (widget.product!.variants.length == 1) {
+        _selectedVariant = widget.product!.variants.first;
+      }
+      AnalyticsService.instance.logProductView(
+        id: widget.product!.id.toString(),
+        title: widget.product!.title,
+        price: widget.product!.price,
+      );
     }
   }
 
@@ -405,6 +413,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               variant: _selectedVariant,
                             );
                       }
+                      AnalyticsService.instance.logAddToCart(
+                        id: product.id.toString(),
+                        title: product.title,
+                        quantity: _quantity,
+                        price: displayPrice,
+                        variant: _selectedVariant?.title,
+                      );
                       context.pop();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(

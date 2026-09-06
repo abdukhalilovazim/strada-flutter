@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
+import 'package:pizza_strada/core/services/analytics_service.dart';
 import 'package:pizza_strada/features/auth/domain/entities/user_entity.dart';
 import 'package:pizza_strada/features/auth/domain/usecases/confirm_otp_usecase.dart';
 import 'package:pizza_strada/features/auth/domain/usecases/login_usecase.dart';
@@ -42,6 +43,8 @@ class AuthCubit extends Cubit<AuthState> {
       (user) async {
         await SecureStorage.saveToken(user.token);
         await SecureStorage.saveUserInfo(name: user.fullName, phone: user.phone);
+        AnalyticsService.instance.setUserProfileId(user.phone);
+        AnalyticsService.instance.logEvent('login_success', {'phone': user.phone, 'name': user.fullName});
         emit(AuthSuccess(user));
       },
     );
