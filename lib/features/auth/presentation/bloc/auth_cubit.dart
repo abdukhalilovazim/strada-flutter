@@ -35,7 +35,7 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
-  Future<void> confirmOtp({required String phone, required int code}) async {
+  Future<void> confirmOtp({required String phone, required String code}) async {
     emit(AuthLoading());
     final result = await _confirmOtpUseCase(phone: phone, code: code);
     result.fold(

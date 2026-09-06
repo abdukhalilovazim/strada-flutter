@@ -32,7 +32,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, UserEntity>> confirmOtp({
     required String phone,
-    required int code,
+    required String code,
   }) async {
     try {
       return Right(await _remoteDataSource.confirmOtp(phone: phone, code: code));

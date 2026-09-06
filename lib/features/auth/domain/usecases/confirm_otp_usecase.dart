@@ -10,7 +10,7 @@ class ConfirmOtpUseCase {
 
   ConfirmOtpUseCase(this._repository);
 
-  Future<Either<Failure, UserEntity>> call({required String phone, required int code}) {
+  Future<Either<Failure, UserEntity>> call({required String phone, required String code}) {
     return _repository.confirmOtp(phone: phone, code: code);
   }
 }

@@ -68,7 +68,7 @@ class _OtpPageState extends State<OtpPage> {
   void _onConfirm(BuildContext ctx) {
     final codeStr = _controllers.map((c) => c.text).join();
     if (codeStr.length == 4) {
-      ctx.read<AuthCubit>().confirmOtp(phone: widget.phone, code: int.parse(codeStr));
+      ctx.read<AuthCubit>().confirmOtp(phone: widget.phone, code: codeStr);
     }
   }
 

@@ -4,7 +4,7 @@ import 'package:pizza_strada/features/auth/data/models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
   Future<bool> login({required String fullName, required String phone});
-  Future<UserModel> confirmOtp({required String phone, required int code});
+  Future<UserModel> confirmOtp({required String phone, required String code});
   Future<UserModel> getMe();
   Future<UserModel> updateProfile({required String fullName, String? birthdate});
 }
@@ -28,7 +28,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<UserModel> confirmOtp({required String phone, required int code}) async {
+  Future<UserModel> confirmOtp({required String phone, required String code}) async {
     final response = await _client.post(
       'auth/confirm-otp',
       body: {
