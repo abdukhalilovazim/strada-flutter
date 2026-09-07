@@ -294,19 +294,61 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildLanguageOption(String title, Locale locale) {
     final isSelected = context.locale == locale;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.08)
+            : (isDark ? AppColors.darkSurface : AppColors.neutral50),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isSelected ? AppColors.primary : (isDark ? AppColors.neutral800 : AppColors.neutral200),
+          width: isSelected ? 1.5 : 1.0,
+        ),
+      ),
       child: Material(
         color: Colors.transparent,
-        child: ListTile(
-          title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: isSelected ? AppColors.primary : Theme.of(context).textTheme.bodyMedium?.color)),
-          trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
           onTap: () async {
             await context.setLocale(locale);
             if (!mounted) return;
             context.read<HomeCubit>().init();
             Navigator.pop(context);
           },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected
+                          ? AppColors.primary
+                          : (isDark ? Colors.white : AppColors.neutral900),
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.primary
+                          : (isDark ? AppColors.neutral700 : AppColors.neutral300),
+                      width: isSelected ? 5.5 : 1.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

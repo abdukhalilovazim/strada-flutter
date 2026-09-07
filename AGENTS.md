@@ -200,7 +200,7 @@ Header-Sign:       HMAC-SHA256(jsonEncode(variables) + randomStr + timestamp, HM
 | Secondary Color    | `AppColors.secondary` (`0xFF2E7D32`) |
 | Card Radius        | `16px` (OrderCard), `20px` (ProductCard) |
 | Shadow             | `Colors.black.withOpacity(0.04)`, `blurRadius: 10` |
-| Font Family        | Inter (via `google_fonts`)       |
+| Font Family        | Inter (Local/Bundled via `assets/fonts/` & `pubspec.yaml`) |
 | Grid Aspect Ratio  | `0.62` (ProductCard grid)        |
 | Slider Viewport    | `0.92` fraction, `20px` radius   |
 
@@ -230,18 +230,86 @@ Before making **any** code change, verify:
 
 
 
-## 10. Auto-Update Policy
+---
 
-This `agents.md` file MUST be updated immediately when:
-1. A new technical requirement or constraint is established.
-2. A new feature area or pattern is introduced.
-3. An existing rule is modified or deprecated.
+## 8. UI Design System & Component Guidelines 🎨 MANDATORY
 
-The file must always reflect the current, ground-truth state of the project.
+### 8.1 Shrift & Typography Optimization
+- **Lokal Inter Shrifti:** Inter shrifti tarmoqqa bog'liq bo'lmasligi, FOUT (Flash of Unstyled Text) va yuklanish kechikishlarining oldini olish uchun `assets/fonts/` papkasida lokal saqlanadi va `pubspec.yaml` orqali ilovaga bog'lanadi.
+- **Tipografiya Tokenlari:** Barcha matn stillari qat'iy ravishda `AppTextStyles` orqali olinadi. Vidjetlar ichida inline `TextStyle(fontSize: ...)` e'lon qilish qat'iyan man etiladi.
+- **Shrift Masshtabi:** `MediaQuery.textScaler` moslashuvchanligi hisobga olingan holda matn elementlariga qat'iy `overflow: TextOverflow.ellipsis` va zarur joylarda `maxLines` berilishi shart.
+
+### 8.2 Standart Inputlar va TextArealari (`AppTextField`)
+- **Yagona Komponent Majburiyati:** Ilovadagi barcha matn kiritish maydonlari (kirish/login, profil, promokod, qidiruv/search, izoh va ko'p qatorli textarea'lar) yagona `AppTextField` (`lib/core/widgets/app_text_field.dart`) vidjeti orqali amalga oshirilishi shart. Xom (raw) `TextField` yoki `TextFormField` ishlatish taqiqlanadi.
+- **Standart Dizayn Tokenlari:**
+  - `borderRadius`: Qat'iy **14–16px** (burchaklari yumaloqlangan).
+  - Orqa fon: Light rejimda `AppColors.neutral50` / `AppColors.neutral100`, Dark rejimda `AppColors.darkSurface`.
+  - Hoshiya (Border): Odatiy holatda 1px `AppColors.neutral200` (darkda `AppColors.neutral800`), fokuslanganda (active/focused) 1.5px qalinlikda `AppColors.primary` (qizil).
+  - Tozalash tugmasi: Qiymat kiritilganda avtomatik o'chirish (`Icons.close_rounded`) ikonkasi chiqishi shart.
+  - Ichki bo'shliq (Padding): Gorizontal `16px`, vertikal `14px`.
+
+### 8.3 Tanlov Komponentlari: Option Kartalari va Chiplar (`AppSelectCard`, `AppChip`)
+- **Yagona Tanlov Standarti:** Ilovadagi barcha tanlov holatlari (Yetkazib berish / Olib ketish, Filial tanlash, To'lov usullari, Til tanlash, Murojaat anonimligi) bitta vizual tilga ega bo'lishi shart.
+- **Active (Tanlangan) Holat:**
+  - Hoshiya: 1.5px `AppColors.primary` (qizil).
+  - Fon rangi: Light rejimda `AppColors.primary.withValues(alpha: 0.08)`, Dark rejimda `AppColors.primary.withValues(alpha: 0.15)`.
+  - Indikator: O'ng tomonda qizil to'ldirilgan animatsiyali radio-dot yoki check belgisi.
+  - Soya: Yumshoq qizil tusli nur (`box-shadow: 0 2px 10px rgba(211, 47, 47, 0.15)`).
+- **Inactive (Tanlanmagan) Holat:**
+  - Hoshiya: 1px `AppColors.neutral200` (darkda `AppColors.neutral800`), fon `cardColor` / `inputBg`, neytral rangdagi ikonka va bo'sh radio doira.
+
+### 8.4 Vizual Elementlar: Ikonkalar, Emojilar va Rasmlar
+- **Ikonkalar Oilasi:** Ilovada faqat **Material Rounded** (`Icons.*_rounded`) va SVG vektor ikonkalar (`AppIcons`) ishlatiladi. Sharp, outlined yoki turli xil paketlardan olingan boshqa uslubdagi ikonkalar aralashtirilmaydi.
+- **Yagona Boshqaruv Guruhi (Unified Floating Action Groups):**
+  - Xarita ustidagi yoki alohida turuvchi barcha floating tugmalar (Zoom In +, Zoom Out -, GPS Mening joylashuvim) ekranning har joyiga sochib tashlanmaydi.
+  - Ular o'ng tomonda bitta vertikal kapsula/kartochka ichida (`_buildMapControls` uslubida) nozik ajratgichlar (divider) bilan guruhlanadi.
+  - Pastki manzil yoki action kartasi bilan bir ustunda (`Column`) bo'lishi shart, shunda hech qachon pastki panel orqasida qolib ketmaydi.
+- **Emojilar Siyosati:**
+  - Asosiy navigatsiya, tugmalar yoki boshqaruv elementlarida oddiy emojilar ishlatish taqiqlanadi (ular turli OS larda har xil va sifatsiz ko'rinadi).
+  - Emojilar faqat kontekstual teglar va badge'lar uchun ruxsat etiladi (masalan: 🍕 Taom sifati, 🚚 Yetkazib berish, 💬 Xizmat).
+- **Rasmlar (Images):**
+  - Barcha tarmoq rasmlari `CachedNetworkImage` orqali keshlanadi.
+  - Yuklanish vaqtida shimmer (`AppShimmer`) va xato holatida standart brend placeholder'i ko'rsatilishi shart.
 
 ---
 
-## 9. Feature Documentation (Real Codebase Map)
+## 9. WebView Arxitekturasi va Xavfsiz Aloqa Standartlari 🌐 MANDATORY
+
+### 9.1 Xavfsiz JavaScript Bajarilishi (`_safeRunJavaScript`)
+- **Ta'qiq:** `WebViewController.runJavaScript()` hech qachon xom (try-catch'siz) chaqirilmaydi. Agar sahifa yuklanayotgan bo'lsa yoki funksiya hali aniqlanmagan bo'lsa, iOS `WKWebView` darhol `PlatformException(FWFEvaluateJavaScriptError)` tashlaydi va ilova crash bo'lishi mumkin.
+- **Majburiy Pattern:** Barcha JS chaqiruvlari `_safeRunJavaScript()` yordamchisi orqali bajarilishi va funksiya mavjudligi tekshirilishi shart:
+  ```dart
+  _safeRunJavaScript('if (typeof window.funcName === "function") { window.funcName(args); }');
+  ```
+- **Blade Tomonida:** Barcha global `window.*` funksiyalari skript boshida e'lon qilinishi, agar xarita yoki DOM hali tayyor bo'lmasa, kelgan parametrlarni navbatga (`__pendingLat`, `__pendingLng`) olib, tayyor bo'lgach bajarishi shart.
+
+### 9.2 Matn Belgilanishi va Kontekst Menyularni Taqiqash
+- Har qanday mobil WebView sahifasida (MapPicker, Branches, PublicOffer, Inquiry):
+  - CSS orqali: `* { -webkit-touch-callout: none !important; -webkit-user-select: none !important; user-select: none !important; }`
+  - Input maydonlarida: `input, textarea { -webkit-user-select: auto !important; user-select: auto !important; }`
+  - JS orqali: `contextmenu` va `selectstart` hodisalari bloklanishi shart (iOS da ko'k lupa va copy-paste menyusi chiqib ketmasligi uchun).
+
+### 9.3 Toza Taqdimot va Redundant Elementlarni Yo'qotish
+- Mobil ilova ichidagi WebView'lar uchun Flutter tomoni nativ `AppBar` yaratadi.
+- Shu sababli, Blade shablonlarida takroriy sarlavhalar, katta logotiplar yoki ortiqcha header ikonkalar ko'rsatilmaydi. Sahifa to'g'ridan-to'g'ri mazmun/forma bilan boshlanadi.
+
+### 9.4 Til, Mavzu va Ma'lumotlarni Sinxronlash
+- Har bir WebView ochilganda quyidagilar URL query params va HTTP headers sifatida uzatiladi:
+  - `lang`: Joriy faol til kodi (`uz`, `ru`, `en`).
+  - `theme`: Joriy mavzu rejimi (`light`, `dark`).
+  - `X-User-Phone` va `X-User-Name`: Foydalanuvchi ma'lumotlari (kerak bo'lganda).
+
+---
+
+## 10. Paketlar va Qaramliklar Siyosati (Zero Package Bloat) 📦 MANDATORY
+
+- **Minimalizm qoidasi:** Kichik UI detallar (animatsiyali hoshiyalar, maxsus kartochkalar, oddiy modal oynalar) uchun yangi tashqi paket qo'shish qat'iyan taqiqlanadi.
+- Faqat Flutter SDK standart vidjetlari va mavjud tasdiqlangan kutubxonalar (`flutter_bloc`, `go_router`, `easy_localization`, `flutter_secure_storage`, `webview_flutter`, `geolocator`) ishlatiladi.
+- Har qanday yangi paket faqat jiddiy arxitekturaviy ehtiyoj tug'ilganda va dasturchi bilan kelishilgan holda qo'shilishi mumkin.
+
+---
+
+## 11. Feature Documentation (Real Codebase Map)
 
 > Bu bo'lim har bir featurening real ishlash logikasini, sahifalarini va UX xususiyatlarini tavsiflaydi. Har qanday o'zgarish kiritishdan oldin shu bo'limni o'qing.
 
@@ -494,55 +562,66 @@ HomeInitial → HomeLoading → HomeLoaded(categories, fullProducts, products, s
 
 ---
 
-## 10. UX Contracts (O'zgartirib bo'lmaydigan UX qoidalar)
+## 12. UX Contracts (O'zgartirib bo'lmaydigan UX qoidalar)
 
 > Bu qoidalar foydalanuvchi tajribasini buzmaslik uchun majburiydir.
 
-### 10.1 Navigation
+### 12.1 Navigation
 
 - `ShellRoute` = Bottom nav bar faqat `/home`, `/cart`, `/orders`, `/profile` uchun ko'rinadi.
 - Checkout, MapPicker, ProductDetail — bottom nav YO'Q (to'liq sahifa).
 - `go()` faqat tab o'tishda, `push()` modal/detail sahifalarda.
 
-### 10.2 Loading States
+### 12.2 Loading States
 
 - `HomeCubit` loading → shimmer skeleton (hech qachon `CircularProgressIndicator` emas).
 - `OrderCubit` loading → `CircularProgressIndicator` markazda.
 - `AuthCubit` loading → tugma `disabled` + spinner ichida.
 - `CheckoutPage` submit → `_isSubmitting = true` → "Buyurtma berish" tugmasi disabled.
 
-### 10.3 Error States
+### 12.3 Error States
 
 - `HomeFailure` → WiFi ikonka + server xabari, `RefreshIndicator` orqali retry.
 - `AuthFailure` → `SnackBar` (floating, qizil rang, 12px radius).
 - `SplashFailure` → inline xato + "Qayta urinish" tugmasi.
 - Checkout promo xatosi → maydon ostida qizil matn (SnackBar emas).
 
-### 10.4 Cart Badge
+### 12.4 Cart Badge
 
 - Savat ikonkasidagi badge: `CartState.items.length` (noyob itemlar soni, miqdor emas).
 - `ProductCard` dagi badge: `quantityInCart` (umumiy miqdor).
 - Badge 0 bo'lsa — ko'rinmaydi.
 
-### 10.5 Price Formatting
+### 12.5 Price Formatting
 
 - Barcha narxlar: `NumberFormatter.formatSum(price)` + `' so\'m'` yoki `' UZS'`.
 - Locale key: `'common.currency'.tr()` — hardcode QILINMAYDI.
 
-### 10.6 Dark Mode
+### 12.6 Dark Mode
 
 - `AppTheme.light` va `AppTheme.dark` — ikkala mavzu qo'llab-quvvatlanadi.
 - Widgetlar `Theme.of(context).cardColor`, `Theme.of(context).textTheme.*` ishlatadi.
 - Magic color literals (masalan, `Colors.white`) faqat komponent foni uchun ruxsat (Splash, BottomNav).
 
-### 10.7 Scroll & Category Sync
+### 12.7 Scroll & Category Sync
 
 - `HomePage`da scroll va chip sync **ikki tomonlama**: scroll → chip yangilanadi; chip → scroll animatsiya.
 - `_isScrollingToCategory` flag bu ikkinchi loopni oldini oladi.
 - Yangi kategoriya bo'limi qo'shilsa, `_getTargetOffset()` va `_getActiveCategory()` metodlarida height hisob-kitobi o'zgartirilishi shart.
 
-### 10.8 Variant Selection
+### 12.8 Variant Selection
 
 - 1 ta variant: sahifa ochilishida avtomatik tanlanadi, variant paneli ko'rsatilmaydi.
 - 2+ variant: paneli ko'rsatiladi, default tanlov yo'q; savatga qo'shishda majburiy.
 - Tanlov yo'q + "Savatga qo'shish" → `SnackBar` xatosi, sahifa yopilmaydi.
+
+---
+
+## 13. Auto-Update Policy
+
+This `AGENTS.md` file MUST be updated immediately when:
+1. A new technical requirement or constraint is established.
+2. A new feature area or pattern is introduced.
+3. An existing rule is modified or deprecated.
+
+The file must always reflect the current, ground-truth state of the project.
