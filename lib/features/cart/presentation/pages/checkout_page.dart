@@ -867,6 +867,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         backgroundColor: AppColors.success,
       ));
       context.read<CartCubit>().clear();
+      context.read<CheckoutCubit>().resetAfterOrder();
       if (orderId.isNotEmpty) {
         context.go('/order/$orderId');
       } else {

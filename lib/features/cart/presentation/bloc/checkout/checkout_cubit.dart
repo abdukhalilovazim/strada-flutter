@@ -119,5 +119,17 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       emit(state.copyWith(isSubmitting: false, submitError: msg));
     }
   }
+
+  void resetAfterOrder() {
+    emit(CheckoutState(
+      isDelivery: state.isDelivery,
+      branchId: state.branchId,
+      branchTitle: state.branchTitle,
+      lat: state.lat,
+      lng: state.lng,
+      address: state.address,
+      deliveryPrice: state.deliveryPrice,
+    ));
+  }
 }
 

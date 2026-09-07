@@ -14,7 +14,7 @@ lib/
 │   ├── constants/                # ApiConstants, AppConstants
 │   ├── di/                       # get_it + @injectable DI
 │   ├── error/                    # Failure classes (dartz Either<Failure, T>)
-│   ├── network/                  # GraphQL client (single link chain)
+│   ├── network/                  # REST API client (ApiClient via http package)
 │   ├── router/                   # go_router configuration
 │   ├── storage/                  # SecureStorage, SharedPrefs
 │   ├── theme/                    # AppColors, AppTextStyles, AppTheme, AppIcons, AppDimensions
@@ -35,7 +35,7 @@ lib/
 ### 1.2 Data Flow
 
 ```
-UI (Widget) → Cubit → UseCase → Repository → DataSource → GraphQL API
+UI (Widget) → Cubit → UseCase → Repository → DataSource → REST API (ApiClient)
                 ↓
         State emission → UI rebuild
 ```
@@ -46,7 +46,7 @@ UI (Widget) → Cubit → UseCase → Repository → DataSource → GraphQL API
 |------------------|--------------------------------|----------------|
 | State Management | `flutter_bloc` (Cubit)         | ^8.1.6         |
 | DI               | `get_it` + `injectable`        | ^8.0.2 / ^2.4.4|
-| API Client       | `graphql_flutter`              | ^5.2.0-beta.7  |
+| API Client       | `http` (ApiClient)             | ^1.2.0         |
 | Navigation       | `go_router`                    | ^14.6.2        |
 | Localization     | `easy_localization`            | ^3.0.7         |
 | Secure Storage   | `flutter_secure_storage`       | ^9.2.2         |
@@ -89,12 +89,11 @@ During **every** code modification, the agent **MUST**:
 - Extract heavy subtrees into separate `const` widgets to isolate rebuilds.
 - Never create objects (lists, maps, callbacks) inline inside `build()` — hoist them to class-level or use `const`.
 
-#### GraphQL / Network Efficiency
-- **No duplicate requests:** Before adding a new GraphQL call, verify the data isn't already available in an existing Cubit state.
+#### REST API / Network Efficiency
+- **No duplicate requests:** Before adding a new API call, verify the data isn't already available in an existing Cubit state.
 - **No redundant fetches:** `HomeCubit.init()` fetches products + categories + sliders in parallel. Never re-fetch individually.
 - **Client-side filtering only:** Products are fetched once; category filtering happens in-memory via `category.slug` match.
 - **Debounce mutations:** Never fire the same mutation (e.g., `createOrder`) twice. Disable UI trigger after first tap.
-- **Cache-first:** Use GraphQL cache policies (`CachePolicy.cacheFirst`) for static data (settings, categories, branches).
 - **60s timeout:** All network operations MUST have a 60-second `connectionTimeout`. No exceptions.
 
 #### State Management Efficiency
@@ -168,17 +167,23 @@ When responding to code modification requests:
 
 ---
 
-## 4. GraphQL Schemas
+## 4. REST API Endpoints
 
-| Schema  | Endpoint            | Operations                                                    |
-|---------|---------------------|---------------------------------------------------------------|
-| Common  | `/graphql/common`   | Products, Categories, Settings, Branches, Login, ConfirmOtp   |
-| Order   | `/graphql/order`    | Orders, Order, CreateOrder, CheckPromoCode, CalculateDeliveryPrice |
+| Resource | Method | Path | Description |
+|---|---|---|---|
+| Products | GET | `/api/v1/products` | All products & filtering |
+| Categories | GET | `/api/v1/categories` | Categories list |
+| Settings | GET | `/api/v1/settings` | General settings & payment methods |
+| Branches | GET | `/api/v1/branches` | Branches list |
+| Login | POST | `/api/v1/auth/login` | Phone + Full name OTP dispatch |
+| Confirm OTP | POST | `/api/v1/auth/confirm-otp` | Verify code & get token |
+| Orders | GET | `/api/v1/orders` | User order history |
+| Create Order | POST | `/api/v1/orders` | Place new order |
+| Delivery Price | POST | `/api/v1/delivery-price` | Calculate delivery cost |
+| Promo Code | POST | `/api/v1/promo-code/check` | Validate promo code |
+| Loyalty Balance | GET | `/api/v1/loyalty/balance` | User loyalty points & balance |
 
-### Routing Rule
-Operations are routed via `Link.split` based on operation name. Order-schema operations: `orders`, `Orders`, `order`, `Order`, `createOrder`, `checkPromoCode`, `calculateDeliveryPrice`.
-
-### Security Headers (Mutations Only)
+### Security Headers (Mutations / POST / PUT Only)
 Every mutation includes HMAC-SHA256 signature:
 ```
 Header-Random-Str: <16-char random string>
@@ -206,7 +211,7 @@ Header-Sign:       HMAC-SHA256(jsonEncode(variables) + randomStr + timestamp, HM
 
 Before making **any** code change, verify:
 
-- [ ] No duplicate GraphQL operation exists for the same data
+- [ ] No duplicate API request exists for the same data
 - [ ] New strings are added to all 3 locale files
 - [ ] `const` is used wherever possible
 - [ ] Prices use `NumberFormatter.formatSum()`

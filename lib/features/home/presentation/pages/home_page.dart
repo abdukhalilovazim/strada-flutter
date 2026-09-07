@@ -417,12 +417,15 @@ class _HomePageState extends State<HomePage> {
                             ),
                             child: Column(
                               children: [
-                                AppShimmer(
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    borderRadius:
-                                        const BorderRadius.vertical(
-                                            top: Radius.circular(16))),
+                                const AspectRatio(
+                                  aspectRatio: 1,
+                                  child: AppShimmer(
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      borderRadius:
+                                          BorderRadius.vertical(
+                                              top: Radius.circular(16))),
+                                ),
                                 Padding(
                                   padding: const EdgeInsets.all(8),
                                   child: Column(

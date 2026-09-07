@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:pizza_strada/core/constants/api_constants.dart';
 import 'package:pizza_strada/core/constants/app_constants.dart';
-import 'package:pizza_strada/core/network/cookie_aware_client.dart';
+import 'package:pizza_strada/core/router/app_router.dart';
 import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/utils/device_info_helper.dart';
 
@@ -26,7 +26,7 @@ class ApiException implements Exception {
 class ApiClient {
   final http.Client _client;
 
-  ApiClient({http.Client? client}) : _client = client ?? CookieAwareClient();
+  ApiClient({http.Client? client}) : _client = client ?? http.Client();
 
   Future<Map<String, String>> _buildHeaders({bool isMutation = false, dynamic body}) async {
     final token = await SecureStorage.getToken();
@@ -84,7 +84,9 @@ class ApiClient {
     final headers = await _buildHeaders(isMutation: false);
     _logRequest('GET', uri, headers);
 
-    final response = await _client.get(uri, headers: headers);
+    final response = await _client
+        .get(uri, headers: headers)
+        .timeout(const Duration(seconds: 60));
     return _processResponse('GET', uri.toString(), response);
   }
 
@@ -94,7 +96,9 @@ class ApiClient {
     final jsonBody = body != null ? jsonEncode(body) : null;
     _logRequest('POST', uri, headers, body: jsonBody);
 
-    final response = await _client.post(uri, headers: headers, body: jsonBody);
+    final response = await _client
+        .post(uri, headers: headers, body: jsonBody)
+        .timeout(const Duration(seconds: 60));
     return _processResponse('POST', uri.toString(), response);
   }
 
@@ -104,7 +108,9 @@ class ApiClient {
     final jsonBody = body != null ? jsonEncode(body) : null;
     _logRequest('PUT', uri, headers, body: jsonBody);
 
-    final response = await _client.put(uri, headers: headers, body: jsonBody);
+    final response = await _client
+        .put(uri, headers: headers, body: jsonBody)
+        .timeout(const Duration(seconds: 60));
     return _processResponse('PUT', uri.toString(), response);
   }
 
@@ -114,7 +120,9 @@ class ApiClient {
     final jsonBody = body != null ? jsonEncode(body) : null;
     _logRequest('DELETE', uri, headers, body: jsonBody);
 
-    final response = await _client.delete(uri, headers: headers, body: jsonBody);
+    final response = await _client
+        .delete(uri, headers: headers, body: jsonBody)
+        .timeout(const Duration(seconds: 60));
     return _processResponse('DELETE', uri.toString(), response);
   }
 
@@ -125,6 +133,10 @@ class ApiClient {
       final bodyStr = response.body.length > 1000 ? "${response.body.substring(0, 1000)}..." : response.body;
       debugPrint('│ Body: $bodyStr');
       debugPrint('└──────────────────────────────────────────────────────────────────');
+    }
+
+    if (response.statusCode == 401) {
+      _handleUnauthorized(url);
     }
 
     dynamic decoded;
@@ -191,5 +203,29 @@ class ApiClient {
 
   String _sanitizeHeader(String value) {
     return value.replaceAll(RegExp(r'[^\x20-\x7E]'), '').trim();
+  }
+
+  static bool _isRedirectingToLogin = false;
+
+  void _handleUnauthorized(String url) {
+    if (url.contains('login') || url.contains('confirm-otp') || url.contains('otp')) {
+      return;
+    }
+
+    if (_isRedirectingToLogin) return;
+    _isRedirectingToLogin = true;
+
+    Future.microtask(() async {
+      try {
+        await SecureStorage.deleteToken();
+        appRouter.go('/auth/login');
+      } catch (e) {
+        debugPrint('🚨 [ApiClient] Failed to redirect to login on 401: $e');
+      } finally {
+        Future.delayed(const Duration(seconds: 2), () {
+          _isRedirectingToLogin = false;
+        });
+      }
+    });
   }
 }
