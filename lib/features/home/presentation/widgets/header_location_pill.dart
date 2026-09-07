@@ -37,13 +37,12 @@ class HeaderLocationPill extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(24),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        constraints: const BoxConstraints(maxWidth: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurface : AppColors.neutral100,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isDark ? AppColors.neutral800 : AppColors.neutral200,
             width: 1,
@@ -55,9 +54,9 @@ class HeaderLocationPill extends StatelessWidget {
             const Icon(
               Icons.location_on_rounded,
               color: AppColors.primary,
-              size: 16,
+              size: 19,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
             Flexible(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -66,20 +65,22 @@ class HeaderLocationPill extends StatelessWidget {
                   Text(
                     modeLabel,
                     style: AppTextStyles.bodyExtraSmall.copyWith(
-                      fontSize: 9,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
                       color: isDark ? AppColors.neutral400 : AppColors.neutral600,
                       height: 1.1,
                     ),
                   ),
+                  const SizedBox(height: 1),
                   Text(
                     displayTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.labelSmall.copyWith(
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: theme.textTheme.bodyLarge?.color,
-                      height: 1.1,
+                      height: 1.15,
                     ),
                   ),
                 ],
@@ -88,7 +89,7 @@ class HeaderLocationPill extends StatelessWidget {
             const SizedBox(width: 4),
             Icon(
               Icons.keyboard_arrow_down_rounded,
-              size: 16,
+              size: 19,
               color: isDark ? AppColors.neutral400 : AppColors.neutral600,
             ),
           ],

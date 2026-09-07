@@ -25,6 +25,7 @@
   "auth.phone": "Phone Number",
   "home.categories": "Categories",
   "home.products": "Products",
+  "product.open": "Select",
   "product.select_variant": "Select",
   "product.select_variant_title": "Select size",
   "product.add_to_cart": "Add to cart",

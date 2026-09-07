@@ -214,6 +214,7 @@ class _HomePageState extends State<HomePage> {
                 // ── AppBar ──
                 SliverAppBar(
                   pinned: true,
+                  toolbarHeight: 60,
                   backgroundColor:
                       Theme.of(context).appBarTheme.backgroundColor,
                   surfaceTintColor: Colors.transparent,
@@ -231,7 +232,8 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       Image.asset(
                         'assets/icons/logo.png',
-                        height: 30,
+                        height: 40,
+                        fit: BoxFit.contain,
                         errorBuilder: (_, __, ___) => Text(
                           'Pizza strada',
                           style: AppTextStyles.h3.copyWith(
@@ -239,7 +241,7 @@ class _HomePageState extends State<HomePage> {
                               fontWeight: FontWeight.bold),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: BlocBuilder<CheckoutCubit, CheckoutState>(
                           builder: (context, checkoutState) {
@@ -397,7 +399,7 @@ class _HomePageState extends State<HomePage> {
                           crossAxisCount: 2,
                           mainAxisSpacing: 16,
                           crossAxisSpacing: 16,
-                          childAspectRatio: 0.68,
+                          childAspectRatio: 0.62,
                         ),
                         delegate: SliverChildBuilderDelegate(
                           (ctx, i) => Container(
@@ -606,7 +608,7 @@ class _HomePageState extends State<HomePage> {
                             crossAxisCount: 2,
                             mainAxisSpacing: 16,
                             crossAxisSpacing: 16,
-                            childAspectRatio: 0.68,
+                            childAspectRatio: 0.62,
                           ),
                           delegate: SliverChildBuilderDelegate(
                             (ctx, i) {
@@ -676,7 +678,7 @@ class _HomePageState extends State<HomePage> {
                               crossAxisCount: 2,
                               mainAxisSpacing: 16,
                               crossAxisSpacing: 16,
-                              childAspectRatio: 0.68,
+                              childAspectRatio: 0.62,
                             ),
                             delegate: SliverChildBuilderDelegate(
                               (ctx, i) {

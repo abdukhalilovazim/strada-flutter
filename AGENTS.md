@@ -201,7 +201,7 @@ Header-Sign:       HMAC-SHA256(jsonEncode(variables) + randomStr + timestamp, HM
 | Card Radius        | `16px` (OrderCard), `20px` (ProductCard) |
 | Shadow             | `Colors.black.withOpacity(0.04)`, `blurRadius: 10` |
 | Font Family        | Inter (via `google_fonts`)       |
-| Grid Aspect Ratio  | `0.68` (ProductCard grid)        |
+| Grid Aspect Ratio  | `0.62` (ProductCard grid)        |
 | Slider Viewport    | `0.92` fraction, `20px` radius   |
 
 ---

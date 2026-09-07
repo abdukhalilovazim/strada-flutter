@@ -200,7 +200,7 @@ class ProductCard extends StatelessWidget {
           ),
           minimumSize: const Size(0, 30),
         ),
-        child: Text('product.open'.tr()),
+        child: Text('product.select_variant'.tr()),
       ),
     );
   }
