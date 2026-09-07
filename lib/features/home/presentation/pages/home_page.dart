@@ -15,6 +15,7 @@ import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_card.dart';
 import 'package:pizza_strada/core/widgets/app_shimmer.dart';
+import 'package:pizza_strada/core/utils/number_formatter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -62,8 +63,7 @@ class _HomePageState extends State<HomePage> {
   void _startCarouselTimer(int itemCount) {
     _carouselTimer?.cancel();
     if (itemCount <= 1) return;
-    _carouselTimer =
-        Timer.periodic(const Duration(seconds: 5), (_) {
+    _carouselTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!_carouselController.hasClients) return;
       final next = (_carouselIndex + 1) % itemCount;
       _carouselController.animateToPage(
@@ -94,8 +94,8 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  /// Mahsulot tanlanganda: variant > 1 bo'lsa tanlash sheetini ochish,
-  /// 1 ta (yoki variantsiz) bo'lsa to'g'ridan-to'g'ri savatga qo'shish.
+  /// Mahsulot kartasiga tegish: variant > 1 bo'lsa tanlash sheetini ochish,
+  /// 1 ta (yoki variantsiz) bo'lsa ProductDetailPage ga o'tish.
   void _handleProductTap(ProductEntity product) {
     if (product.variants.length > 1) {
       showModalBottomSheet(
@@ -106,14 +106,27 @@ class _HomePageState extends State<HomePage> {
           product: product,
           onPick: (variant) {
             context.read<CartCubit>().addToCart(product, variant: variant);
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('product.added'.tr()),
-                duration: const Duration(seconds: 2),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+          },
+        ),
+      );
+    } else {
+      // Variantsiz yoki 1 ta variant: to'g'ridan-to'g'ri detail sahifaga
+      context.push('/product/${product.slug}', extra: product);
+    }
+  }
+
+  /// `+` tugmasi: variantsiz/1 ta variant → to'g'ridan-to'g'ri savatga,
+  /// > 1 variant → variant sheet.
+  void _handleAddToCart(ProductEntity product) {
+    if (product.variants.length > 1) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => VariantPickerSheet(
+          product: product,
+          onPick: (variant) {
+            context.read<CartCubit>().addToCart(product, variant: variant);
           },
         ),
       );
@@ -121,14 +134,6 @@ class _HomePageState extends State<HomePage> {
       final variant =
           product.variants.isNotEmpty ? product.variants.first : null;
       context.read<CartCubit>().addToCart(product, variant: variant);
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('product.added'.tr()),
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
     }
   }
 
@@ -164,7 +169,7 @@ class _HomePageState extends State<HomePage> {
   ) {
     double currentOffset = 0.0;
     final double gridItemWidth = (screenWidth - 48) / 2;
-    final double rowHeight = (gridItemWidth / 0.60) + 16;
+    final double rowHeight = (gridItemWidth / 0.62) + 16;
 
     for (final cat in categories) {
       if (cat.slug == targetSlug) return currentOffset;
@@ -193,7 +198,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     final double gridItemWidth = (screenWidth - 48) / 2;
-    final double rowHeight = (gridItemWidth / 0.60) + 16;
+    final double rowHeight = (gridItemWidth / 0.62) + 16;
 
     for (final cat in categories) {
       final catProducts = allProducts
@@ -229,14 +234,26 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      // ── Uzum Tezkor uslubi: Pastki cart panel ──
+      bottomNavigationBar: BlocBuilder<CartCubit, CartState>(
+        builder: (context, cartState) {
+          if (cartState.items.isEmpty) return const SizedBox.shrink();
+          return _CartBottomPanel(
+            itemCount: cartState.items.length,
+            total: cartState.subtotal,
+            isDark: isDark,
+            onTap: () => context.push('/cart'),
+          );
+        },
+      ),
       body: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, state) {
           if (state is HomeLoaded && _activeCategory == null) {
             _activeCategory = state.categories.firstOrNull?.slug;
-            // Carousel timerni sliderlar bilan boshlash
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _startCarouselTimer(state.sliders.length);
             });
@@ -260,7 +277,7 @@ class _HomePageState extends State<HomePage> {
                     preferredSize: const Size.fromHeight(1),
                     child: Container(
                       height: 1,
-                      color: Theme.of(context).brightness == Brightness.dark
+                      color: isDark
                           ? AppColors.neutral800
                           : AppColors.neutral200,
                     ),
@@ -283,10 +300,7 @@ class _HomePageState extends State<HomePage> {
                       IconButton(
                         icon: Icon(
                           Icons.close_rounded,
-                          color: Theme.of(context).brightness ==
-                                  Brightness.dark
-                              ? Colors.white
-                              : AppColors.neutral900,
+                          color: isDark ? Colors.white : AppColors.neutral900,
                         ),
                         onPressed: _closeSearch,
                       )
@@ -294,14 +308,11 @@ class _HomePageState extends State<HomePage> {
                       IconButton(
                         icon: Icon(
                           Icons.search_rounded,
-                          color: Theme.of(context).brightness ==
-                                  Brightness.dark
-                              ? Colors.white
-                              : AppColors.neutral900,
+                          color: isDark ? Colors.white : AppColors.neutral900,
                         ),
                         onPressed: _openSearch,
                       ),
-                    // Cart badge (AppBar da ham ko'rsatiladi)
+                    // Cart badge (AppBar)
                     BlocBuilder<CartCubit, CartState>(
                       builder: (ctx, cartState) {
                         final count = cartState.items.length;
@@ -310,8 +321,7 @@ class _HomePageState extends State<HomePage> {
                             IconButton(
                               icon: Icon(
                                 AppIcons.cart,
-                                color: Theme.of(context).brightness ==
-                                        Brightness.dark
+                                color: isDark
                                     ? Colors.white
                                     : AppColors.neutral900,
                               ),
@@ -387,7 +397,7 @@ class _HomePageState extends State<HomePage> {
                           child: AppShimmer(
                               width: 80,
                               height: 36,
-                              borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(999)),
                         ),
                       ),
                     ),
@@ -418,7 +428,7 @@ class _HomePageState extends State<HomePage> {
                           (ctx, i) => Container(
                             decoration: BoxDecoration(
                               color: Theme.of(ctx).cardColor,
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black
@@ -430,31 +440,36 @@ class _HomePageState extends State<HomePage> {
                             ),
                             child: Column(
                               children: [
-                                const AspectRatio(
-                                  aspectRatio: 1,
+                                Expanded(
+                                  flex: 5,
                                   child: AppShimmer(
                                       width: double.infinity,
                                       height: double.infinity,
-                                      borderRadius:
-                                          BorderRadius.vertical(
-                                              top: Radius.circular(16))),
+                                      borderRadius: BorderRadius.circular(
+                                          20)),
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.all(8),
-                                  child: Column(
-                                    children: [
-                                      AppShimmer(
-                                          width: 100,
-                                          height: 16,
-                                          borderRadius:
-                                              BorderRadius.circular(4)),
-                                      const SizedBox(height: 6),
-                                      AppShimmer(
-                                          width: 60,
-                                          height: 14,
-                                          borderRadius:
-                                              BorderRadius.circular(4)),
-                                    ],
+                                Expanded(
+                                  flex: 3,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        AppShimmer(
+                                            width: 100,
+                                            height: 14,
+                                            borderRadius:
+                                                BorderRadius.circular(4)),
+                                        AppShimmer(
+                                            width: 60,
+                                            height: 12,
+                                            borderRadius:
+                                                BorderRadius.circular(4)),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ],
@@ -490,7 +505,7 @@ class _HomePageState extends State<HomePage> {
                 // ── Loaded holati ──
                 else if (state is HomeLoaded) ...[
 
-                  // ── Yetkazib berish / Manzil tanlash paneli (Zamonaviy card) ──
+                  // ── Yetkazib berish / Manzil tanlash paneli ──
                   if (!_isSearchActive)
                     SliverToBoxAdapter(
                       child: Padding(
@@ -510,9 +525,6 @@ class _HomePageState extends State<HomePage> {
                                         checkoutState.branchTitle!.isNotEmpty
                                     ? checkoutState.branchTitle!
                                     : 'checkout.select_branch'.tr());
-
-                            final isDark =
-                                Theme.of(context).brightness == Brightness.dark;
 
                             return Material(
                               color: Colors.transparent,
@@ -600,7 +612,8 @@ class _HomePageState extends State<HomePage> {
                                                       .bodyExtraSmall
                                                       .copyWith(
                                                     fontSize: 11,
-                                                    fontWeight: FontWeight.w600,
+                                                    fontWeight:
+                                                        FontWeight.w600,
                                                     color: isDelivery
                                                         ? AppColors.primary
                                                         : AppColors.secondary,
@@ -669,7 +682,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
 
-                  // ── Banner Carousel (Swiper) ──
+                  // ── Banner Carousel ──
                   if (state.sliders.isNotEmpty)
                     SliverToBoxAdapter(
                       child: _BannerCarousel(
@@ -682,7 +695,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
 
-                  // ── Sticky kategoriya chiplari ──
+                  // ── Sticky kategoriya chiplari (Pill uslubi) ──
                   if (!_isSearchActive)
                     SliverPersistentHeader(
                       pinned: true,
@@ -696,28 +709,25 @@ class _HomePageState extends State<HomePage> {
                             children: [
                               Expanded(
                                 child: ListView.builder(
-                                  controller:
-                                      _categoryScrollController,
+                                  controller: _categoryScrollController,
                                   scrollDirection: Axis.horizontal,
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 8),
+                                      horizontal: 12, vertical: 8),
                                   itemCount: state.categories.length,
                                   itemBuilder: (_, i) {
-                                    final cat =
-                                        state.categories[i];
+                                    final cat = state.categories[i];
                                     final selected =
                                         _activeCategory == cat.slug;
-                                    return _CategoryTab(
+                                    return _CategoryPillChip(
                                       title: cat.title,
                                       isSelected: selected,
+                                      isDark: isDark,
                                       onTap: () {
                                         setState(() {
                                           _activeCategory = cat.slug;
-                                          _isScrollingToCategory =
-                                              true;
+                                          _isScrollingToCategory = true;
                                         });
-                                        final offset =
-                                            _getTargetOffset(
+                                        final offset = _getTargetOffset(
                                           cat.slug,
                                           screenWidth,
                                           state.categories,
@@ -731,8 +741,7 @@ class _HomePageState extends State<HomePage> {
                                           curve: Curves.easeInOut,
                                         )
                                             .then((_) {
-                                          _isScrollingToCategory =
-                                              false;
+                                          _isScrollingToCategory = false;
                                         });
                                       },
                                     );
@@ -742,8 +751,7 @@ class _HomePageState extends State<HomePage> {
                               // Pastki ajratuvchi chiziq
                               Container(
                                 height: 1,
-                                color: Theme.of(context).brightness ==
-                                        Brightness.dark
+                                color: isDark
                                     ? AppColors.neutral800
                                     : AppColors.neutral200,
                               ),
@@ -775,16 +783,14 @@ class _HomePageState extends State<HomePage> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
-                                    Icons.search_off_rounded,
+                                const Icon(Icons.search_off_rounded,
                                     size: 56,
                                     color: AppColors.neutral300),
                                 const SizedBox(height: 16),
                                 Text('home.search_empty'.tr(),
                                     style: AppTextStyles.bodyMedium
                                         .copyWith(
-                                            color:
-                                                AppColors.neutral500)),
+                                            color: AppColors.neutral500)),
                               ],
                             ),
                           ),
@@ -792,8 +798,7 @@ class _HomePageState extends State<HomePage> {
                       }
 
                       return SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(
-                            16, 16, 16, 120),
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
                         sliver: SliverGrid(
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
@@ -805,19 +810,32 @@ class _HomePageState extends State<HomePage> {
                           delegate: SliverChildBuilderDelegate(
                             (ctx, i) {
                               final product = results[i];
-                              return BlocBuilder<CartCubit,
-                                  CartState>(
+                              return BlocBuilder<CartCubit, CartState>(
                                 builder: (context, cartState) {
                                   final qty = cartState.items
                                       .where((item) =>
                                           item.product.slug ==
                                           product.slug)
-                                      .fold<int>(0,
-                                          (s, item) => s + item.quantity);
+                                      .fold<int>(
+                                          0, (s, item) => s + item.quantity);
                                   return ProductCard(
                                     product: product,
                                     quantityInCart: qty,
-                                    onTap: () => _handleProductTap(product),
+                                    onTap: () =>
+                                        _handleProductTap(product),
+                                    onAdd: () => _handleAddToCart(product),
+                                    onRemove: () {
+                                      final cartItem = cartState.items
+                                          .where((item) =>
+                                              item.product.slug ==
+                                              product.slug)
+                                          .firstOrNull;
+                                      if (cartItem != null) {
+                                        context
+                                            .read<CartCubit>()
+                                            .updateQuantity(cartItem, -1);
+                                      }
+                                    },
                                   );
                                 },
                               );
@@ -873,8 +891,7 @@ class _HomePageState extends State<HomePage> {
                             delegate: SliverChildBuilderDelegate(
                               (ctx, i) {
                                 final product = catProducts[i];
-                                return BlocBuilder<CartCubit,
-                                    CartState>(
+                                return BlocBuilder<CartCubit, CartState>(
                                   builder: (context, cartState) {
                                     final qty = cartState.items
                                         .where((item) =>
@@ -887,7 +904,23 @@ class _HomePageState extends State<HomePage> {
                                     return ProductCard(
                                       product: product,
                                       quantityInCart: qty,
-                                      onTap: () => _handleProductTap(product),
+                                      onTap: () =>
+                                          _handleProductTap(product),
+                                      onAdd: () =>
+                                          _handleAddToCart(product),
+                                      onRemove: () {
+                                        final cartItem = cartState.items
+                                            .where((item) =>
+                                                item.product.slug ==
+                                                product.slug)
+                                            .firstOrNull;
+                                        if (cartItem != null) {
+                                          context
+                                              .read<CartCubit>()
+                                              .updateQuantity(
+                                                  cartItem, -1);
+                                        }
+                                      },
                                     );
                                   },
                                 );
@@ -898,14 +931,118 @@ class _HomePageState extends State<HomePage> {
                         );
                       }),
                     ],
-                    const SliverToBoxAdapter(
-                        child: SizedBox(height: 120)),
+                    const SliverToBoxAdapter(child: SizedBox(height: 120)),
                   ],
                 ],
               ],
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Pastki savat paneli — Uzum Tezkor uslubi
+class _CartBottomPanel extends StatelessWidget {
+  final int itemCount;
+  final double total;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _CartBottomPanel({
+    required this.itemCount,
+    required this.total,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        border: Border(
+          top: BorderSide(
+            color: isDark ? AppColors.neutral800 : AppColors.neutral100,
+            width: 1,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            height: 52,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(999),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x33D32F2F),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                // Miqdor badge (chapda)
+                Container(
+                  margin: const EdgeInsets.only(left: 4),
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$itemCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                ),
+                // Matn (markazda)
+                Expanded(
+                  child: Text(
+                    'cart.checkout'.tr(),
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+                // Summa (o'ngda)
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: Text(
+                    '${NumberFormatter.formatSum(total.toInt())} ${'common.currency'.tr()}',
+                    style: AppTextStyles.labelMedium.copyWith(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -947,8 +1084,7 @@ class _BannerCarousel extends StatelessWidget {
                       imageUrl: slider.imageUrl,
                       fit: BoxFit.cover,
                       placeholder: (_, __) => Container(
-                        color: Theme.of(context).brightness ==
-                                Brightness.dark
+                        color: Theme.of(context).brightness == Brightness.dark
                             ? AppColors.neutral800
                             : const Color(0xFFF1F5F9),
                       ),
@@ -975,9 +1111,7 @@ class _BannerCarousel extends StatelessWidget {
                   width: isActive ? 20 : 6,
                   height: 6,
                   decoration: BoxDecoration(
-                    color: isActive
-                        ? AppColors.primary
-                        : AppColors.neutral300,
+                    color: isActive ? AppColors.primary : AppColors.neutral300,
                     borderRadius: BorderRadius.circular(3),
                   ),
                 );
@@ -990,45 +1124,51 @@ class _BannerCarousel extends StatelessWidget {
   }
 }
 
-/// Kategoriya tab — Laravel `nav-link-tab` stilida:
-/// matn + pastki qizil chiziq (active), transition animatsiya.
-class _CategoryTab extends StatelessWidget {
+/// Pill uslubidagi kategoriya chip (Uzum Tezkor uslubi)
+class _CategoryPillChip extends StatelessWidget {
   final String title;
   final bool isSelected;
+  final bool isDark;
   final VoidCallback onTap;
 
-  const _CategoryTab({
+  const _CategoryPillChip({
     required this.title,
     required this.isSelected,
+    required this.isDark,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        height: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: isSelected ? AppColors.primary : Colors.transparent,
-              width: 3,
-            ),
-          ),
+          color: isSelected
+              ? AppColors.primary
+              : (isDark ? AppColors.neutral800 : AppColors.neutral100),
+          borderRadius: BorderRadius.circular(999),
+          boxShadow: isSelected
+              ? const [
+                  BoxShadow(
+                    color: Color(0x22D32F2F),
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  )
+                ]
+              : null,
         ),
-        alignment: Alignment.center,
         child: Text(
           title,
           style: AppTextStyles.labelSmall.copyWith(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             color: isSelected
-                ? AppColors.primary
-                : (isDark ? AppColors.neutral400 : AppColors.neutral600),
+                ? Colors.white
+                : (isDark ? AppColors.neutral300 : AppColors.neutral700),
           ),
         ),
       ),
@@ -1041,9 +1181,9 @@ class _StickyCategoryDelegate extends SliverPersistentHeaderDelegate {
   const _StickyCategoryDelegate({required this.child});
 
   @override
-  double get minExtent => 48;
+  double get minExtent => 52;
   @override
-  double get maxExtent => 48;
+  double get maxExtent => 52;
 
   @override
   Widget build(

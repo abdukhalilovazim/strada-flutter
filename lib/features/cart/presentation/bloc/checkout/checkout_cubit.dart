@@ -15,8 +15,29 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         _orderRepository = orderRepository ?? getIt<OrderRepository>(),
         super(const CheckoutState());
 
+  /// Yetkazib berish turini o'zgartirish.
+  /// Pickup ga o'tganda delivery narxi avtomatik sifirlanadi.
   void setDeliveryType(bool isDelivery) {
-    emit(state.copyWith(isDelivery: isDelivery));
+    if (isDelivery) {
+      emit(state.copyWith(isDelivery: true));
+    } else {
+      // Pickup rejimida delivery narxini sifirlaymiz
+      emit(CheckoutState(
+        isDelivery: false,
+        branchId: state.branchId,
+        branchTitle: state.branchTitle,
+        lat: state.lat,
+        lng: state.lng,
+        address: state.address,
+        deliveryPrice: 0,
+        appliedPromoCode: state.appliedPromoCode,
+        promoType: state.promoType,
+        promoValue: state.promoValue,
+        selectedPaymentMethodKey: state.selectedPaymentMethodKey,
+        changeAmount: state.changeAmount,
+        comment: state.comment,
+      ));
+    }
   }
 
   void setBranch(String branchId, {String? branchTitle}) {

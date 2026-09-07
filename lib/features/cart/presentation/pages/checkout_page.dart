@@ -19,8 +19,8 @@ import 'package:url_launcher/url_launcher.dart';
 /// Yagona va tezkor Buyurtma Rasmiylashtirish (Single-Step Checkout) sahifasi.
 ///
 /// Home pageda tanlangan Yetkazib berish / Olib ketish va Manzil/Filial
-/// to'g'ridan-to'g'ri integratsiya qilingan. Barcha bo'limlar (manzil,
-/// qabul qiluvchi, to'lov turi, promokod va narx hisobi) yagona oynada mujassamlashgan.
+/// to'g'ridan-to'g'ri integratsiya qilingan. Delivery bo'lsa delivery narxi
+/// hisoblanadi va ko'rsatiladi; pickup bo'lsa delivery satr umuman ko'rinmaydi.
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
 
@@ -182,7 +182,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         final subtotal = cartState.subtotal;
         final discount = _computeDiscount(checkoutState, subtotal);
 
-        // Olib ketishda yetkazib berish har doim 0
+        // Pickup bo'lsa delivery narxi 0, total faqat subtotal - discount
         final deliveryFee = checkoutState.isDelivery ? checkoutState.deliveryPrice : 0.0;
         final finalTotal = (subtotal + deliveryFee - discount).clamp(0.0, double.infinity);
 
@@ -198,10 +198,18 @@ class _CheckoutPageState extends State<CheckoutPage> {
             centerTitle: true,
             backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
             elevation: 0,
+            surfaceTintColor: Colors.transparent,
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(1),
+              child: Container(
+                height: 1,
+                color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+              ),
+            ),
             leading: IconButton(
               icon: Icon(
                 Icons.arrow_back_ios_new_rounded,
-                color: Theme.of(context).iconTheme.color,
+                color: isDark ? Colors.white : AppColors.neutral900,
               ),
               onPressed: () => context.pop(),
             ),
@@ -216,6 +224,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   context,
                   icon: Icons.delivery_dining_rounded,
                   title: 'checkout.delivery_type'.tr(),
+                  isDark: isDark,
                 ),
                 const SizedBox(height: 10),
                 _buildDeliveryTypeSegment(context, checkoutState, isDark),
@@ -232,6 +241,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   context,
                   icon: Icons.person_rounded,
                   title: 'checkout.recipient'.tr(),
+                  isDark: isDark,
                 ),
                 const SizedBox(height: 10),
                 _buildRecipientCard(context, isDark),
@@ -243,6 +253,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   context,
                   icon: Icons.payment_rounded,
                   title: 'checkout.payment'.tr(),
+                  isDark: isDark,
                 ),
                 const SizedBox(height: 10),
                 _buildPaymentMethodSection(context, checkoutState, paymentMethods, isDark),
@@ -254,6 +265,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   context,
                   icon: Icons.tune_rounded,
                   title: 'checkout.additional'.tr(),
+                  isDark: isDark,
                 ),
                 const SizedBox(height: 10),
                 _buildAdditionalSection(context, checkoutState, subtotal, isDark),
@@ -265,6 +277,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   context,
                   icon: Icons.receipt_long_rounded,
                   title: 'checkout.order_summary'.tr(),
+                  isDark: isDark,
                 ),
                 const SizedBox(height: 10),
                 _buildPriceSummaryCard(
@@ -298,11 +311,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
     BuildContext context, {
     required IconData icon,
     required String title,
+    required bool isDark,
   }) {
     return Row(
       children: [
-        Icon(icon, color: AppColors.primary, size: 20),
-        const SizedBox(width: 8),
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 18),
+        ),
+        const SizedBox(width: 10),
         Text(
           title,
           style: AppTextStyles.h3.copyWith(
@@ -1001,7 +1023,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
-  /// Narxlar hisob-kitobi (Subtotal, Delivery, Discount, Total)
+  /// Narxlar hisob-kitobi (Subtotal, Delivery [faqat delivery bo'lsa], Discount, Total)
   Widget _buildPriceSummaryCard(
     BuildContext context, {
     required CheckoutState checkoutState,
@@ -1029,71 +1051,81 @@ class _CheckoutPageState extends State<CheckoutPage> {
       ),
       child: Column(
         children: [
+          // Mahsulotlar narxi
           _PriceLine(
             label: 'cart.subtotal'.tr(),
             valueText: '${NumberFormatter.formatSum(subtotal.toInt())} ${'common.currency'.tr()}',
+            isDark: isDark,
           ),
-          const Divider(height: 18),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'cart.delivery'.tr(),
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500),
-              ),
-              if (!checkoutState.isDelivery)
+
+          // ── Delivery narxi faqat DELIVERY rejimida ko'rsatiladi ──
+          if (checkoutState.isDelivery) ...[
+            const Divider(height: 18),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
                 Text(
-                  'checkout.free'.tr(),
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.secondary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                )
-              else if (checkoutState.loadingDelivery)
-                Row(
-                  children: [
-                    const SizedBox(
-                      width: 12,
-                      height: 12,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 1.8,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'checkout.calculating'.tr(),
-                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500),
-                    ),
-                  ],
-                )
-              else if (checkoutState.address == null || checkoutState.address!.isEmpty)
-                Text(
-                  'checkout.on_address_select'.tr(),
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.neutral500,
-                    fontStyle: FontStyle.italic,
-                  ),
-                )
-              else
-                Text(
-                  '${NumberFormatter.formatSum(deliveryFee.toInt())} ${'common.currency'.tr()}',
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: Theme.of(context).textTheme.bodyMedium?.color,
-                    fontWeight: FontWeight.w600,
+                  'cart.delivery'.tr(),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark ? AppColors.neutral400 : AppColors.neutral500,
                   ),
                 ),
-            ],
-          ),
+                if (checkoutState.loadingDelivery)
+                  Row(
+                    children: [
+                      const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1.8,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'checkout.calculating'.tr(),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                        ),
+                      ),
+                    ],
+                  )
+                else if (checkoutState.address == null || checkoutState.address!.isEmpty)
+                  Text(
+                    'checkout.on_address_select'.tr(),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  )
+                else
+                  Text(
+                    '${NumberFormatter.formatSum(deliveryFee.toInt())} ${'common.currency'.tr()}',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: isDark
+                          ? Colors.white
+                          : Theme.of(context).textTheme.bodyMedium?.color,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+
+          // Chegirma (promo kod bo'lsa)
           if (discount > 0) ...[
             const Divider(height: 18),
             _PriceLine(
               label: 'cart.discount'.tr(),
               valueText: '- ${NumberFormatter.formatSum(discount.toInt())} ${'common.currency'.tr()}',
               isNegative: true,
+              isDark: isDark,
             ),
           ],
+
           const Divider(height: 18),
+
+          // JAMI
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1129,68 +1161,131 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final bool needsAddress = checkoutState.isDelivery &&
         (checkoutState.address == null || checkoutState.address!.isEmpty);
 
+    final bool needsBranch = !checkoutState.isDelivery && checkoutState.branchId == null;
+
     final bool canSubmit = !needsAddress &&
+        !needsBranch &&
         !checkoutState.isSubmitting &&
         !checkoutState.loadingDelivery &&
-        cartState.items.isNotEmpty &&
-        (!checkoutState.isDelivery ? checkoutState.branchId != null : true);
+        cartState.items.isNotEmpty;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: isDark ? AppColors.darkSurface : Colors.white,
         border: Border(
           top: BorderSide(
             color: isDark ? AppColors.neutral800 : AppColors.neutral200,
             width: 1,
           ),
         ),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
         ],
       ),
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: needsAddress
-                ? () => _openMapPicker(context)
-                : (canSubmit ? () => _submitOrder(context, cartState) : null),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: needsAddress ? AppColors.secondary : AppColors.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              elevation: 0,
-            ),
-            child: checkoutState.isSubmitting
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        needsAddress ? Icons.location_on_rounded : Icons.check_circle_outline_rounded,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        needsAddress
-                            ? 'checkout.select_address'.tr()
-                            : '${'checkout.submit_order'.tr()} • ${NumberFormatter.formatSum(finalTotal.toInt())} ${'common.currency'.tr()}',
-                        style: AppTextStyles.labelLarge.copyWith(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Narx ko'rsatkichi (total breakdown mini)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'cart.total'.tr(),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-          ),
+                  if (checkoutState.isDelivery && checkoutState.loadingDelivery)
+                    Row(
+                      children: [
+                        const SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'checkout.calculating'.tr(),
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    Text(
+                      '${NumberFormatter.formatSum(finalTotal.toInt())} ${'common.currency'.tr()}',
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            // Buyurtma berish tugmasi
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: needsAddress
+                    ? () => _openMapPicker(context)
+                    : (canSubmit ? () => _submitOrder(context, cartState) : null),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: needsAddress ? AppColors.secondary : AppColors.primary,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor:
+                      isDark ? AppColors.neutral700 : AppColors.neutral300,
+                  disabledForegroundColor:
+                      isDark ? AppColors.neutral500 : AppColors.neutral400,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                child: checkoutState.isSubmitting
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            needsAddress
+                                ? Icons.location_on_rounded
+                                : Icons.check_circle_outline_rounded,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            needsAddress
+                                ? 'checkout.select_address'.tr()
+                                : '${'checkout.submit_order'.tr()} • ${NumberFormatter.formatSum(finalTotal.toInt())} ${'common.currency'.tr()}',
+                            style: AppTextStyles.labelLarge.copyWith(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1369,11 +1464,13 @@ class _PriceLine extends StatelessWidget {
   final String label;
   final String valueText;
   final bool isNegative;
+  final bool isDark;
 
   const _PriceLine({
     required this.label,
     required this.valueText,
     this.isNegative = false,
+    this.isDark = false,
   });
 
   @override
@@ -1383,14 +1480,16 @@ class _PriceLine extends StatelessWidget {
       children: [
         Text(
           label,
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+          ),
         ),
         Text(
           valueText,
           style: AppTextStyles.labelSmall.copyWith(
             color: isNegative
                 ? AppColors.error
-                : Theme.of(context).textTheme.bodyMedium?.color,
+                : (isDark ? Colors.white : Theme.of(context).textTheme.bodyMedium?.color),
             fontWeight: isNegative ? FontWeight.bold : FontWeight.w600,
           ),
         ),

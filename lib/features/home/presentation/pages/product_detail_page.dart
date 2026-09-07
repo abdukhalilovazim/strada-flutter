@@ -307,11 +307,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ],
       ),
 
-      // ── Bottom Bar: Stepper + Savatga qo'shish ──
+      // ── Bottom Bar: Stepper (qizil pill) + Savatga qo'shish ──
       bottomNavigationBar: Container(
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
+          color: isDark ? AppColors.darkSurface : Colors.white,
           border: Border(
             top: BorderSide(
               color: isDark ? AppColors.neutral800 : AppColors.neutral200,
@@ -320,7 +320,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
               blurRadius: 12,
               offset: const Offset(0, -4),
             ),
@@ -330,16 +330,22 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           top: false,
           child: Row(
             children: [
-              // Miqdor stepperi
+              // Qizil pill stepper
               Container(
+                height: 48,
                 decoration: BoxDecoration(
-                  border: Border.all(
-                    color: isDark ? AppColors.neutral700 : AppColors.neutral200,
-                    width: 1,
-                  ),
-                  borderRadius: BorderRadius.circular(28),
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(999),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x33D32F2F),
+                      blurRadius: 8,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     GestureDetector(
                       onTap: () {
@@ -348,15 +354,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         }
                       },
                       child: Container(
-                        width: 42,
-                        height: 42,
+                        width: 48,
+                        height: 48,
                         alignment: Alignment.center,
                         child: Icon(
                           Icons.remove_rounded,
-                          size: 18,
+                          size: 20,
                           color: _quantity > 1
-                              ? AppColors.neutral700
-                              : AppColors.neutral300,
+                              ? Colors.white
+                              : Colors.white.withValues(alpha: 0.4),
                         ),
                       ),
                     ),
@@ -365,81 +371,76 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       child: Text(
                         '$_quantity',
                         textAlign: TextAlign.center,
-                        style: AppTextStyles.labelMedium.copyWith(
+                        style: const TextStyle(
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                          fontSize: 16,
                         ),
                       ),
                     ),
                     GestureDetector(
                       onTap: () => setState(() => _quantity++),
                       child: Container(
-                        width: 42,
-                        height: 42,
+                        width: 48,
+                        height: 48,
                         alignment: Alignment.center,
                         child: const Icon(
                           Icons.add_rounded,
-                          size: 18,
-                          color: AppColors.primary,
+                          size: 20,
+                          color: Colors.white,
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
 
-              // Savatga qo'shish tugmasi
+              // Savatga qo'shish tugmasi (pill uslubi)
               Expanded(
-                child: SizedBox(
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (hasVariants && _selectedVariant == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('product.select_variant_error'.tr()),
-                            backgroundColor: AppColors.error,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (hasVariants && _selectedVariant == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('product.select_variant_error'.tr()),
+                              backgroundColor: AppColors.error,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                          );
+                          return;
+                        }
+                        for (int i = 0; i < _quantity; i++) {
+                          context.read<CartCubit>().addToCart(
+                                product,
+                                variant: _selectedVariant,
+                              );
+                        }
+                        AnalyticsService.instance.logAddToCart(
+                          id: product.id.toString(),
+                          title: product.title,
+                          quantity: _quantity,
+                          price: displayPrice,
+                          variant: _selectedVariant?.title,
                         );
-                        return;
-                      }
-                      for (int i = 0; i < _quantity; i++) {
-                        context.read<CartCubit>().addToCart(
-                              product,
-                              variant: _selectedVariant,
-                            );
-                      }
-                      AnalyticsService.instance.logAddToCart(
-                        id: product.id.toString(),
-                        title: product.title,
-                        quantity: _quantity,
-                        price: displayPrice,
-                        variant: _selectedVariant?.title,
-                      );
-                      context.pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('product.added'.tr()),
-                          backgroundColor: AppColors.success,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                        context.pop();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(999),
                         ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
+                        minimumSize: const Size(0, 48),
+                        elevation: 0,
                       ),
-                      minimumSize: const Size(0, 48),
-                    ),
-                    child: Text(
-                      '${'product.add_to_cart'.tr()} • ${NumberFormatter.formatSum(totalPrice)} ${'common.currency'.tr()}',
-                      overflow: TextOverflow.ellipsis,
+                      child: Text(
+                        '${'product.add_to_cart'.tr()} • ${NumberFormatter.formatSum(totalPrice)} ${'common.currency'.tr()}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ),

@@ -6,20 +6,32 @@ import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 
-/// Mahsulot kartochkasi.
-/// Dizayn: Laravel mobile `product-card` stiliga mos —
-/// oq fon, 16px radius, yengil soya, 1:1 rasm (contain, kulrang fon),
-/// nom, narx (qizil, eski narx chizilgan), "Ochish" pill tugma.
+/// Uzum Tezkor uslubidagi mahsulot kartochkasi.
+///
+/// - Rasm yuqorida to'liq (AspectRatio 1:1, cover).
+/// - Nom va narx pastda.
+/// - `quantityInCart == 0`: pastki-o'ng burchakda floating qizil circle `+` tugma.
+/// - `quantityInCart > 0`: floating pill `- N +` stepper qizil rangda.
 class ProductCard extends StatelessWidget {
   final ProductEntity product;
   final int quantityInCart;
+
+  /// Mahsulot kartasiga tegish (detail/variant sheet)
   final VoidCallback? onTap;
+
+  /// Savatga qo'shish (`+` bosish)
+  final VoidCallback? onAdd;
+
+  /// Miqdorni kamaytirish (`-` bosish)
+  final VoidCallback? onRemove;
 
   const ProductCard({
     super.key,
     required this.product,
     this.quantityInCart = 0,
     this.onTap,
+    this.onAdd,
+    this.onRemove,
   });
 
   @override
@@ -27,185 +39,251 @@ class ProductCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppColors.neutral800 : AppColors.neutral200,
-          width: 1,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurface : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Rasm qismi + miqdor badge
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(15)),
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: Container(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Rasm bloki ──
+              Expanded(
+                flex: 5,
+                child: Stack(
+                  children: [
+                    // Rasm
+                    Container(
+                      width: double.infinity,
                       color: isDark
                           ? AppColors.neutral800
                           : const Color(0xFFF8F9FA),
-                      padding: const EdgeInsets.all(8),
                       child: CachedNetworkImage(
                         imageUrl: product.thumbnail.isNotEmpty
                             ? product.thumbnail
                             : product.photo,
-                        fit: BoxFit.contain,
+                        fit: BoxFit.cover,
                         placeholder: (_, __) => Container(
                           color: isDark
                               ? AppColors.neutral800
                               : const Color(0xFFF8F9FA),
                         ),
-                        errorWidget: (_, __, ___) => Icon(
-                          Icons.image_not_supported_outlined,
-                          color: AppColors.neutral400,
-                          size: 32,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // Savat badge (top-right)
-                if (quantityInCart > 0)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
+                        errorWidget: (_, __, ___) => Center(
+                          child: Icon(
+                            Icons.image_not_supported_outlined,
+                            color: AppColors.neutral400,
+                            size: 32,
                           ),
-                        ],
-                      ),
-                      child: Text(
-                        '$quantityInCart',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11,
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
 
-            // Kontent qismi
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Nom
-                    Text(
-                      product.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.labelSmall.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: theme.textTheme.bodyLarge?.color,
-                        fontSize: 13,
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    // Narx + tugma
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Eski narx (chizilgan)
-                        if (product.oldPrice != null &&
-                            product.oldPrice! > product.price) ...[
-                          Text(
+                    // Eski narx badge (chegirma bo'lsa)
+                    if (product.oldPrice != null &&
+                        product.oldPrice! > product.price)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.error,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
                             '${NumberFormatter.formatSum(product.oldPrice!)} ${'common.currency'.tr()}',
-                            style: AppTextStyles.bodyExtraSmall.copyWith(
-                              color: AppColors.neutral400,
-                              fontSize: 11,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
                               decoration: TextDecoration.lineThrough,
-                              decorationColor: AppColors.neutral400,
+                              decorationColor: Colors.white,
                             ),
                           ),
-                          const SizedBox(height: 2),
-                        ],
-                        // Joriy narx
-                        Text(
-                          '${NumberFormatter.formatSum(product.price)} ${'common.currency'.tr()}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
                         ),
-                        const SizedBox(height: 8),
-                        // "Ochish" tugmasi — pill, to'liq kenglik
-                        _buildOpenButton(context),
-                      ],
+                      ),
+
+                    // Floating qo'shish tugmasi / stepper (pastki-o'ng)
+                    Positioned(
+                      right: 8,
+                      bottom: 8,
+                      child: quantityInCart == 0
+                          ? _AddButton(onTap: onAdd)
+                          : _InlineQuantityStepper(
+                              quantity: quantityInCart,
+                              onDecrement: onRemove,
+                              onIncrement: onAdd,
+                            ),
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
+
+              // ── Matn bloki ──
+              Expanded(
+                flex: 3,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Nom
+                      Text(
+                        product.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.labelSmall.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: theme.textTheme.bodyLarge?.color,
+                          fontSize: 13,
+                          height: 1.3,
+                        ),
+                      ),
+
+                      // Narx
+                      Text(
+                        '${NumberFormatter.formatSum(product.price)} ${'common.currency'.tr()}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  /// "Ochish" — to'liq kenglikdagi qizil pill tugma (Laravel btn-danger rounded-pill)
-  Widget _buildOpenButton(BuildContext context) {
-    final hasMultipleVariants = product.variants.length > 1;
-    return SizedBox(
-      width: double.infinity,
-      height: 30,
-      child: ElevatedButton(
-        onPressed: onTap,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          textStyle: AppTextStyles.labelSmall.copyWith(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-          minimumSize: const Size(0, 30),
+/// Floating qizil circle `+` tugmasi (savat bo'sh bo'lsa)
+class _AddButton extends StatelessWidget {
+  final VoidCallback? onTap;
+
+  const _AddButton({this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: const BoxDecoration(
+          color: AppColors.primary,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x33D32F2F),
+              blurRadius: 8,
+              offset: Offset(0, 3),
+            ),
+          ],
         ),
-        child: Text(
-          hasMultipleVariants
-              ? 'product.select_variant'.tr()
-              : 'cart.add'.tr(),
+        child: const Icon(
+          Icons.add_rounded,
+          color: Colors.white,
+          size: 22,
         ),
+      ),
+    );
+  }
+}
+
+/// Floating pill stepper `- N +` (savat bo'sh bo'lmasa)
+class _InlineQuantityStepper extends StatelessWidget {
+  final int quantity;
+  final VoidCallback? onDecrement;
+  final VoidCallback? onIncrement;
+
+  const _InlineQuantityStepper({
+    required this.quantity,
+    this.onDecrement,
+    this.onIncrement,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 36,
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33D32F2F),
+            blurRadius: 8,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Minus tugma
+          GestureDetector(
+            onTap: onDecrement,
+            child: Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              child: Icon(
+                quantity <= 1
+                    ? Icons.delete_outline_rounded
+                    : Icons.remove_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+          ),
+          // Miqdor
+          SizedBox(
+            width: 24,
+            child: Text(
+              '$quantity',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          // Plus tugma
+          GestureDetector(
+            onTap: onIncrement,
+            child: Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.add_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
