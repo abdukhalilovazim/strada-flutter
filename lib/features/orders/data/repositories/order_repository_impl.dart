@@ -20,22 +20,8 @@ class OrderRepositoryImpl implements OrderRepository {
   }
 
   @override
-  Future<Either<Failure, int>> createOrder({
-    required String fullName,
-    required String phone,
-    required String address,
-    required String branchId,
-    required bool isDelivery,
-    required List<Map<String, dynamic>> items,
-  }) async {
-    return _safeCall(() => _remoteDataSource.createOrder(
-          fullName: fullName,
-          phone: phone,
-          address: address,
-          branchId: branchId,
-          isDelivery: isDelivery,
-          items: items,
-        ));
+  Future<Either<Failure, Map<String, dynamic>>> createOrder(Map<String, dynamic> params) async {
+    return _safeCall(() => _remoteDataSource.createOrder(params));
   }
 
   Future<Either<Failure, T>> _safeCall<T>(Future<T> Function() call) async {

@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:pizza_strada/core/constants/api_constants.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -20,7 +21,7 @@ class _BranchesWebViewPageState extends State<BranchesWebViewPage> {
   bool _isLoading = true;
   bool _isInitialized = false;
 
-  static const String _branchesUrl = 'https://food.khalilovdev.uz/branches-view';
+  static String get _branchesUrl => '${ApiConstants.webviewBaseUrl}/branches';
 
   @override
   void didChangeDependencies() {

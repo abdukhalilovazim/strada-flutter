@@ -249,11 +249,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
             child: _currentStep == 0
                 ? _buildStep1(context, checkoutState, isDark)
                 : _buildStep2(context, checkoutState, paymentMethods, subtotal,
-                    discount, usedPoints, finalTotal.toDouble(), isDark),
+                    discount, finalTotal.toDouble(), isDark),
           ),
           bottomNavigationBar: _buildBottomBar(
               context, checkoutState, cartState, subtotal, discount,
-              usedPoints, finalTotal.toDouble()),
+              finalTotal.toDouble()),
         );
       },
     );
@@ -395,7 +395,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
     List<PaymentMethodEntity> paymentMethods,
     double subtotal,
     double discount,
-    int usedPoints,
     double finalTotal,
     bool isDark,
   ) {
@@ -688,7 +687,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
     CartState cartState,
     double subtotal,
     double discount,
-    int usedPoints,
     double finalTotal,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

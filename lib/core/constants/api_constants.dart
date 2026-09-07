@@ -14,6 +14,9 @@ class ApiConstants {
   /// REST API v1 bazaviy URL
   static String get apiBaseUrl => '$_base/api/v1';
 
+  /// Mobil WebView sahifalari uchun bazaviy URL
+  static String get webviewBaseUrl => '$_base/webview';
+
   // HMAC-SHA256 secret key
   static String get hmacSecret => dotenv.get(
     'HMAC_SECRET',

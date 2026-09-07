@@ -4,15 +4,7 @@ import 'package:pizza_strada/features/orders/data/models/order_model.dart';
 
 abstract class OrderRemoteDataSource {
   Future<List<OrderModel>> getOrders();
-  Future<OrderModel> getOrder(int id);
-  Future<int> createOrder({
-    required String fullName,
-    required String phone,
-    required String address,
-    required String branchId,
-    required bool isDelivery,
-    required List<Map<String, dynamic>> items,
-  });
+  Future<Map<String, dynamic>> createOrder(Map<String, dynamic> params);
 }
 
 @LazySingleton(as: OrderRemoteDataSource)
@@ -28,33 +20,9 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
   }
 
   @override
-  Future<OrderModel> getOrder(int id) async {
-    final response = await _client.get('orders/$id');
-    return OrderModel.fromJson(response as Map<String, dynamic>);
-  }
-
-  @override
-  Future<int> createOrder({
-    required String fullName,
-    required String phone,
-    required String address,
-    required String branchId,
-    required bool isDelivery,
-    required List<Map<String, dynamic>> items,
-  }) async {
-    final response = await _client.post(
-      'orders',
-      body: {
-        'type': isDelivery ? 0 : 1,
-        'branch_id': isDelivery ? null : int.tryParse(branchId),
-        'address': isDelivery ? address : null,
-        'payment_method': 0,
-        'products': items,
-      },
-    );
-
-    final map = response as Map<String, dynamic>;
-    return int.tryParse(map['order_id']?.toString() ?? map['id']?.toString() ?? '0') ?? 0;
+  Future<Map<String, dynamic>> createOrder(Map<String, dynamic> params) async {
+    final response = await _client.post('orders', body: params);
+    return response as Map<String, dynamic>;
   }
 }
 

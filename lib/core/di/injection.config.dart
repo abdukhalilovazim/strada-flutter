@@ -40,8 +40,6 @@ import 'package:pizza_strada/features/home/domain/usecases/home_usecases.dart'
     as _i918;
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart'
     as _i528;
-import 'package:pizza_strada/features/loyalty/presentation/bloc/loyalty_cubit.dart'
-    as _i421;
 import 'package:pizza_strada/features/orders/data/datasources/order_remote_datasource.dart'
     as _i168;
 import 'package:pizza_strada/features/orders/data/repositories/order_repository_impl.dart'
@@ -70,7 +68,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i791.ApiClient>(() => networkModule.client);
     gh.lazySingleton<_i357.ThemeCubit>(() => _i357.ThemeCubit());
     gh.lazySingleton<_i1058.CartCubit>(() => _i1058.CartCubit());
-    gh.lazySingleton<_i421.LoyaltyCubit>(() => _i421.LoyaltyCubit());
     gh.lazySingleton<_i972.HomeRemoteDataSource>(
         () => _i972.HomeRemoteDataSourceImpl(gh<_i791.ApiClient>()));
     gh.lazySingleton<_i168.OrderRemoteDataSource>(

@@ -28,11 +28,7 @@ dependencies:
   easy_localization: ^3.0.7
 
   # Maps & Geo
-  flutter_map: ^7.0.2
-  latlong2: ^0.9.1
   geolocator: ^13.0.2
-  geocoding: ^3.0.0
-  permission_handler: ^11.3.1
 
   # Storage
   flutter_secure_storage: ^9.2.2
@@ -52,12 +48,10 @@ dependencies:
   package_info_plus: ^8.1.2
   intl: ^0.20.2
   shimmer: ^3.0.0
-  flutter_svg: ^2.0.17
   google_fonts: ^6.2.1 # Inter font
   url_launcher: ^6.3.1 # tel: link
   webview_flutter: ^4.10.0
   dartz: ^0.10.1 # Either<Failure, T>
-  freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
   appmetrica_plugin: ^4.1.0
   app_links: ^7.2.1
@@ -67,7 +61,6 @@ dev_dependencies:
     sdk: flutter
   injectable_generator: ^2.6.2
   build_runner: ^2.4.13
-  freezed: ^2.5.7
   json_serializable: ^6.8.0
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.14.4

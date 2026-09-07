@@ -38,7 +38,8 @@ class ApiClient {
     final headers = <String, String>{
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
+      if (token != null)
+        'Authorization': token.startsWith('Bearer ') ? token : 'Bearer $token',
       'language': lang,
       'device-id': _sanitizeHeader(DeviceInfoHelper.deviceId),
       'device-name': _sanitizeHeader(DeviceInfoHelper.deviceName),

@@ -138,14 +138,8 @@
   "checkout.step_two_title": "2/2 - To'lov va Chegirmalar",
   "checkout.your_order": "Sizning buyurtmangiz",
   "checkout.items_count": "ta mahsulot",
-  "checkout.loyalty_points": "Sodiqlik ballari",
-  "checkout.points_available": "ball mavjud",
-  "checkout.use_points_for_discount": "Ballardan chegirma sifatida foydalanish",
-  "checkout.loyalty_discount": "Loyalty ball",
   "checkout.submit_order": "Buyurtma berish",
   "orders.estimated_time": "Tahminiy vaqt",
   "orders.call_branch": "Filial bilan bog'lanish",
-  "profile.points_expiring": "{points} ball kuyadi",
-  "profile.your_points": "Ballaringiz",
   "profile.branches": "Filiallar"
 }

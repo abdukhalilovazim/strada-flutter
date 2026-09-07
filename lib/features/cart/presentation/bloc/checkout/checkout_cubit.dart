@@ -3,11 +3,16 @@ import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:pizza_strada/core/services/analytics_service.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
 
+import 'package:pizza_strada/core/di/injection.dart';
+import 'package:pizza_strada/features/orders/domain/repositories/order_repository.dart';
+
 class CheckoutCubit extends Cubit<CheckoutState> {
   final ApiClient _apiClient;
+  final OrderRepository _orderRepository;
 
-  CheckoutCubit({ApiClient? apiClient})
+  CheckoutCubit({ApiClient? apiClient, OrderRepository? orderRepository})
       : _apiClient = apiClient ?? ApiClient(),
+        _orderRepository = orderRepository ?? getIt<OrderRepository>(),
         super(const CheckoutState());
 
   void setDeliveryType(bool isDelivery) {
@@ -89,8 +94,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     required List<Map<String, dynamic>> products,
   }) async {
     emit(state.copyWith(isSubmitting: true, submitError: null));
-    try {
-      final vars = {
+    final vars = {
         'type': state.isDelivery ? 0 : 1, 
         'branch_id': state.isDelivery ? null : int.tryParse(state.branchId ?? ''),
         'latitude': state.isDelivery ? state.lat : null,
@@ -103,15 +107,17 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         'products': products,
       };
 
-      final response = await _apiClient.post('orders', body: vars);
-      emit(state.copyWith(
+    final result = await _orderRepository.createOrder(vars);
+    result.fold(
+      (failure) => emit(state.copyWith(
         isSubmitting: false,
-        successData: response,
-      ));
-    } catch (e) {
-      final msg = e is ApiException ? e.message : e.toString();
-      emit(state.copyWith(isSubmitting: false, submitError: msg));
-    }
+        submitError: failure.messageKey,
+      )),
+      (data) => emit(state.copyWith(
+        isSubmitting: false,
+        successData: data,
+      )),
+    );
   }
 
   void resetAfterOrder() {
