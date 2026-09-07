@@ -10,6 +10,7 @@ import 'package:pizza_strada/core/constants/api_constants.dart';
 import 'package:pizza_strada/core/constants/app_constants.dart';
 import 'package:pizza_strada/core/router/app_router.dart';
 import 'package:pizza_strada/core/storage/secure_storage.dart';
+import 'package:pizza_strada/core/storage/shared_prefs.dart';
 import 'package:pizza_strada/core/utils/device_info_helper.dart';
 
 class ApiException implements Exception {
@@ -34,6 +35,7 @@ class ApiClient {
     final lang = (context != null && context.mounted)
         ? (EasyLocalization.of(context)?.locale.languageCode ?? 'uz')
         : 'uz';
+    final isDark = SharedPrefs.getThemeMode() == ThemeMode.dark;
 
     final headers = <String, String>{
       'Content-Type': 'application/json',
@@ -41,6 +43,8 @@ class ApiClient {
       if (token != null)
         'Authorization': token.startsWith('Bearer ') ? token : 'Bearer $token',
       'language': lang,
+      'theme': isDark ? 'dark' : 'light',
+      'source': DeviceInfoHelper.appSource,
       'device-id': _sanitizeHeader(DeviceInfoHelper.deviceId),
       'device-name': _sanitizeHeader(DeviceInfoHelper.deviceName),
       'device': Platform.isIOS ? 'ios' : 'android',

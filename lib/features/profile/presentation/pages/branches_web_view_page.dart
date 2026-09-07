@@ -1,7 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:pizza_strada/core/constants/api_constants.dart';
+import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
+import 'package:pizza_strada/core/utils/device_info_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -67,15 +69,38 @@ class _BranchesWebViewPageState extends State<BranchesWebViewPage> {
               debugPrint('Branches WebView error: ${error.description}');
             },
           ),
-        )
-        ..loadRequest(
-          Uri.parse('$_branchesUrl?lang=$lang&theme=$themeMode'),
-          headers: {
-            'Accept-Language': lang,
-            'X-App-Theme': themeMode,
-          },
         );
+
+      _loadContent(lang, themeMode);
     }
+  }
+
+  Future<void> _loadContent(String lang, String themeMode) async {
+    final token = await SecureStorage.getToken();
+    final queryParams = {
+      'lang': lang,
+      'theme': themeMode,
+      'app_version_code': DeviceInfoHelper.appVersionCode,
+      'device_id': DeviceInfoHelper.deviceId,
+      'device_name': DeviceInfoHelper.deviceName,
+      'source': DeviceInfoHelper.appSource,
+      if (token != null && token.isNotEmpty) 'token': token,
+    };
+
+    final uri = Uri.parse(_branchesUrl).replace(queryParameters: queryParams);
+
+    final headers = {
+      'app-version-code': DeviceInfoHelper.appVersionCode,
+      'device-id': DeviceInfoHelper.deviceId,
+      'device-name': DeviceInfoHelper.deviceName,
+      'language': lang,
+      'theme': themeMode,
+      'source': DeviceInfoHelper.appSource,
+      if (token != null && token.isNotEmpty)
+        'Authorization': token.startsWith('Bearer ') ? token : 'Bearer $token',
+    };
+
+    await _controller.loadRequest(uri, headers: headers);
   }
 
   @override

@@ -6,6 +6,7 @@ class DeviceInfoHelper {
   static String deviceId   = '';
   static String deviceName = '';
   static String appVersionCode = '1';
+  static String get appSource => Platform.isIOS ? 'app_store' : 'play_store';
 
   static Future<void> init() async {
     final info = DeviceInfoPlugin();
