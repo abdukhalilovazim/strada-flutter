@@ -14,9 +14,7 @@ import 'package:pizza_strada/features/cart/presentation/widgets/order_type_botto
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/header_location_pill.dart';
-import 'package:pizza_strada/features/home/presentation/widgets/home_loyalty_card.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_card.dart';
-import 'package:pizza_strada/features/loyalty/presentation/bloc/loyalty_cubit.dart';
 import 'package:pizza_strada/core/widgets/app_shimmer.dart';
 
 class HomePage extends StatefulWidget {
@@ -476,101 +474,6 @@ class _HomePageState extends State<HomePage> {
 
                 // ── Loaded holati ──
                 else if (state is HomeLoaded) ...[
-
-                  // Loyalty karta
-                  const SliverToBoxAdapter(child: HomeLoyaltyCard()),
-
-                  // Win-back bannerlar
-                  SliverToBoxAdapter(
-                    child: BlocBuilder<LoyaltyCubit, LoyaltyState>(
-                      builder: (context, loyaltyState) {
-                        if (loyaltyState is LoyaltyLoaded &&
-                            loyaltyState.loyalty.lastOrderDate != null) {
-                          final days = DateTime.now()
-                              .difference(
-                                  loyaltyState.loyalty.lastOrderDate!)
-                              .inDays;
-                          if (days >= 7) {
-                            String msg = '';
-                            String sub = '';
-                            if (days >= 30) {
-                              msg =
-                                  "Sog'indingizmi? Sevimli taomingiz kutmoqda!";
-                              sub =
-                                  'Siz uchun maxsus 20% chegirma. Promo-kod: WINBACK20';
-                              if (loyaltyState.loyalty.expiringPoints !=
-                                      null &&
-                                  loyaltyState.loyalty.expiringPoints! >
-                                      0) {
-                                sub +=
-                                    '\nShoshiling, ballaringiz muddati tugayapti!';
-                              }
-                            } else if (days >= 14) {
-                              msg =
-                                  "Sog'indingizmi? Sevimli taomingiz kutmoqda!";
-                              sub =
-                                  'Siz uchun maxsus 10% chegirma. Promo-kod: WINBACK10';
-                            } else {
-                              msg =
-                                  "Sog'indingizmi? Sevimli taomingiz kutmoqda!";
-                            }
-
-                            return Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                  16, 8, 16, 0),
-                              child: Dismissible(
-                                key: Key('winback_$days'),
-                                child: Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryLight,
-                                    borderRadius:
-                                        BorderRadius.circular(16),
-                                    border: Border.all(
-                                        color: AppColors.primary
-                                            .withValues(alpha: 0.3)),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                          Icons.local_pizza_rounded,
-                                          color: AppColors.primary,
-                                          size: 36),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(msg,
-                                                style: AppTextStyles
-                                                    .labelMedium
-                                                    .copyWith(
-                                                        color: AppColors
-                                                            .primary)),
-                                            if (sub.isNotEmpty) ...[
-                                              const SizedBox(height: 4),
-                                              Text(sub,
-                                                  style: AppTextStyles
-                                                      .bodySmall
-                                                      .copyWith(
-                                                          color: AppColors
-                                                              .neutral700)),
-                                            ],
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          }
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
-                  ),
 
                   // ── Banner Carousel (Swiper) ──
                   if (state.sliders.isNotEmpty)

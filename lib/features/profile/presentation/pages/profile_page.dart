@@ -8,10 +8,10 @@ import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/theme/app_icons.dart';
 import 'package:pizza_strada/core/theme/theme_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
-import 'package:pizza_strada/features/loyalty/presentation/bloc/loyalty_cubit.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/inquiry_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/branches_web_view_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:pizza_strada/core/utils/phone_number_formatter.dart';
 
 import 'package:pizza_strada/core/di/injection.dart';
 import 'package:pizza_strada/features/auth/domain/entities/user_entity.dart';
@@ -119,7 +119,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       children: [
                         Text(_user?.fullName ?? 'profile.guest'.tr(), style: AppTextStyles.labelLarge.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)),
                         const SizedBox(height: 4),
-                        Text(_user?.phone ?? '', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600)),
+                        Text(
+                          _user?.phone != null ? PhoneNumberFormatter.formatFull(_user!.phone) : '',
+                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
+                        ),
                         if (_user?.birthdate != null) ...[
                           const SizedBox(height: 4),
                           Text(_user!.birthdate!, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
@@ -142,55 +145,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            // Loyalty Card
-            BlocBuilder<LoyaltyCubit, LoyaltyState>(
-              builder: (context, state) {
-                if (state is LoyaltyLoaded) {
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 24),
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.primary, AppColors.error],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.3),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        )
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('profile.your_points'.tr(), style: AppTextStyles.labelMedium.copyWith(color: Colors.white.withValues(alpha: 0.8))),
-                            const SizedBox(height: 4),
-                            Text('${state.loyalty.points}', style: AppTextStyles.display.copyWith(color: Colors.white)),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.stars_rounded, color: Colors.white, size: 32),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-            ),
+            const SizedBox(height: 8),
 
             // Settings Items
             _buildItem(

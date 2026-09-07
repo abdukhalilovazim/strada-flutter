@@ -11,32 +11,20 @@ class SplashCubit extends Cubit<SplashState> {
 
   SplashCubit(this._homeRepository) : super(SplashInitial());
 
-  /// Ilova ishga tushganda zaruriy sozlamalar va auth holatini tekshiradi.
-  /// 
-  /// 1. [HomeRepository.getSettings] orqali server sozlamalarini oladi.
-  /// 2. [settings.canOrder] orqali buyurtma berish mumkinligini (ish vaqti) tekshiradi.
+  /// Ilova ishga tushganda token tekshiruvi va auth holatini aniqlaydi.
   Future<void> init() async {
     emit(SplashLoading());
 
-    // Server sozlamalarini olish
-    final settingsResult = await _homeRepository.getSettings();
-
-    settingsResult.fold(
-      (failure) {
-        // API'dan kelgan aniq xato xabarini ko'rsatish
-        final errorMessage = failure.message ?? 'Noma\'lum xato yuz berdi';
-        debugPrint('❌ [SplashCubit] Settings xatosi: $errorMessage');
-        emit(SplashFailure(errorMessage));
-      },
-      (settings) async {
-        // Token mavjudligini tekshirish orqali auth holatini aniqlash
-        final token = await SecureStorage.getToken();
-        if (token != null && token.isNotEmpty) {
-          emit(SplashAuthenticated());
-        } else {
-          emit(SplashUnauthenticated());
-        }
-      },
-    );
+    try {
+      final token = await SecureStorage.getToken();
+      if (token != null && token.isNotEmpty) {
+        emit(SplashAuthenticated());
+      } else {
+        emit(SplashUnauthenticated());
+      }
+    } catch (e) {
+      debugPrint('❌ [SplashCubit] Token tekshirishda xatolik: $e');
+      emit(SplashUnauthenticated());
+    }
   }
 }

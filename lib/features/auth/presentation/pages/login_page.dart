@@ -1,10 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
+import 'package:pizza_strada/core/utils/phone_number_formatter.dart';
 import 'package:pizza_strada/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:pizza_strada/core/di/injection.dart';
 
@@ -16,7 +16,9 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _phoneController = TextEditingController(text: '997775443');
+  final _phoneController = TextEditingController(
+    text: PhoneNumberFormatter.format('997775443'),
+  );
   final _nameController = TextEditingController(text: 'Azim');
   final _phoneFocus = FocusNode();
   final _nameFocus = FocusNode();
@@ -31,9 +33,15 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _onContinue(BuildContext ctx) {
-    String digits = _phoneController.text.replaceAll(RegExp(r'\D'), '');
-    if (digits.startsWith('998') && digits.length > 9) {
-      digits = digits.substring(3);
+    final digits = PhoneNumberFormatter.extractDigits(_phoneController.text);
+    if (digits.length < 9) {
+      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+        content: Text('error.validation'.tr()),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+      return;
     }
     final phone = '+998$digits';
     ctx.read<AuthCubit>().login(
@@ -53,7 +61,10 @@ class _LoginPageState extends State<LoginPage> {
         body: BlocConsumer<AuthCubit, AuthState>(
           listener: (ctx, state) {
             if (state is AuthOtpSent) {
-              ctx.push('/auth/otp', extra: state.phone);
+              ctx.push('/auth/otp', extra: {
+                'phone': state.phone,
+                'fullName': _nameController.text.trim(),
+              });
             } else if (state is AuthFailure) {
               ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
                 content: Text(state.message),
@@ -155,18 +166,16 @@ class _LoginPageState extends State<LoginPage> {
                       focusNode: _phoneFocus,
                       keyboardType: TextInputType.phone,
                       textInputAction: TextInputAction.done,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly
+                      inputFormatters: const [
+                        PhoneNumberFormatter(),
                       ],
-                      maxLength: 9,
                       style: AppTextStyles.bodyLarge.copyWith(
                         color: isDark ? Colors.white : AppColors.neutral900,
                       ),
                       decoration: _inputDecoration(
-                        '',
+                        '(90) 123-45-67',
                         Icons.phone_outlined,
                       ).copyWith(
-                        counterText: '',
                         prefixText: '+998 ',
                         prefixStyle: AppTextStyles.bodyLarge.copyWith(
                           color: isDark ? Colors.white : AppColors.neutral900,

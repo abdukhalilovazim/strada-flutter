@@ -48,10 +48,6 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     emit(state.clearSubmitError());
   }
 
-  void toggleLoyaltyPoints(bool use) {
-    emit(state.copyWith(useLoyaltyPoints: use));
-  }
-
   Future<void> applyPromo(String code, double subtotal) async {
     emit(state.copyWith(loadingPromo: true, promoError: null));
     try {
@@ -91,7 +87,6 @@ class CheckoutCubit extends Cubit<CheckoutState> {
 
   Future<void> submitOrder({
     required List<Map<String, dynamic>> products,
-    required int usedPoints,
   }) async {
     emit(state.copyWith(isSubmitting: true, submitError: null));
     try {
@@ -105,7 +100,6 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         'change': state.changeAmount?.toInt(),
         'comment': state.comment,
         'promo_code': state.appliedPromoCode,
-        'loyalty_points_used': usedPoints,
         'products': products,
       };
 

@@ -17,8 +17,6 @@ class CheckoutState extends Equatable {
   final String? promoError;
   final bool loadingPromo;
 
-  final bool useLoyaltyPoints;
-
   final String selectedPaymentMethodKey;
   final double? changeAmount;
   final String comment;
@@ -41,7 +39,6 @@ class CheckoutState extends Equatable {
     this.promoValue,
     this.promoError,
     this.loadingPromo = false,
-    this.useLoyaltyPoints = false,
     this.selectedPaymentMethodKey = 'cash',
     this.changeAmount,
     this.comment = '',
@@ -64,7 +61,6 @@ class CheckoutState extends Equatable {
     double? promoValue,
     String? promoError,
     bool? loadingPromo,
-    bool? useLoyaltyPoints,
     String? selectedPaymentMethodKey,
     double? changeAmount,
     String? comment,
@@ -86,7 +82,6 @@ class CheckoutState extends Equatable {
       promoValue: promoValue ?? this.promoValue,
       promoError: promoError, // Set explicitly to clear errors if needed, but normally handled by Cubit
       loadingPromo: loadingPromo ?? this.loadingPromo,
-      useLoyaltyPoints: useLoyaltyPoints ?? this.useLoyaltyPoints,
       selectedPaymentMethodKey: selectedPaymentMethodKey ?? this.selectedPaymentMethodKey,
       changeAmount: changeAmount ?? this.changeAmount,
       comment: comment ?? this.comment,
@@ -115,7 +110,6 @@ class CheckoutState extends Equatable {
         promoValue,
         promoError,
         loadingPromo,
-        useLoyaltyPoints,
         selectedPaymentMethodKey,
         changeAmount,
         comment,

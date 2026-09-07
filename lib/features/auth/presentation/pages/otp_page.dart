@@ -7,12 +7,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
+import 'package:pizza_strada/core/utils/phone_number_formatter.dart';
 import 'package:pizza_strada/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:pizza_strada/core/di/injection.dart';
 
 class OtpPage extends StatefulWidget {
   final String phone;
-  const OtpPage({super.key, required this.phone});
+  final String fullName;
+  const OtpPage({super.key, required this.phone, this.fullName = ''});
 
   @override
   State<OtpPage> createState() => _OtpPageState();
@@ -74,8 +76,8 @@ class _OtpPageState extends State<OtpPage> {
 
   void _onResend(BuildContext ctx) {
     if (_canResend) {
-      // API call to resend OTP
-      ctx.read<AuthCubit>().login(phone: widget.phone, fullName: ""); // fullName empty because they already entered it
+      final name = widget.fullName.trim().isNotEmpty ? widget.fullName.trim() : 'Mijoz';
+      ctx.read<AuthCubit>().login(phone: widget.phone, fullName: name);
       _startTimer();
     }
   }
@@ -152,7 +154,7 @@ class _OtpPageState extends State<OtpPage> {
                     Center(
                       child: Text(
                         'auth.otp_subtitle'.tr(
-                            namedArgs: {'phone': widget.phone}),
+                            namedArgs: {'phone': PhoneNumberFormatter.formatFull(widget.phone)}),
                         style: AppTextStyles.bodyMedium
                             .copyWith(color: AppColors.neutral500),
                         textAlign: TextAlign.center,

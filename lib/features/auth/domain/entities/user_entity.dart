@@ -1,12 +1,9 @@
-import 'package:pizza_strada/features/loyalty/domain/entities/user_loyalty_entity.dart';
-
 class UserEntity {
   final int    id;
   final String fullName;
   final String phone;
   final String token;
   final String? birthdate;
-  final UserLoyaltyEntity? loyalty;
 
   const UserEntity({
     required this.id,
@@ -14,6 +11,5 @@ class UserEntity {
     required this.phone,
     required this.token,
     this.birthdate,
-    this.loyalty,
   });
 }

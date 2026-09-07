@@ -286,7 +286,16 @@ final appRouter = GoRouter(
     GoRoute(path: '/auth/login', builder: (_, __) => const LoginPage()),
     GoRoute(
       path: '/auth/otp',
-      builder: (_, state) => OtpPage(phone: state.extra as String),
+      builder: (_, state) {
+        if (state.extra is Map<String, dynamic>) {
+          final data = state.extra as Map<String, dynamic>;
+          return OtpPage(
+            phone: data['phone'] as String? ?? '',
+            fullName: data['fullName'] as String? ?? '',
+          );
+        }
+        return OtpPage(phone: state.extra as String? ?? '');
+      },
     ),
     ShellRoute(
       builder: (_, __, child) => MainScaffold(child: child),

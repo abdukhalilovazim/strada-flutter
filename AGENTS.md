@@ -18,7 +18,7 @@ lib/
 │   ├── router/                   # go_router configuration
 │   ├── storage/                  # SecureStorage, SharedPrefs
 │   ├── theme/                    # AppColors, AppTextStyles, AppTheme, AppIcons, AppDimensions
-│   ├── utils/                    # DeviceInfoHelper, validators, NumberFormatter
+│   ├── utils/                    # DeviceInfoHelper, validators, NumberFormatter, PhoneNumberFormatter
 │   └── widgets/                  # AppButton, AppShimmer, AppTextField
 ├── features/
 │   ├── auth/                     # Login + OTP (data → domain → presentation)
@@ -181,7 +181,6 @@ When responding to code modification requests:
 | Create Order | POST | `/api/v1/orders` | Place new order |
 | Delivery Price | POST | `/api/v1/delivery-price` | Calculate delivery cost |
 | Promo Code | POST | `/api/v1/promo-code/check` | Validate promo code |
-| Loyalty Balance | GET | `/api/v1/loyalty/balance` | User loyalty points & balance |
 
 ### Security Headers (Mutations / POST / PUT Only)
 Every mutation includes HMAC-SHA256 signature:
@@ -229,37 +228,7 @@ Before making **any** code change, verify:
 - The agent's role is strictly limited to **code generation, editing, and analysis**.
 - If a command needs to be run (e.g., `build_runner`), **mention it in the response** but do NOT execute it.
 
-### 9.7 `loyalty` Feature (Rejalashtirilgan)
 
-**Maqsad:** Faol foydalanuvchilarni rag'batlantirish va uxlab qolgan (lapsed) mijozlarni qaytarish (win-back).
-
-**1. Ball (Point) Tizimi:**
-- Har bir buyurtma summasidan **3%** avtomatik ball sifatida qaytadi.
-- **1 ball = 1 so'm** chegirma.
-- Muddat: **45 kun**. Agar ishlatilmasa ballar avtomatik yonib ketadi.
-- Bonuslar: Birinchi buyurtma (+5,000 ball), Tug'ilgan kun (+10,000 ball), Referral (+10,000 ball).
-- **UX:**
-  - `Profile/Home` sahifalarida "Ballaringiz: X" widgeti va progress bar chiqadi.
-  - Ball tugashiga 7 kun qolganda qizil rangda ogohlantirish ko'rsatiladi: `"X ball 7 kundan keyin tugaydi"`.
-  - `CheckoutPage` da promokod kiritish qismi yonida "Ballardan foydalanish" toggle/checkbox qo'shiladi. (Promo-kod kabi ishlashi kerak).
-
-**2. Win-back Mexanizmi (Client-side, In-app):**
-- Barcha triggerlar mijozning oxirgi xaridi (`lastOrderDate`) asosida `HomeCubit.init()` da tekshiriladi.
-- **Bannerlar (`HomePage` tepasida):**
-  - **7-13 kun o'tsa:** Kichik eslatma — `"Sog'indingizmi? Sevimli taomingiz kutmoqda"`.
-  - **14-29 kun o'tsa:** O'rtacha win-back — Banner + avtomatik 10% chegirma promokod (7 kun amal qiladi).
-  - **30+ kun o'tsa:** Kuchli win-back — Banner + 20% promokod + "Ball muddati tugayapti" ogohlantirishi (agar ball bo'lsa).
-- Bannerlar har doim `Dismissible` (yopish mumkin) bo'lishi kerak.
-
-**3. Bildirishnomalar Markazi (`ProfilePage`):**
-- Profil sahifasidagi "Bildirishnomalar" qismi faollashtiriladi.
-- U yerni in-app notification center ga aylantiramiz: Win-back xabarlari tarixi, ball to'plash holati, order status yangilanishlari shu yerda yig'iladi.
-
-**Arxitektura:**
-- Yangi `LoyaltyCubit` (Global, `@lazySingleton` xuddi `HomeCubit` kabi).
-- Backend tomondan `UserLoyaltyEntity` obyektlari qo'shilishi kutiladi.
-
----
 
 ## 10. Auto-Update Policy
 
@@ -438,11 +407,12 @@ HomeInitial → HomeLoading → HomeLoaded(categories, fullProducts, products, s
 - Tanlanganda `_lat`, `_lng`, `_addressController` to'ldiriladi va `_calculateDelivery()` chaqiriladi.
 
 **MapPickerPage (`/map-picker`):**
-- `flutter_map` + OpenStreetMap tiles.
-- `Geolocator` → joriy joylashuv → marker va karta shu joyga o'rnatiladi.
-- Xaritaga tap → marker yangi joyga ko'chadi + reverse geocoding (ko'cha nomi kartochkada).
-- "Joylashuvim" FAB → qayta joriy joyga qaytaradi.
-- "Tasdiqlash" → `context.pop({'lat', 'lng', 'address'})` — CheckoutPage olib oladi.
+- `webview_flutter` + Yandex Maps JS API 2.1 (markaziy pin, Yandex Geocoder, qidiruv).
+- `Geolocator` → joriy GPS joylashuv → xarita markazi ko'chadi.
+- Xaritani surish (drag) → markaziy pin animatsiyasi + Yandex reverse geocoding (aniq ko'cha, mahalla, uy raqami).
+- "Mening joylashuvim" FAB → foydalanuvchi joyiga animatsiya bilan qaytaradi.
+- Tepada manzil bo'yicha qidiruv (search bar).
+- "Tasdiqlash" → `context.pop({'lat', 'lng', 'address'})` — Checkout/OrderType qabul qiladi.
 
 **✏️ MapPicker — Qo'lda yozish fallback (Rejalashtirilgan):**
 - Xarita ustida yoki tagida `"Manzilni qo'lda kiriting"` tugmasi/toggle.

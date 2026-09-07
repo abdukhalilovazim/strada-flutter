@@ -9,7 +9,6 @@ import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_c
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
-import 'package:pizza_strada/features/loyalty/presentation/bloc/loyalty_cubit.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:pizza_strada/core/services/analytics_service.dart';
@@ -176,7 +175,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   double _computeDiscount(CheckoutState state, double subtotal) {
-    if (!state.useLoyaltyPoints && state.appliedPromoCode == null) return 0;
+    if (state.appliedPromoCode == null) return 0;
     double discount = 0;
     if (state.appliedPromoCode != null && state.promoValue != null) {
       if (state.promoType == 1) {
@@ -214,19 +213,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
         final subtotal = cartState.subtotal;
         final discount = _computeDiscount(checkoutState, subtotal);
 
-        int usedPoints = 0;
-        final loyaltyState = context.read<LoyaltyCubit>().state;
-        if (checkoutState.useLoyaltyPoints && loyaltyState is LoyaltyLoaded) {
-          final maxAllowed =
-              (subtotal + checkoutState.deliveryPrice - discount).toInt();
-          usedPoints = loyaltyState.loyalty.points > maxAllowed
-              ? maxAllowed
-              : loyaltyState.loyalty.points;
-        }
         final finalTotal = (subtotal +
                 checkoutState.deliveryPrice -
-                discount -
-                usedPoints)
+                discount)
             .clamp(0, double.infinity);
 
         return Scaffold(
@@ -413,70 +402,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Loyalty points
-        BlocBuilder<LoyaltyCubit, LoyaltyState>(
-          builder: (context, state) {
-            if (state is LoyaltyLoaded && state.loyalty.points > 0) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('checkout.loyalty_points'.tr(),
-                      style: AppTextStyles.h3.copyWith(
-                          color: Theme.of(context)
-                              .textTheme
-                              .headlineMedium
-                              ?.color)),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.4)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.stars_rounded,
-                            color: AppColors.primary, size: 28),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${state.loyalty.points} ${'checkout.points_available'.tr()}',
-                                style: AppTextStyles.labelMedium.copyWith(
-                                    color: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.color),
-                              ),
-                              Text(
-                                'checkout.use_points_for_discount'.tr(),
-                                style: AppTextStyles.bodySmall
-                                    .copyWith(color: AppColors.neutral500),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Switch.adaptive(
-                          value: checkoutState.useLoyaltyPoints,
-                          onChanged: (val) => context
-                              .read<CheckoutCubit>()
-                              .toggleLoyaltyPoints(val),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-              );
-            }
-            return const SizedBox.shrink();
-          },
-        ),
-
         // To'lov usuli
         Text('checkout.payment'.tr(),
             style: AppTextStyles.h3.copyWith(
@@ -732,13 +657,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     value: discount,
                     isNegative: true),
               ],
-              if (usedPoints > 0) ...[
-                const Divider(height: 16),
-                _PriceLine(
-                    label: 'checkout.loyalty_discount'.tr(),
-                    value: usedPoints.toDouble(),
-                    isNegative: true),
-              ],
               const Divider(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -824,7 +742,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           };
                         }).toList();
                         context.read<CheckoutCubit>().submitOrder(
-                            products: products, usedPoints: usedPoints);
+                            products: products);
                       },
                 child: checkoutState.isSubmitting
                     ? const SizedBox(

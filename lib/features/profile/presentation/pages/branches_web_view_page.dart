@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 /// Web View [BranchesWebViewPage] displaying list of branches.
@@ -42,7 +43,26 @@ class _BranchesWebViewPageState extends State<BranchesWebViewPage> {
             onPageFinished: (_) {
               if (mounted) setState(() => _isLoading = false);
             },
+            onNavigationRequest: (request) {
+              final url = request.url;
+              if (url.startsWith('tel:') ||
+                  url.startsWith('mailto:') ||
+                  url.startsWith('tg:') ||
+                  url.contains('yandex.com/maps') ||
+                  url.contains('maps.yandex') ||
+                  url.contains('maps.google')) {
+                final uri = Uri.tryParse(url);
+                if (uri != null) {
+                  launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+                return NavigationDecision.prevent;
+              }
+              return NavigationDecision.navigate;
+            },
             onWebResourceError: (error) {
+              if (error.description.contains('unsupported URL') || error.errorCode == -1002) {
+                return;
+              }
               debugPrint('Branches WebView error: ${error.description}');
             },
           ),

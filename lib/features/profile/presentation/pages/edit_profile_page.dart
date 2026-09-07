@@ -8,6 +8,7 @@ import 'package:pizza_strada/core/di/injection.dart';
 import 'package:pizza_strada/features/auth/domain/entities/user_entity.dart';
 import 'package:pizza_strada/features/auth/domain/usecases/update_profile_usecase.dart';
 import 'package:pizza_strada/core/storage/secure_storage.dart';
+import 'package:pizza_strada/core/utils/phone_number_formatter.dart';
 
 class EditProfilePage extends StatefulWidget {
   final UserEntity user;
@@ -28,7 +29,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.user.fullName);
-    _phoneController = TextEditingController(text: widget.user.phone);
+    _phoneController = TextEditingController(text: PhoneNumberFormatter.formatFull(widget.user.phone));
     _selectedDate = widget.user.birthdate;
   }
 

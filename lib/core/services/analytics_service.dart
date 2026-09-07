@@ -13,20 +13,20 @@ class AnalyticsService {
 
   /// Initialize AppMetrica if API key is provided in .env
   Future<void> init() async {
+    // Debug rejimida native SDK konsolga AMAEvent va UUID loglarini chiqarmasligi uchun faollashtirilmaydi
+    if (kDebugMode) return;
+
     try {
       final apiKey = dotenv.env['APPMETRICA_API_KEY'];
       if (apiKey != null && apiKey.isNotEmpty && apiKey != 'YOUR_APPMETRICA_API_KEY') {
         await AppMetrica.activate(AppMetricaConfig(
           apiKey,
-          logs: kDebugMode,
+          logs: false,
           crashReporting: true,
           sessionsAutoTrackingEnabled: true,
           appOpenTrackingEnabled: true,
         ));
         _isInitialized = true;
-        debugPrint('✅ [AnalyticsService] AppMetrica initialized successfully');
-      } else {
-        debugPrint('ℹ️ [AnalyticsService] APPMETRICA_API_KEY not configured, running in mock/log mode');
       }
     } catch (e, stack) {
       debugPrint('⚠️ [AnalyticsService] Failed to initialize AppMetrica: $e\n$stack');
@@ -35,10 +35,7 @@ class AnalyticsService {
 
   /// General event logging
   Future<void> logEvent(String name, [Map<String, Object>? parameters]) async {
-    if (kDebugMode) {
-      debugPrint('📊 [Analytics] Event: $name | Params: $parameters');
-    }
-    if (!_isInitialized) return;
+    if (kDebugMode || !_isInitialized) return;
     try {
       if (parameters != null && parameters.isNotEmpty) {
         await AppMetrica.reportEventWithMap(name, parameters);
@@ -52,8 +49,9 @@ class AnalyticsService {
 
   /// App opened via deep link or standard launch
   Future<void> logAppOpen([String? deeplink]) async {
+    if (kDebugMode || !_isInitialized) return;
     await logEvent('app_open', deeplink != null ? {'deeplink': deeplink} : null);
-    if (_isInitialized && deeplink != null) {
+    if (deeplink != null) {
       try {
         await AppMetrica.reportAppOpen(deeplink);
       } catch (_) {}
@@ -67,10 +65,7 @@ class AnalyticsService {
 
   /// User profile ID association
   Future<void> setUserProfileId(String userId) async {
-    if (kDebugMode) {
-      debugPrint('👤 [Analytics] Set User Profile ID: $userId');
-    }
-    if (!_isInitialized) return;
+    if (kDebugMode || !_isInitialized) return;
     try {
       await AppMetrica.setUserProfileID(userId);
     } catch (_) {}

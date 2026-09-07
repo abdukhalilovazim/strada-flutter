@@ -1,5 +1,4 @@
 import 'package:pizza_strada/features/auth/domain/entities/user_entity.dart';
-import 'package:pizza_strada/features/loyalty/data/models/user_loyalty_model.dart';
 
 class UserModel extends UserEntity {
   const UserModel({
@@ -8,7 +7,6 @@ class UserModel extends UserEntity {
     required super.phone,
     required super.token,
     super.birthdate,
-    super.loyalty,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
@@ -17,8 +15,5 @@ class UserModel extends UserEntity {
     phone:    json['phone']     as String,
     token:    json['token']     as String? ?? '',
     birthdate: (json['birth_date'] ?? json['birthdate']) as String?,
-    loyalty:  json['loyalty'] != null 
-                ? UserLoyaltyModel.fromJson(json['loyalty'] as Map<String, dynamic>) 
-                : null,
   );
 }

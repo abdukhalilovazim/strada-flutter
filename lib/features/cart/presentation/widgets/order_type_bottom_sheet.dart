@@ -131,63 +131,64 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
 
               // Delivery Mode Content
               if (isDelivery) ...[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurface : AppColors.neutral100,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                InkWell(
+                  onTap: () async {
+                    final result = await context.push<Map<String, dynamic>>('/map-picker');
+                    if (result != null && context.mounted) {
+                      final lat = result['lat'] as double?;
+                      final lng = result['lng'] as double?;
+                      final address = result['address'] as String?;
+                      if (address != null && address.isNotEmpty) {
+                        context.read<CheckoutCubit>().setAddressAndCalculateDelivery(
+                              lat ?? 0.0,
+                              lng ?? 0.0,
+                              address,
+                            );
+                      }
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.darkSurface : AppColors.neutral100,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 24),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'checkout.address'.tr(),
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 24),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'checkout.address'.tr(),
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              state.address != null && state.address!.isNotEmpty
-                                  ? state.address!
-                                  : 'checkout.select_address'.tr(),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTextStyles.labelMedium.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: theme.textTheme.bodyLarge?.color,
+                              const SizedBox(height: 2),
+                              Text(
+                                state.address != null && state.address!.isNotEmpty
+                                    ? state.address!
+                                    : 'checkout.select_address'.tr(),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.labelMedium.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.textTheme.bodyLarge?.color,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.map_rounded, color: AppColors.primary),
-                        onPressed: () async {
-                          final result = await context.push<Map<String, dynamic>>('/map-picker');
-                          if (result != null && context.mounted) {
-                            final lat = result['lat'] as double?;
-                            final lng = result['lng'] as double?;
-                            final address = result['address'] as String?;
-                            if (address != null && address.isNotEmpty) {
-                              context.read<CheckoutCubit>().setAddressAndCalculateDelivery(
-                                    lat ?? 0.0,
-                                    lng ?? 0.0,
-                                    address,
-                                  );
-                            }
-                          }
-                        },
-                      ),
-                    ],
+                        const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.primary, size: 16),
+                      ],
+                    ),
                   ),
                 ),
               ] else ...[
