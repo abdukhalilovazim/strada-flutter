@@ -13,7 +13,6 @@ import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_s
 import 'package:pizza_strada/features/cart/presentation/widgets/order_type_bottom_sheet.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
-import 'package:pizza_strada/features/home/presentation/widgets/header_location_pill.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_card.dart';
 import 'package:pizza_strada/core/widgets/app_shimmer.dart';
 
@@ -93,6 +92,44 @@ class _HomePageState extends State<HomePage> {
       _isSearchActive = false;
       _searchQuery = '';
     });
+  }
+
+  /// Mahsulot tanlanganda: variant > 1 bo'lsa tanlash sheetini ochish,
+  /// 1 ta (yoki variantsiz) bo'lsa to'g'ridan-to'g'ri savatga qo'shish.
+  void _handleProductTap(ProductEntity product) {
+    if (product.variants.length > 1) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => VariantPickerSheet(
+          product: product,
+          onPick: (variant) {
+            context.read<CartCubit>().addToCart(product, variant: variant);
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('product.added'.tr()),
+                duration: const Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          },
+        ),
+      );
+    } else {
+      final variant =
+          product.variants.isNotEmpty ? product.variants.first : null;
+      context.read<CartCubit>().addToCart(product, variant: variant);
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('product.added'.tr()),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   /// Scroll offsetiga qarab aktiv kategoriyani aniqlash
@@ -228,41 +265,17 @@ class _HomePageState extends State<HomePage> {
                           : AppColors.neutral200,
                     ),
                   ),
-                  title: Row(
-                    children: [
-                      Image.asset(
-                        'assets/icons/logo.png',
-                        height: 40,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => Text(
-                          'Pizza strada',
-                          style: AppTextStyles.h3.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: BlocBuilder<CheckoutCubit, CheckoutState>(
-                          builder: (context, checkoutState) {
-                            return HeaderLocationPill(
-                              orderType: checkoutState.isDelivery ? 0 : 1,
-                              addressName: checkoutState.address,
-                              branchTitle: checkoutState.branchTitle,
-                              onTap: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (_) =>
-                                      const OrderTypeBottomSheet(),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+                  titleSpacing: 16,
+                  title: Image.asset(
+                    'assets/icons/logo.png',
+                    height: 38,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Text(
+                      'Pizza strada',
+                      style: AppTextStyles.h3.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold),
+                    ),
                   ),
                   actions: [
                     // Search toggle
@@ -477,6 +490,185 @@ class _HomePageState extends State<HomePage> {
                 // ── Loaded holati ──
                 else if (state is HomeLoaded) ...[
 
+                  // ── Yetkazib berish / Manzil tanlash paneli (Zamonaviy card) ──
+                  if (!_isSearchActive)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                        child: BlocBuilder<CheckoutCubit, CheckoutState>(
+                          builder: (context, checkoutState) {
+                            final isDelivery = checkoutState.isDelivery;
+                            final String modeLabel = isDelivery
+                                ? 'checkout.delivery'.tr()
+                                : 'checkout.pickup'.tr();
+                            final String displayTitle = isDelivery
+                                ? (checkoutState.address != null &&
+                                        checkoutState.address!.isNotEmpty
+                                    ? checkoutState.address!
+                                    : 'checkout.select_address'.tr())
+                                : (checkoutState.branchTitle != null &&
+                                        checkoutState.branchTitle!.isNotEmpty
+                                    ? checkoutState.branchTitle!
+                                    : 'checkout.select_branch'.tr());
+
+                            final isDark =
+                                Theme.of(context).brightness == Brightness.dark;
+
+                            return Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (_) =>
+                                        const OrderTypeBottomSheet(),
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(16),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? AppColors.darkSurface
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: isDark
+                                          ? AppColors.neutral800
+                                          : AppColors.neutral200,
+                                      width: 1,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                            alpha: isDark ? 0.2 : 0.04),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: isDelivery
+                                              ? AppColors.primary
+                                                  .withValues(alpha: 0.1)
+                                              : AppColors.secondary
+                                                  .withValues(alpha: 0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Icon(
+                                          isDelivery
+                                              ? Icons.delivery_dining_rounded
+                                              : Icons.storefront_rounded,
+                                          color: isDelivery
+                                              ? AppColors.primary
+                                              : AppColors.secondary,
+                                          size: 24,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  width: 7,
+                                                  height: 7,
+                                                  decoration: BoxDecoration(
+                                                    color: isDelivery
+                                                        ? AppColors.primary
+                                                        : AppColors.secondary,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  modeLabel,
+                                                  style: AppTextStyles
+                                                      .bodyExtraSmall
+                                                      .copyWith(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: isDelivery
+                                                        ? AppColors.primary
+                                                        : AppColors.secondary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              displayTitle,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: AppTextStyles.labelMedium
+                                                  .copyWith(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w700,
+                                                color: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyLarge
+                                                    ?.color,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 10, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: isDark
+                                              ? AppColors.neutral800
+                                              : AppColors.neutral100,
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              'common.change'.tr(),
+                                              style: AppTextStyles
+                                                  .bodyExtraSmall
+                                                  .copyWith(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                                color: AppColors.primary,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 2),
+                                            const Icon(
+                                              Icons.keyboard_arrow_down_rounded,
+                                              size: 16,
+                                              color: AppColors.primary,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+
                   // ── Banner Carousel (Swiper) ──
                   if (state.sliders.isNotEmpty)
                     SliverToBoxAdapter(
@@ -625,9 +817,7 @@ class _HomePageState extends State<HomePage> {
                                   return ProductCard(
                                     product: product,
                                     quantityInCart: qty,
-                                    onTap: () => context.push(
-                                        '/product/${product.slug}',
-                                        extra: product),
+                                    onTap: () => _handleProductTap(product),
                                   );
                                 },
                               );
@@ -697,9 +887,7 @@ class _HomePageState extends State<HomePage> {
                                     return ProductCard(
                                       product: product,
                                       quantityInCart: qty,
-                                      onTap: () => context.push(
-                                          '/product/${product.slug}',
-                                          extra: product),
+                                      onTap: () => _handleProductTap(product),
                                     );
                                   },
                                 );

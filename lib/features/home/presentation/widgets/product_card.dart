@@ -181,6 +181,7 @@ class ProductCard extends StatelessWidget {
 
   /// "Ochish" — to'liq kenglikdagi qizil pill tugma (Laravel btn-danger rounded-pill)
   Widget _buildOpenButton(BuildContext context) {
+    final hasMultipleVariants = product.variants.length > 1;
     return SizedBox(
       width: double.infinity,
       height: 30,
@@ -200,7 +201,11 @@ class ProductCard extends StatelessWidget {
           ),
           minimumSize: const Size(0, 30),
         ),
-        child: Text('product.select_variant'.tr()),
+        child: Text(
+          hasMultipleVariants
+              ? 'product.select_variant'.tr()
+              : 'cart.add'.tr(),
+        ),
       ),
     );
   }
@@ -223,6 +228,14 @@ class VariantPickerSheet extends StatefulWidget {
 
 class _VariantPickerSheetState extends State<VariantPickerSheet> {
   VariantEntity? selectedVariant;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.product.variants.isNotEmpty) {
+      selectedVariant = widget.product.variants.first;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -431,19 +444,22 @@ class _VariantPickerSheetState extends State<VariantPickerSheet> {
           const SizedBox(height: 24),
 
           // Savatga qo'shish tugmasi
-          SizedBox(
-            height: 52,
-            child: ElevatedButton(
-              onPressed: selectedVariant == null
-                  ? null
-                  : () {
-                      widget.onPick(selectedVariant!);
-                      Navigator.pop(context);
-                    },
-              child: Text(
-                selectedVariant == null
-                    ? 'product.select_variant'.tr()
-                    : '${'cart.add'.tr()} — ${NumberFormatter.formatSum(selectedVariant!.price)} ${'common.currency'.tr()}',
+          SafeArea(
+            top: false,
+            child: SizedBox(
+              height: 50,
+              child: ElevatedButton(
+                onPressed: selectedVariant == null
+                    ? null
+                    : () {
+                        widget.onPick(selectedVariant!);
+                        Navigator.pop(context);
+                      },
+                child: Text(
+                  selectedVariant == null
+                      ? 'product.select_variant'.tr()
+                      : '${'cart.add'.tr()} — ${NumberFormatter.formatSum(selectedVariant!.price)} ${'common.currency'.tr()}',
+                ),
               ),
             ),
           ),

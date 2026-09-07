@@ -3,13 +3,15 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pizza_strada/core/constants/api_constants.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
+import 'package:pizza_strada/core/utils/device_info_helper.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 /// Yandex Maps asosidagi manzil tanlash sahifasi [MapPickerPage].
 ///
-/// WebView orqali Yandex Maps JS API 2.1 integratsiyasi:
+/// Backenddagi `/webview/map-picker` orqali ishlaydi:
 /// - Markaziy harakatlanuvchi pin (Yandex Go / Wolt uslubida)
 /// - Haqiqiy Yandex Geocoder orqali aniq manzilni aniqlash
 /// - Qidiruv (ko'cha yoki joy nomi bo'yicha)
@@ -31,14 +33,21 @@ class _MapPickerPageState extends State<MapPickerPage> {
   bool _isGeocoding = true;
   bool _isMapLoading = true;
   bool _isLocating = false;
-
-  static const String _yandexApiKey = '5a208825-198a-478f-bad4-2c686c374f08';
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _initController();
     _checkInitialLocation();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      _isInitialized = true;
+      _initController();
+    }
   }
 
   @override
@@ -67,11 +76,13 @@ class _MapPickerPageState extends State<MapPickerPage> {
   }
 
   void _initController() {
-    final lang = _getLanguageCode();
+    final lang = EasyLocalization.of(context)?.locale.languageCode ?? 'uz';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = isDark ? 'dark' : 'light';
 
     final controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0xFFF3F4F6))
+      ..setBackgroundColor(isDark ? const Color(0xFF121217) : const Color(0xFFF3F4F6))
       ..addJavaScriptChannel(
         'FlutterMap',
         onMessageReceived: (JavaScriptMessage message) {
@@ -114,17 +125,33 @@ class _MapPickerPageState extends State<MapPickerPage> {
             if (mounted) setState(() => _isMapLoading = false);
           },
         ),
-      )
-      ..loadHtmlString(_buildHtml(lang), baseUrl: 'https://pizzastrada.uz');
+      );
 
+    final queryParams = {
+      'lat': _currentLat.toString(),
+      'lng': _currentLng.toString(),
+      'lang': lang,
+      'theme': themeMode,
+      'app_version_code': DeviceInfoHelper.appVersionCode,
+      'device_id': DeviceInfoHelper.deviceId,
+      'device_name': DeviceInfoHelper.deviceName,
+      'source': DeviceInfoHelper.appSource,
+    };
+
+    final uri = Uri.parse('${ApiConstants.webviewBaseUrl}/map-picker')
+        .replace(queryParameters: queryParams);
+
+    final headers = {
+      'app-version-code': DeviceInfoHelper.appVersionCode,
+      'device-id': DeviceInfoHelper.deviceId,
+      'device-name': DeviceInfoHelper.deviceName,
+      'language': lang,
+      'theme': themeMode,
+      'source': DeviceInfoHelper.appSource,
+    };
+
+    controller.loadRequest(uri, headers: headers);
     _controller = controller;
-  }
-
-  String _getLanguageCode() {
-    final code = EasyLocalization.of(context)?.locale.languageCode ?? 'uz';
-    if (code == 'ru') return 'ru_RU';
-    if (code == 'en') return 'en_US';
-    return 'uz_UZ';
   }
 
   Future<void> _goToMyLocation() async {
@@ -168,154 +195,6 @@ class _MapPickerPageState extends State<MapPickerPage> {
       final escaped = jsonEncode(query);
       _controller?.runJavaScript('window.searchAddress($escaped);');
     }
-  }
-
-  String _buildHtml(String lang) {
-    return '''
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body, #map { width: 100%; height: 100%; overflow: hidden; background: #e5e7eb; }
-        
-        #pin-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -100%);
-            z-index: 1000;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .pin-svg {
-            width: 44px;
-            height: 44px;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25));
-            transition: transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .pin-shadow {
-            width: 14px;
-            height: 6px;
-            background: rgba(0, 0, 0, 0.28);
-            border-radius: 50%;
-            margin-top: -3px;
-            transition: transform 0.18s, opacity 0.18s;
-        }
-        .moving .pin-svg {
-            transform: translateY(-14px) scale(1.08);
-        }
-        .moving .pin-shadow {
-            transform: scale(0.5);
-            opacity: 0.2;
-        }
-        .ymaps-2-1-79-copyright { display: none !important; }
-    </style>
-    <script src="https://api-maps.yandex.ru/2.1/?apikey=$_yandexApiKey&lang=$lang" type="text/javascript"></script>
-</head>
-<body>
-    <div id="map"></div>
-    <div id="pin-container">
-        <svg class="pin-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z" fill="#D32F2F"/>
-        </svg>
-        <div class="pin-shadow"></div>
-    </div>
-
-    <script>
-        let myMap = null;
-        let pinContainer = document.getElementById('pin-container');
-        let geocodeTimeout = null;
-
-        function sendToFlutter(data) {
-            if (window.FlutterMap) {
-                window.FlutterMap.postMessage(JSON.stringify(data));
-            }
-        }
-
-        ymaps.ready(function() {
-            myMap = new ymaps.Map('map', {
-                center: [$_currentLat, $_currentLng],
-                zoom: 16,
-                controls: []
-            }, {
-                suppressMapOpenBlock: true
-            });
-
-            myMap.behaviors.enable(['drag', 'scrollZoom', 'multiTouch']);
-
-            myMap.events.add('actionbegin', function() {
-                pinContainer.classList.add('moving');
-                sendToFlutter({ type: 'moving' });
-            });
-
-            myMap.events.add('actionend', function() {
-                pinContainer.classList.remove('moving');
-                triggerGeocode();
-            });
-
-            sendToFlutter({ type: 'map_ready' });
-            triggerGeocode();
-        });
-
-        function triggerGeocode() {
-            if (!myMap) return;
-            const center = myMap.getCenter();
-            clearTimeout(geocodeTimeout);
-            geocodeTimeout = setTimeout(function() {
-                ymaps.geocode(center, { results: 1 }).then(function(res) {
-                    const geo = res.geoObjects.get(0);
-                    let address = '';
-                    if (geo) {
-                        address = geo.getAddressLine();
-                    } else {
-                        address = center[0].toFixed(5) + ', ' + center[1].toFixed(5);
-                    }
-                    sendToFlutter({
-                        type: 'location_changed',
-                        lat: center[0],
-                        lng: center[1],
-                        address: address
-                    });
-                }).catch(function() {
-                    sendToFlutter({
-                        type: 'location_changed',
-                        lat: center[0],
-                        lng: center[1],
-                        address: center[0].toFixed(5) + ', ' + center[1].toFixed(5)
-                    });
-                });
-            }, 250);
-        }
-
-        window.moveToCoords = function(lat, lng) {
-            if (myMap) {
-                myMap.setCenter([lat, lng], 16, { checkZoomRange: true, duration: 400 });
-            }
-        };
-
-        window.searchAddress = function(query) {
-            if (!query || !myMap) return;
-            ymaps.geocode(query, { results: 1 }).then(function(res) {
-                const geo = res.geoObjects.get(0);
-                if (geo) {
-                    const coords = geo.geometry.getCoordinates();
-                    myMap.setCenter(coords, 16, { duration: 400 });
-                } else {
-                    sendToFlutter({ type: 'search_not_found' });
-                }
-            }).catch(function() {
-                sendToFlutter({ type: 'search_not_found' });
-            });
-        };
-    </script>
-</body>
-</html>
-''';
   }
 
   @override

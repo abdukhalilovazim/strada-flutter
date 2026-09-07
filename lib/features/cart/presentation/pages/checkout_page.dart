@@ -12,6 +12,8 @@ import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:pizza_strada/core/services/analytics_service.dart';
+import 'package:pizza_strada/core/storage/secure_storage.dart';
+import 'package:pizza_strada/core/utils/phone_number_formatter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class CheckoutPage extends StatefulWidget {
@@ -35,11 +37,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
   bool _showPromoInput = false;
   bool _showChangeInput = false;
   bool _showCommentInput = false;
+  String? _userName;
+  String? _userPhone;
 
   @override
   void initState() {
     super.initState();
     _loadBranches();
+    _loadUserData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final state = context.read<CheckoutCubit>().state;
@@ -83,7 +88,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
               .toList();
           if (_branches.isNotEmpty &&
               context.read<CheckoutCubit>().state.branchId == null) {
-            context.read<CheckoutCubit>().setBranch(_branches.first.id);
+            context.read<CheckoutCubit>().setBranch(
+                  _branches.first.id,
+                  branchTitle: _branches.first.title,
+                );
           }
         });
       }
@@ -92,80 +100,18 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
-  void _showBranchPicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        return Container(
-          padding: const EdgeInsets.only(top: 20),
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('checkout.select_branch'.tr(), style: AppTextStyles.h3),
-              const SizedBox(height: 16),
-              if (_isLoadingBranches)
-                const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: CircularProgressIndicator(),
-                )
-              else
-                Flexible(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-                    itemCount: _branches.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (_, i) {
-                      final branch = _branches[i];
-                      final isSelected =
-                          context.read<CheckoutCubit>().state.branchId ==
-                              branch.id;
-                      return Material(
-                        color: Colors.transparent,
-                        child: ListTile(
-                          contentPadding:
-                              const EdgeInsets.symmetric(horizontal: 20),
-                          title: Text(
-                            branch.title,
-                            style: AppTextStyles.labelMedium.copyWith(
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.w500,
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.color,
-                            ),
-                          ),
-                          trailing: isSelected
-                              ? const Icon(Icons.check_circle_rounded,
-                                  color: AppColors.primary)
-                              : null,
-                          onTap: () {
-                            context
-                                .read<CheckoutCubit>()
-                                .setBranch(branch.id);
-                            Navigator.pop(context);
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
-    );
+  Future<void> _loadUserData() async {
+    final name = await SecureStorage.getUserName();
+    final phone = await SecureStorage.getUserPhone();
+    if (mounted) {
+      setState(() {
+        _userName = name;
+        _userPhone = phone;
+      });
+    }
   }
+
+
 
   int _getPaymentMethodId(String key) {
     final k = key.toLowerCase().trim();
@@ -369,20 +315,157 @@ class _CheckoutPageState extends State<CheckoutPage> {
               }
             },
           )
-        else
-          _SelectorCard(
-            icon: Icons.storefront_rounded,
-            text: _branches
-                    .cast<CheckoutBranch?>()
-                    .firstWhere((b) => b?.id == checkoutState.branchId,
-                        orElse: () => null)
-                    ?.title ??
-                'checkout.branch'.tr(),
-            isPlaceholder: checkoutState.branchId == null,
-            isLoading: _isLoadingBranches,
-            isDark: isDark,
-            onTap: _showBranchPicker,
-          ),
+        else ...[
+          if (_isLoadingBranches)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            )
+          else if (_branches.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurface : AppColors.neutral100,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Text(
+                'checkout.select_branch'.tr(),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                ),
+              ),
+            )
+          else
+            Column(
+              children: _branches.map((branch) {
+                final isSelected = checkoutState.branchId == branch.id;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => context.read<CheckoutCubit>().setBranch(
+                            branch.id,
+                            branchTitle: branch.title,
+                          ),
+                      borderRadius: BorderRadius.circular(14),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? (isDark
+                                  ? AppColors.primary.withValues(alpha: 0.15)
+                                  : AppColors.primaryLight)
+                              : (isDark
+                                  ? AppColors.darkSurface
+                                  : Colors.white),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.primary
+                                : (isDark
+                                    ? AppColors.neutral800
+                                    : AppColors.neutral200),
+                            width: isSelected ? 1.5 : 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(
+                                  alpha: isDark ? 0.2 : 0.04),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.primary.withValues(alpha: 0.15)
+                                    : (isDark
+                                        ? AppColors.neutral800
+                                        : AppColors.neutral100),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.storefront_rounded,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : (isDark
+                                        ? AppColors.neutral400
+                                        : AppColors.neutral600),
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                branch.title,
+                                style: AppTextStyles.labelMedium.copyWith(
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.w600,
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.color,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : (isDark
+                                          ? AppColors.neutral700
+                                          : AppColors.neutral300),
+                                  width: 2,
+                                ),
+                              ),
+                              child: isSelected
+                                  ? Center(
+                                      child: Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: const BoxDecoration(
+                                          color: AppColors.primary,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
         const SizedBox(height: 32),
       ],
     );
@@ -398,10 +481,189 @@ class _CheckoutPageState extends State<CheckoutPage> {
     double finalTotal,
     bool isDark,
   ) {
+    final isDelivery = checkoutState.isDelivery;
+    final locationTitle = isDelivery
+        ? (checkoutState.address != null && checkoutState.address!.isNotEmpty
+            ? checkoutState.address!
+            : 'checkout.select_address'.tr())
+        : (checkoutState.branchTitle != null &&
+                checkoutState.branchTitle!.isNotEmpty
+            ? checkoutState.branchTitle!
+            : (_branches
+                    .cast<CheckoutBranch?>()
+                    .firstWhere((b) => b?.id == checkoutState.branchId,
+                        orElse: () => null)
+                    ?.title ??
+                'checkout.branch'.tr()));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // To'lov usuli
+        // ── 1. Yetkazib berish va Qabul qiluvchi ma'lumotlari ──
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'checkout.order_summary'.tr(),
+              style: AppTextStyles.h3.copyWith(
+                color: Theme.of(context).textTheme.headlineMedium?.color,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () => setState(() => _currentStep = 0),
+              icon: const Icon(Icons.edit_outlined,
+                  size: 15, color: AppColors.primary),
+              label: Text(
+                'common.change'.tr(),
+                style:
+                    AppTextStyles.labelSmall.copyWith(color: AppColors.primary),
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Yetkazib berish / Olib ketish joyi
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: isDelivery
+                          ? AppColors.primary.withValues(alpha: 0.1)
+                          : AppColors.secondary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      isDelivery
+                          ? Icons.delivery_dining_rounded
+                          : Icons.storefront_rounded,
+                      color:
+                          isDelivery ? AppColors.primary : AppColors.secondary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isDelivery
+                              ? 'checkout.delivery_location'.tr()
+                              : 'checkout.pickup_location'.tr(),
+                          style: AppTextStyles.bodyExtraSmall.copyWith(
+                            color: isDark
+                                ? AppColors.neutral400
+                                : AppColors.neutral600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          locationTitle,
+                          style: AppTextStyles.labelMedium.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: Divider(height: 1),
+              ),
+              // Qabul qiluvchi ma'lumotlari (Ism + Telefon)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.person_outline_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'checkout.recipient'.tr(),
+                          style: AppTextStyles.bodyExtraSmall.copyWith(
+                            color: isDark
+                                ? AppColors.neutral400
+                                : AppColors.neutral600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _userName != null && _userName!.isNotEmpty
+                              ? _userName!
+                              : 'profile.guest'.tr(),
+                          style: AppTextStyles.labelMedium.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                        if (_userPhone != null && _userPhone!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            PhoneNumberFormatter.format(_userPhone!),
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: isDark
+                                  ? AppColors.neutral400
+                                  : AppColors.neutral600,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // ── 2. To'lov usuli ──
         Text('checkout.payment'.tr(),
             style: AppTextStyles.h3.copyWith(
                 color: Theme.of(context).textTheme.headlineMedium?.color)),
