@@ -68,6 +68,7 @@
   "checkout.change_from": "Qaytim qaysi summadan",
   "checkout.comment_hint": "Izohingizni kiriting...",
   "checkout.free": "Tekin",
+  "checkout.on_address_select": "Manzil tanlanganda",
   "checkout.enter_amount": "Summani kiriting",
   "checkout.select_branch": "Filial tanlang",
   "checkout.step1_label": "Buyurtma va manzil",

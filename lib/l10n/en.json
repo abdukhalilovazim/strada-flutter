@@ -68,6 +68,7 @@
   "checkout.change_from": "Change from amount",
   "checkout.comment_hint": "Enter your comment...",
   "checkout.free": "Free",
+  "checkout.on_address_select": "When address selected",
   "checkout.enter_amount": "Enter amount",
   "checkout.select_branch": "Select branch",
   "checkout.step1_label": "Order & Address",

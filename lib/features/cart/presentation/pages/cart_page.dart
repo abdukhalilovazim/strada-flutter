@@ -170,12 +170,32 @@ class CartPage extends StatelessWidget {
                                   ),
                                 ],
                                 const SizedBox(height: 6),
-                                Text(
-                                  '${NumberFormatter.formatSum(item.totalPrice)} ${'common.currency'.tr()}',
-                                  style: AppTextStyles.labelMedium.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w800,
-                                  ),
+                                Builder(
+                                  builder: (context) {
+                                    final unitPrice = item.variant?.price ?? item.product.price;
+                                    return Text.rich(
+                                      TextSpan(
+                                        children: [
+                                          if (item.quantity > 1) ...[
+                                            TextSpan(
+                                              text: '${NumberFormatter.formatSum(unitPrice.toInt())} × ${item.quantity} = ',
+                                              style: AppTextStyles.bodySmall.copyWith(
+                                                color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                          TextSpan(
+                                            text: '${NumberFormatter.formatSum(item.totalPrice.toInt())} ${'common.currency'.tr()}',
+                                            style: AppTextStyles.labelMedium.copyWith(
+                                              color: AppColors.primary,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),

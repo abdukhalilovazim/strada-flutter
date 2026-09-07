@@ -68,6 +68,7 @@
   "checkout.change_from": "Сдача с суммы",
   "checkout.comment_hint": "Оставьте комментарий...",
   "checkout.free": "Бесплатно",
+  "checkout.on_address_select": "При выборе адреса",
   "checkout.enter_amount": "Введите сумму",
   "checkout.select_branch": "Выберите филиал",
   "checkout.step1_label": "Заказ и адрес",
