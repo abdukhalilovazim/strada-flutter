@@ -10,57 +10,136 @@ import 'package:pizza_strada/features/orders/domain/entities/order_entity.dart';
 import 'package:pizza_strada/features/orders/presentation/bloc/order_cubit.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
 
-class OrdersPage extends StatelessWidget {
+import 'package:pizza_strada/core/storage/secure_storage.dart';
+import 'package:pizza_strada/core/widgets/app_button.dart';
+
+class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => getIt<OrderCubit>()..getOrders(),
-      child: Scaffold(
-        backgroundColor: AppColors.surface,
-        appBar: AppBar(
-          title: Text(
-            'orders.title'.tr(), 
-            style: AppTextStyles.h2.copyWith(
-              color: Theme.of(context).textTheme.headlineMedium?.color,
-            ),
-          ),
-          backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-          elevation: 0,
-          centerTitle: true,
-        ),
-        body: BlocBuilder<OrderCubit, OrderState>(
-          builder: (context, state) {
-            if (state is OrderLoading) {
-              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-            } else if (state is OrderFailure) {
-              return Center(child: Text(state.message, style: AppTextStyles.bodyMedium));
-            } else if (state is OrderLoaded) {
-              if (state.orders.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(AppIcons.noOrders, size: 64, color: AppColors.neutral200),
-                      const SizedBox(height: 16),
-                      Text('orders.empty'.tr(), style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400)),
-                    ],
-                  ),
-                );
-              }
+  State<OrdersPage> createState() => _OrdersPageState();
+}
 
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                itemCount: state.orders.length,
-                itemBuilder: (context, index) {
-                  final order = state.orders[index];
-                  return OrderCard(order: order);
-                },
-              );
-            }
-            return const SizedBox();
-          },
+class _OrdersPageState extends State<OrdersPage> {
+  bool _isLoading = true;
+  String? _token;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    final token = await SecureStorage.getToken();
+    if (mounted) {
+      setState(() {
+        _token = token;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(
+          'orders.title'.tr(), 
+          style: AppTextStyles.h2.copyWith(
+            color: Theme.of(context).textTheme.headlineMedium?.color,
+          ),
+        ),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : (_token == null || _token!.isEmpty)
+              ? _buildGuestView(context, isDark)
+              : BlocProvider(
+                  create: (context) => getIt<OrderCubit>()..getOrders(),
+                  child: BlocBuilder<OrderCubit, OrderState>(
+                    builder: (context, state) {
+                      if (state is OrderLoading) {
+                        return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                      } else if (state is OrderFailure) {
+                        return Center(child: Text(state.message, style: AppTextStyles.bodyMedium));
+                      } else if (state is OrderLoaded) {
+                        if (state.orders.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(AppIcons.noOrders, size: 64, color: AppColors.neutral200),
+                                const SizedBox(height: 16),
+                                Text('orders.empty'.tr(), style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400)),
+                              ],
+                            ),
+                          );
+                        }
+
+                        return ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                          itemCount: state.orders.length,
+                          itemBuilder: (context, index) {
+                            final order = state.orders[index];
+                            return OrderCard(order: order);
+                          },
+                        );
+                      }
+                      return const SizedBox();
+                    },
+                  ),
+                ),
+    );
+  }
+
+  Widget _buildGuestView(BuildContext context, bool isDark) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.receipt_long_rounded, size: 40, color: AppColors.primary),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'orders.guest_title'.tr(),
+              style: AppTextStyles.h3.copyWith(
+                color: Theme.of(context).textTheme.titleLarge?.color,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'orders.guest_desc'.tr(),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            AppButton(
+              text: 'auth.login_button'.tr(),
+              onTap: () async {
+                await context.push('/auth/login');
+                _checkAuth();
+              },
+            ),
+          ],
         ),
       ),
     );

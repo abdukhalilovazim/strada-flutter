@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pizza_strada/core/di/injection.dart';
 import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:pizza_strada/core/services/analytics_service.dart';
 import 'package:pizza_strada/core/storage/secure_storage.dart';
@@ -9,9 +12,12 @@ import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
 import 'package:pizza_strada/core/utils/phone_number_formatter.dart';
+import 'package:pizza_strada/core/widgets/app_text_field.dart';
+import 'package:pizza_strada/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
+import 'package:pizza_strada/features/cart/presentation/widgets/checkout_otp_sheet.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -35,12 +41,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
   final _commentController = TextEditingController();
   final _promoController = TextEditingController();
   final _changeController = TextEditingController();
+  final _guestNameController = TextEditingController();
+  final _guestPhoneController = TextEditingController();
 
   bool _showPromoInput = false;
   bool _showChangeInput = false;
   bool _showCommentInput = false;
   String? _userName;
   String? _userPhone;
+  bool _isTelegramChecking = false;
+  Timer? _telegramPollTimer;
 
   @override
   void initState() {
@@ -90,6 +100,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
     _commentController.dispose();
     _promoController.dispose();
     _changeController.dispose();
+    _guestNameController.dispose();
+    _guestPhoneController.dispose();
+    _telegramPollTimer?.cancel();
     super.dispose();
   }
 
@@ -652,13 +665,78 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
-  /// Qabul qiluvchi shaxs ma'lumotlari (Ism + Raqam)
+  /// Qabul qiluvchi shaxs ma'lumotlari (Ism + Raqam yoki Mehmon formasi)
   Widget _buildRecipientCard(BuildContext context, bool isDark) {
+    final bool isGuest = _userPhone == null || _userPhone!.isEmpty;
+
+    if (!isGuest) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurface : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.person_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _userName != null && _userName!.isNotEmpty ? _userName! : 'profile.guest'.tr(),
+                    style: AppTextStyles.labelMedium.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                  if (_userPhone != null && _userPhone!.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      PhoneNumberFormatter.format(_userPhone!),
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Mehmon foydalanuvchi uchun forma
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark ? AppColors.neutral800 : AppColors.neutral200,
         ),
@@ -670,44 +748,108 @@ class _CheckoutPageState extends State<CheckoutPage> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.person_rounded,
-              color: AppColors.primary,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _userName != null && _userName!.isNotEmpty ? _userName! : 'profile.guest'.tr(),
-                  style: AppTextStyles.labelMedium.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                  ),
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                if (_userPhone != null && _userPhone!.isNotEmpty) ...[
-                  const SizedBox(height: 2),
+                child: const Icon(
+                  Icons.person_outline_rounded,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'checkout.guest_contact_title'.tr(),
+                      style: AppTextStyles.labelMedium.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                    Text(
+                      'checkout.guest_contact_desc'.tr(),
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          AppTextField(
+            controller: _guestNameController,
+            hintText: 'auth.name_hint'.tr(),
+            prefixIcon: Icons.person_outline_rounded,
+          ),
+          const SizedBox(height: 10),
+          AppTextField(
+            controller: _guestPhoneController,
+            hintText: '90 123 45 67',
+            prefixText: '+998 ',
+            keyboardType: TextInputType.phone,
+            prefixIcon: Icons.phone_outlined,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(9),
+            ],
+          ),
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: _isTelegramChecking ? null : _startTelegramAuth,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0088CC).withValues(alpha: isDark ? 0.15 : 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF0088CC).withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_isTelegramChecking)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFF0088CC),
+                      ),
+                    )
+                  else
+                    const Icon(
+                      Icons.telegram_rounded,
+                      color: Color(0xFF0088CC),
+                      size: 20,
+                    ),
+                  const SizedBox(width: 8),
                   Text(
-                    PhoneNumberFormatter.format(_userPhone!),
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: isDark ? AppColors.neutral400 : AppColors.neutral600,
-                      fontWeight: FontWeight.w500,
+                    _isTelegramChecking
+                        ? 'checkout.waiting_telegram_auth'.tr()
+                        : 'checkout.login_with_telegram'.tr(),
+                    style: AppTextStyles.labelMedium.copyWith(
+                      color: const Color(0xFF0088CC),
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
-              ],
+              ),
             ),
           ),
         ],
@@ -1303,7 +1445,126 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
-  void _submitOrder(BuildContext context, CartState cartState) {
+  Future<void> _startTelegramAuth() async {
+    setState(() => _isTelegramChecking = true);
+    try {
+      final authDs = getIt<AuthRemoteDataSource>();
+      final startRes = await authDs.telegramStart();
+      final ticket = startRes['ticket']?.toString();
+      final botUrl = startRes['bot_url']?.toString();
+
+      if (ticket == null || botUrl == null) {
+        throw Exception('Failed to start Telegram login');
+      }
+
+      final uri = Uri.parse(botUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+
+      // Poll for 90 seconds
+      int attempts = 0;
+      _telegramPollTimer?.cancel();
+      _telegramPollTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+        attempts++;
+        if (attempts > 45 || !mounted) {
+          timer.cancel();
+          if (mounted) setState(() => _isTelegramChecking = false);
+          return;
+        }
+
+        try {
+          final checkRes = await authDs.telegramCheck(ticket: ticket);
+          if (checkRes['status'] == 'confirmed' && checkRes['token'] != null) {
+            timer.cancel();
+            final token = checkRes['token'].toString();
+            final userMap = checkRes['user'] as Map<String, dynamic>?;
+            final fullName = userMap?['full_name']?.toString() ?? '';
+            final phone = userMap?['phone']?.toString() ?? '';
+
+            await SecureStorage.saveToken(token);
+            await SecureStorage.saveUserInfo(name: fullName, phone: phone);
+
+            if (mounted) {
+              setState(() {
+                _isTelegramChecking = false;
+                _userName = fullName;
+                _userPhone = phone;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text('checkout.auth_success'.tr()),
+                backgroundColor: AppColors.success,
+              ));
+            }
+          }
+        } catch (_) {}
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isTelegramChecking = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('auth.login_error'.tr()),
+          backgroundColor: AppColors.error,
+        ));
+      }
+    }
+  }
+
+  Future<void> _submitOrder(BuildContext context, CartState cartState) async {
+    final token = await SecureStorage.getToken();
+    final bool isGuest = token == null || token.isEmpty || _userPhone == null || _userPhone!.isEmpty;
+
+    if (isGuest) {
+      final name = _guestNameController.text.trim();
+      final phoneDigits = _guestPhoneController.text.trim();
+
+      if (name.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('checkout.enter_name_error'.tr()),
+          backgroundColor: AppColors.error,
+        ));
+        return;
+      }
+      if (phoneDigits.length != 9) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('checkout.enter_phone_error'.tr()),
+          backgroundColor: AppColors.error,
+        ));
+        return;
+      }
+
+      final fullPhone = '+998$phoneDigits';
+
+      try {
+        final authDs = getIt<AuthRemoteDataSource>();
+        final res = await authDs.loginWithChannel(
+          fullName: name,
+          phone: fullPhone,
+        );
+
+        final channel = res['channel']?.toString() ?? 'sms';
+
+        if (!mounted) return;
+        final verified = await CheckoutOtpSheet.show(
+          context,
+          phone: fullPhone,
+          fullName: name,
+          initialChannel: channel,
+        );
+
+        if (verified != true) return;
+
+        await _loadUserData();
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e is ApiException ? e.message : 'auth.login_error'.tr()),
+          backgroundColor: AppColors.error,
+        ));
+        return;
+      }
+    }
+
     final products = cartState.items.map((item) {
       final variantId = item.variant?.id ?? item.product.variants.firstOrNull?.id ?? 0;
       return {
@@ -1313,6 +1574,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       };
     }).toList();
 
+    if (!context.mounted) return;
     context.read<CheckoutCubit>().submitOrder(products: products);
   }
 

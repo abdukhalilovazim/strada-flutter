@@ -275,9 +275,6 @@ final appRouter = GoRouter(
   redirect: (context, state) async {
     final token = await SecureStorage.getToken();
     final onAuth = state.matchedLocation.startsWith('/auth');
-    if (token == null && !onAuth && state.matchedLocation != '/splash') {
-      return '/auth/login';
-    }
     if (token != null && onAuth) return '/home';
     return null;
   },

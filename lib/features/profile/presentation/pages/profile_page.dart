@@ -12,6 +12,7 @@ import 'package:pizza_strada/features/profile/presentation/pages/inquiry_page.da
 import 'package:pizza_strada/features/profile/presentation/pages/branches_web_view_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:pizza_strada/core/utils/phone_number_formatter.dart';
+import 'package:pizza_strada/core/widgets/app_button.dart';
 
 import 'package:pizza_strada/core/di/injection.dart';
 import 'package:pizza_strada/features/auth/domain/entities/user_entity.dart';
@@ -85,52 +86,52 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Column(
           children: [
             // User Card
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+            if (_user != null)
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      shape: BoxShape.circle,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primaryLight,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(AppIcons.profile, color: AppColors.primary, size: 32),
                     ),
-                    child: const Icon(AppIcons.profile, color: AppColors.primary, size: 32),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(_user?.fullName ?? 'profile.guest'.tr(), style: AppTextStyles.labelLarge.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)),
-                        const SizedBox(height: 4),
-                        Text(
-                          _user?.phone != null ? PhoneNumberFormatter.formatFull(_user!.phone) : '',
-                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
-                        ),
-                        if (_user?.birthdate != null) ...[
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_user!.fullName, style: AppTextStyles.labelLarge.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)),
                           const SizedBox(height: 4),
-                          Text(_user!.birthdate!, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
-                        ]
-                      ],
+                          Text(
+                            PhoneNumberFormatter.formatFull(_user!.phone),
+                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
+                          ),
+                          if (_user?.birthdate != null) ...[
+                            const SizedBox(height: 4),
+                            Text(_user!.birthdate!, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
+                          ]
+                        ],
+                      ),
                     ),
-                  ),
-                  if (_user != null)
                     IconButton(
                       icon: const Icon(Icons.edit_rounded, color: AppColors.primary),
                       onPressed: () async {
@@ -142,9 +143,74 @@ class _ProfilePageState extends State<ProfilePage> {
                         }
                       },
                     ),
-                ],
+                  ],
+                ),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 54,
+                          height: 54,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.person_outline_rounded, color: AppColors.primary, size: 30),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'profile.guest_greeting'.tr(),
+                                style: AppTextStyles.labelLarge.copyWith(
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'profile.guest_login_prompt'.tr(),
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    AppButton(
+                      text: 'auth.login_button'.tr(),
+                      onTap: () async {
+                        await context.push('/auth/login');
+                        _loadUserInfo();
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
             const SizedBox(height: 8),
 
             // Settings Items
@@ -189,77 +255,79 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
 
 
-            const SizedBox(height: 32),
+            if (_user != null) ...[
+              const SizedBox(height: 32),
 
-            // Logout
-            Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+              // Logout
+              Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                  ),
                 ),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(16),
-                child: ListTile(
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (dialogContext) {
-                        return AlertDialog(
-                          backgroundColor: Theme.of(dialogContext).cardColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          title: Text(
-                            'profile.logout'.tr(),
-                            style: AppTextStyles.h3.copyWith(
-                              color: Theme.of(dialogContext).textTheme.headlineMedium?.color,
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                  child: ListTile(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (dialogContext) {
+                          return AlertDialog(
+                            backgroundColor: Theme.of(dialogContext).cardColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                          ),
-                          content: Text(
-                            'profile.logout_confirm'.tr(),
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: Theme.of(dialogContext).textTheme.bodyMedium?.color,
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(dialogContext),
-                              child: Text(
-                                'common.no'.tr(),
-                                style: AppTextStyles.labelMedium.copyWith(
-                                  color: AppColors.neutral600,
-                                ),
+                            title: Text(
+                              'profile.logout'.tr(),
+                              style: AppTextStyles.h3.copyWith(
+                                color: Theme.of(dialogContext).textTheme.headlineMedium?.color,
                               ),
                             ),
-                            TextButton(
-                              onPressed: () async {
-                                Navigator.pop(dialogContext);
-                                await SecureStorage.clearAll();
-                                if (!context.mounted) return;
-                                context.go('/auth/login');
-                              },
-                              child: Text(
-                                'common.yes'.tr(),
-                                style: AppTextStyles.labelMedium.copyWith(
-                                  color: AppColors.error,
-                                ),
+                            content: Text(
+                              'profile.logout_confirm'.tr(),
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: Theme.of(dialogContext).textTheme.bodyMedium?.color,
                               ),
                             ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                  leading: const Icon(Icons.logout_rounded, color: AppColors.error, size: 22),
-                  title: Text('profile.logout'.tr(), style: AppTextStyles.labelLarge.copyWith(color: AppColors.error)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(dialogContext),
+                                child: Text(
+                                  'common.no'.tr(),
+                                  style: AppTextStyles.labelMedium.copyWith(
+                                    color: AppColors.neutral600,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () async {
+                                  Navigator.pop(dialogContext);
+                                  await SecureStorage.clearAll();
+                                  if (!context.mounted) return;
+                                  setState(() => _user = null);
+                                },
+                                child: Text(
+                                  'common.yes'.tr(),
+                                  style: AppTextStyles.labelMedium.copyWith(
+                                    color: AppColors.error,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    leading: const Icon(Icons.logout_rounded, color: AppColors.error, size: 22),
+                    title: Text('profile.logout'.tr(), style: AppTextStyles.labelLarge.copyWith(color: AppColors.error)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),

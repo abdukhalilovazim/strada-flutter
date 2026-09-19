@@ -38,10 +38,8 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
       create: (context) => getIt<SplashCubit>()..init(),
       child: BlocListener<SplashCubit, SplashState>(
         listener: (context, state) {
-          if (state is SplashAuthenticated) {
+          if (state is SplashAuthenticated || state is SplashUnauthenticated) {
             context.go('/home');
-          } else if (state is SplashUnauthenticated) {
-            context.go('/auth/login');
           } else if (state is SplashFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.error)),
