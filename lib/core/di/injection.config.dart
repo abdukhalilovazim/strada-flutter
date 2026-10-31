@@ -108,6 +108,8 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i918.GetSettingsUseCase(gh<_i929.HomeRepository>()));
     gh.lazySingleton<_i918.GetSlidersUseCase>(
         () => _i918.GetSlidersUseCase(gh<_i929.HomeRepository>()));
+    gh.lazySingleton<_i918.GetSDUIPageUseCase>(
+        () => _i918.GetSDUIPageUseCase(gh<_i929.HomeRepository>()));
     gh.factory<_i100.AuthCubit>(() => _i100.AuthCubit(
           gh<_i223.LoginUseCase>(),
           gh<_i746.ConfirmOtpUseCase>(),
@@ -117,6 +119,7 @@ extension GetItInjectableX on _i174.GetIt {
           gh<_i918.GetSlidersUseCase>(),
           gh<_i918.GetProductsUseCase>(),
           gh<_i918.GetSettingsUseCase>(),
+          gh<_i918.GetSDUIPageUseCase>(),
         ));
     return this;
   }
