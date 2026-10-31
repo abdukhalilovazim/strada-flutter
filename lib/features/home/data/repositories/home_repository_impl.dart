@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:pizza_strada/core/error/failures.dart';
+import 'package:pizza_strada/core/sdui/models/sdui_page_model.dart';
 import 'package:pizza_strada/core/utils/api_helper.dart';
 import 'package:pizza_strada/features/home/data/datasources/home_remote_datasource.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
@@ -32,6 +33,11 @@ class HomeRepositoryImpl implements HomeRepository {
   @override
   Future<Either<Failure, List<SliderEntity>>> getSliders() async {
     return _safeCall(() => _remoteDataSource.getSliders());
+  }
+
+  @override
+  Future<Either<Failure, SDUIPageModel>> getSDUIPage({String slug = 'home', String? categorySlug, int? branchId}) async {
+    return _safeCall(() => _remoteDataSource.getSDUIPage(slug: slug, categorySlug: categorySlug, branchId: branchId));
   }
 
   Future<Either<Failure, T>> _safeCall<T>(Future<T> Function() call) async {

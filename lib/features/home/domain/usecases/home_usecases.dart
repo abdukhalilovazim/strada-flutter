@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:injectable/injectable.dart';
 import 'package:pizza_strada/core/error/failures.dart';
+import 'package:pizza_strada/core/sdui/models/sdui_page_model.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/domain/repositories/home_repository.dart';
 
@@ -31,4 +32,12 @@ class GetSlidersUseCase {
   final HomeRepository _repository;
   GetSlidersUseCase(this._repository);
   Future<Either<Failure, List<SliderEntity>>> call() => _repository.getSliders();
+}
+
+@lazySingleton
+class GetSDUIPageUseCase {
+  final HomeRepository _repository;
+  GetSDUIPageUseCase(this._repository);
+  Future<Either<Failure, SDUIPageModel>> call({String slug = 'home', String? categorySlug, int? branchId}) =>
+      _repository.getSDUIPage(slug: slug, categorySlug: categorySlug, branchId: branchId);
 }

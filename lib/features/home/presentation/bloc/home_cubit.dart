@@ -33,6 +33,26 @@ class HomeLoaded extends HomeState {
     this.selectedCategory,
   });
 
+  HomeLoaded copyWith({
+    List<SliderEntity>? sliders,
+    List<CategoryEntity>? categories,
+    List<ProductEntity>? fullProducts,
+    List<ProductEntity>? products,
+    SettingsEntity? settings,
+    String? selectedCategory,
+    SDUIPageModel? sduiPage,
+  }) {
+    return HomeLoaded(
+      sliders: sliders ?? this.sliders,
+      categories: categories ?? this.categories,
+      fullProducts: fullProducts ?? this.fullProducts,
+      products: products ?? this.products,
+      settings: settings ?? this.settings,
+      selectedCategory: selectedCategory ?? this.selectedCategory,
+      sduiPage: sduiPage ?? this.sduiPage,
+    );
+  }
+
   @override
   List<Object?> get props => [
         sliders,
@@ -58,6 +78,7 @@ class HomeCubit extends Cubit<HomeState> {
   final GetSlidersUseCase _getSlidersUseCase;
   final GetProductsUseCase _getProductsUseCase;
   final GetSettingsUseCase _getSettingsUseCase;
+  final GetSDUIPageUseCase _getSDUIPageUseCase;
   final SDUICacheManager _cacheManager = SDUICacheManager();
 
   HomeCubit(
@@ -65,6 +86,7 @@ class HomeCubit extends Cubit<HomeState> {
     this._getSlidersUseCase,
     this._getProductsUseCase,
     this._getSettingsUseCase,
+    this._getSDUIPageUseCase,
   ) : super(HomeInitial());
 
   Future<void> init() async {
@@ -82,60 +104,71 @@ class HomeCubit extends Cubit<HomeState> {
       emit(HomeLoading());
     }
 
-    final slidersCol = await _getSlidersUseCase();
-    final categoriesCol = await _getCategoriesUseCase();
-    final productsCol = await _getProductsUseCase();
-    final settingsCol = await _getSettingsUseCase();
+    // 1. Fetch backend SDUI page and raw domain data concurrently
+    final sduiResultFuture = _getSDUIPageUseCase(slug: 'home');
+    final slidersColFuture = _getSlidersUseCase();
+    final categoriesColFuture = _getCategoriesUseCase();
+    final productsColFuture = _getProductsUseCase();
+    final settingsColFuture = _getSettingsUseCase();
 
-    slidersCol.fold(
-      (f) {
-        if (state is! HomeLoaded) emit(HomeFailure(f.messageKey));
+    final sduiResult = await sduiResultFuture;
+    final slidersCol = await slidersColFuture;
+    final categoriesCol = await categoriesColFuture;
+    final productsCol = await productsColFuture;
+    final settingsCol = await settingsColFuture;
+
+    final sliders = slidersCol.getOrElse(() => const []);
+    final categories = categoriesCol.getOrElse(() => const []);
+    final products = productsCol.getOrElse(() => const []);
+    final settings = settingsCol.fold((_) => null, (s) => s);
+
+    final defaultSlug = categories.isNotEmpty ? categories.first.slug : null;
+    final initialProducts = defaultSlug != null
+        ? products.where((p) => p.category?.slug == defaultSlug).toList()
+        : products;
+
+    sduiResult.fold(
+      (failure) {
+        // Fallback: If server SDUI endpoint is unreachable, compile layout locally!
+        if (categories.isEmpty && products.isEmpty) {
+          if (state is! HomeLoaded) emit(HomeFailure(failure.messageKey));
+          return;
+        }
+
+        final localSduiPage = SDUIScreenBuilder.buildHomeScreen(
+          sliders: sliders,
+          categories: categories,
+          products: initialProducts,
+          settings: settings,
+          selectedCategorySlug: defaultSlug,
+        );
+
+        _cacheManager.savePage(localSduiPage);
+
+        emit(HomeLoaded(
+          sliders: sliders,
+          categories: categories,
+          fullProducts: products,
+          products: initialProducts,
+          settings: settings,
+          selectedCategory: defaultSlug,
+          sduiPage: localSduiPage,
+        ));
       },
-      (sliders) => categoriesCol.fold(
-        (f) {
-          if (state is! HomeLoaded) emit(HomeFailure(f.messageKey));
-        },
-        (categories) => productsCol.fold(
-          (f) {
-            if (state is! HomeLoaded) emit(HomeFailure(f.messageKey));
-          },
-          (products) => settingsCol.fold(
-            (f) {
-              if (state is! HomeLoaded) emit(HomeFailure(f.messageKey));
-            },
-            (settings) {
-              final defaultSlug = categories.isNotEmpty ? categories.first.slug : null;
+      (serverSduiPage) {
+        // Success: Use server-driven layout directly!
+        _cacheManager.savePage(serverSduiPage);
 
-              // Filter products by default active category
-              final initialProducts = defaultSlug != null
-                  ? products.where((p) => p.category?.slug == defaultSlug).toList()
-                  : products;
-
-              // Compile declarative SDUI page schema
-              final sduiPage = SDUIScreenBuilder.buildHomeScreen(
-                sliders: sliders,
-                categories: categories,
-                products: initialProducts,
-                settings: settings,
-                selectedCategorySlug: defaultSlug,
-              );
-
-              // Persist locally for instant offline launches
-              _cacheManager.savePage(sduiPage);
-
-              emit(HomeLoaded(
-                sliders: sliders,
-                categories: categories,
-                fullProducts: products,
-                products: initialProducts,
-                settings: settings,
-                selectedCategory: defaultSlug,
-                sduiPage: sduiPage,
-              ));
-            },
-          ),
-        ),
-      ),
+        emit(HomeLoaded(
+          sliders: sliders,
+          categories: categories,
+          fullProducts: products,
+          products: initialProducts,
+          settings: settings,
+          selectedCategory: defaultSlug,
+          sduiPage: serverSduiPage,
+        ));
+      },
     );
   }
 
@@ -155,8 +188,8 @@ class HomeCubit extends Cubit<HomeState> {
             .toList();
       }
 
-      // Rebuild dynamic SDUI layout with filtered items
-      final updatedSDUIPage = SDUIScreenBuilder.buildHomeScreen(
+      // 1. Instant local optimistic update for sub-16ms tactile responsiveness
+      final optimisticSDUIPage = SDUIScreenBuilder.buildHomeScreen(
         sliders: currentState.sliders,
         categories: currentState.categories,
         products: filteredProducts,
@@ -171,8 +204,23 @@ class HomeCubit extends Cubit<HomeState> {
         products: filteredProducts,
         settings: currentState.settings,
         selectedCategory: nextCategorySlug,
-        sduiPage: updatedSDUIPage,
+        sduiPage: optimisticSDUIPage,
       ));
+
+      // 2. Fetch server-driven layout for the selected category in background
+      final serverResult = await _getSDUIPageUseCase(
+        slug: 'home',
+        categorySlug: nextCategorySlug,
+      );
+
+      serverResult.fold(
+        (_) => null, // If failed, optimistic local layout is already active
+        (serverPage) {
+          if (state is HomeLoaded && (state as HomeLoaded).selectedCategory == nextCategorySlug) {
+            emit((state as HomeLoaded).copyWith(sduiPage: serverPage));
+          }
+        },
+      );
     }
   }
 }

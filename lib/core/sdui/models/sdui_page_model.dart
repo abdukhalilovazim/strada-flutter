@@ -31,10 +31,15 @@ class SDUIPageModel extends Equatable {
   String get title => (meta['title'] as String?) ?? 'Pizza Strada';
 
   factory SDUIPageModel.fromJson(Map<String, dynamic> json) {
+    final metaData = (json['meta'] as Map<String, dynamic>?) ?? {};
+    if (json['title'] != null && !metaData.containsKey('title')) {
+      metaData['title'] = json['title'];
+    }
+
     return SDUIPageModel(
       version: json['version']?.toString() ?? '1.0.0',
-      screenId: json['screen_id']?.toString() ?? 'default',
-      meta: (json['meta'] as Map<String, dynamic>?) ?? {},
+      screenId: json['screen_id']?.toString() ?? json['id']?.toString() ?? 'default',
+      meta: metaData,
       sections: (json['sections'] as List<dynamic>?)
               ?.map((s) => SDUISectionModel.fromJson(s as Map<String, dynamic>))
               .toList() ??
