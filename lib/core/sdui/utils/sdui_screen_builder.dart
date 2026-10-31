@@ -41,17 +41,16 @@ class SDUIScreenBuilder {
         },
         items: sliders.map((slider) {
           SDUIAction? action;
-          if (slider.buttonUrl != null && slider.buttonUrl!.isNotEmpty) {
-            action = SDUIAction(type: 'open_url', target: slider.buttonUrl);
+          if (slider.link != null && slider.link!.isNotEmpty) {
+            action = SDUIAction(type: 'open_url', target: slider.link);
           }
 
           return SDUIComponentModel(
-            id: slider.image,
+            id: slider.id.toString(),
             type: 'banner_card',
             properties: {
-              'image_url': slider.image,
-              'caption': slider.caption,
-              'button': slider.button,
+              'image_url': slider.imageUrl,
+              'caption': slider.title,
             },
             action: action,
           );
