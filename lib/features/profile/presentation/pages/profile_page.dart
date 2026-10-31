@@ -90,44 +90,49 @@ class _ProfilePageState extends State<ProfilePage> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
+                  color: isDark ? AppColors.darkCard : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                    color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  boxShadow: AppColors.softShadow(isDark),
                 ),
                 child: Row(
                   children: [
                     Container(
                       width: 60,
                       height: 60,
-                      decoration: const BoxDecoration(
-                        color: AppColors.primaryLight,
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(AppIcons.profile, color: AppColors.primary, size: 32),
+                      child: const Icon(AppIcons.profile, color: AppColors.primary, size: 30),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(_user!.fullName, style: AppTextStyles.labelLarge.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)),
+                          Text(
+                            _user!.fullName,
+                            style: AppTextStyles.h4.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.white : AppColors.neutral900,
+                            ),
+                          ),
                           const SizedBox(height: 4),
                           Text(
                             PhoneNumberFormatter.formatFull(_user!.phone),
-                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                            ),
                           ),
                           if (_user?.birthdate != null) ...[
                             const SizedBox(height: 4),
-                            Text(_user!.birthdate!, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
+                            Text(
+                              _user!.birthdate!,
+                              style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500),
+                            ),
                           ]
                         ],
                       ),
@@ -150,18 +155,12 @@ class _ProfilePageState extends State<ProfilePage> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
+                  color: isDark ? AppColors.darkCard : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                    color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  boxShadow: AppColors.softShadow(isDark),
                 ),
                 child: Column(
                   children: [
@@ -433,29 +432,48 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: isDarkItem ? AppColors.darkCard : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDarkItem ? AppColors.neutral800 : AppColors.neutral200,
+          color: isDarkItem ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
         ),
+        boxShadow: AppColors.softShadow(isDarkItem),
       ),
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
         child: ListTile(
           onTap: onTap,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           leading: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.primaryLight,
+              color: isDarkItem
+                  ? AppColors.primary.withValues(alpha: 0.15)
+                  : AppColors.primaryLight,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: AppColors.primary, size: 24),
+            child: Icon(icon, color: AppColors.primary, size: 22),
           ),
-          title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color)),
-          subtitle: subtitle != null ? Text(subtitle, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)) : null,
-          trailing: trailing ?? const Icon(Icons.chevron_right_rounded, color: AppColors.neutral400),
+          title: Text(
+            title,
+            style: AppTextStyles.labelMedium.copyWith(
+              fontWeight: FontWeight.w600,
+              color: isDarkItem ? Colors.white : AppColors.neutral900,
+            ),
+          ),
+          subtitle: subtitle != null
+              ? Text(
+                  subtitle,
+                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500),
+                )
+              : null,
+          trailing: trailing ??
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: isDarkItem ? AppColors.neutral500 : AppColors.neutral400,
+              ),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
       ),
@@ -469,32 +487,41 @@ class _ProfilePageState extends State<ProfilePage> {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final isDarkItem = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: isDarkItem ? AppColors.darkCard : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(
+          color: isDarkItem ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
+        ),
+        boxShadow: AppColors.softShadow(isDarkItem),
       ),
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
         child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           leading: Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.neutral50,
-              borderRadius: BorderRadius.circular(10),
+              color: isDarkItem ? AppColors.neutral800 : AppColors.neutral100,
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: AppColors.neutral700, size: 20),
+            child: Icon(
+              icon,
+              color: isDarkItem ? Colors.white : AppColors.neutral700,
+              size: 22,
+            ),
           ),
-          title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color)),
+          title: Text(
+            title,
+            style: AppTextStyles.labelMedium.copyWith(
+              fontWeight: FontWeight.w600,
+              color: isDarkItem ? Colors.white : AppColors.neutral900,
+            ),
+          ),
           trailing: Switch.adaptive(
             value: value,
             onChanged: onChanged,

@@ -188,25 +188,19 @@ class OrderCard extends StatelessWidget {
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+          color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: AppColors.softShadow(isDark),
       ),
       child: InkWell(
         onTap: () => context.push('/order/${order.id}', extra: order),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -219,13 +213,14 @@ class OrderCard extends StatelessWidget {
                   Text(
                     '#${order.id}',
                     style: AppTextStyles.h4.copyWith(
-                      color: Theme.of(context).textTheme.headlineMedium?.color,
+                      color: isDark ? Colors.white : AppColors.neutral900,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.1),
+                      color: statusColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -240,7 +235,7 @@ class OrderCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
               // Info rows: Type, Branch, Payment Method, Items count
               if (order.type != null && order.type!.isNotEmpty) ...[
@@ -261,7 +256,7 @@ class OrderCard extends StatelessWidget {
                 'orders.items_count'.tr(namedArgs: {'count': order.products.length.toString()}),
               ),
 
-              const Divider(height: 24, color: AppColors.neutral100),
+              Divider(height: 24, color: isDark ? AppColors.darkBorder : AppColors.neutral100),
 
               // Bottom Price & Chevron indicator
               Row(
@@ -272,19 +267,35 @@ class OrderCard extends StatelessWidget {
                     children: [
                       Text(
                         'cart.total'.tr(),
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.neutral500,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark ? AppColors.neutral400 : AppColors.neutral500,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       Text(
                         '${NumberFormatter.formatSum(order.totalPrice)} ${'common.currency'.tr()}',
-                        style: AppTextStyles.h4.copyWith(color: AppColors.primary),
+                        style: AppTextStyles.priceMedium.copyWith(
+                          color: AppColors.primary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ],
                   ),
-                  const Icon(Icons.chevron_right_rounded, color: AppColors.neutral300),
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.neutral800 : AppColors.neutral100,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 13,
+                      color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                    ),
+                  ),
                 ],
               ),
             ],

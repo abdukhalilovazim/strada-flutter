@@ -185,10 +185,10 @@ class OrderConfirmationSheet extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.neutral900 : AppColors.neutral100,
-                        borderRadius: BorderRadius.circular(14),
+                        color: isDark ? AppColors.darkCard : AppColors.neutral50,
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                          color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
                         ),
                       ),
                       child: Column(
@@ -247,10 +247,10 @@ class OrderConfirmationSheet extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.neutral900 : AppColors.neutral100,
-                          borderRadius: BorderRadius.circular(14),
+                          color: isDark ? AppColors.darkCard : AppColors.neutral50,
+                          borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                            color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
                           ),
                         ),
                         child: Row(
@@ -275,12 +275,12 @@ class OrderConfirmationSheet extends StatelessWidget {
 
                     // 6. Yakuniy narxlar
                     Container(
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.neutral900 : AppColors.neutral100,
-                        borderRadius: BorderRadius.circular(14),
+                        color: isDark ? AppColors.darkCard : AppColors.neutral50,
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                          color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
                         ),
                       ),
                       child: Column(

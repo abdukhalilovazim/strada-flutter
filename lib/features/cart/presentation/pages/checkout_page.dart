@@ -570,18 +570,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+          color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppColors.softShadow(isDark),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -736,7 +730,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       context.read<CheckoutCubit>().setChangeAmount(null);
                     }
                   },
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
@@ -744,24 +738,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       color: isSelected
                           ? (isDark
                               ? AppColors.primary.withValues(alpha: 0.15)
-                              : AppColors.primary.withValues(alpha: 0.08))
-                          : (isDark ? AppColors.darkSurface : Colors.white),
-                      borderRadius: BorderRadius.circular(14),
+                              : AppColors.primaryLight)
+                          : (isDark ? AppColors.darkCard : Colors.white),
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isSelected
                             ? AppColors.primary
-                            : (isDark ? AppColors.neutral800 : AppColors.neutral200),
+                            : (isDark ? AppColors.darkBorder : AppColors.neutral200),
                         width: isSelected ? 1.5 : 1,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: isSelected
-                              ? AppColors.primary.withValues(alpha: 0.15)
-                              : Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-                          blurRadius: isSelected ? 6 : 3,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.18),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : AppColors.softShadow(isDark),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -777,7 +771,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.labelSmall.copyWith(
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                             color: isSelected
                                 ? AppColors.primary
                                 : Theme.of(context).textTheme.bodyMedium?.color,
@@ -797,12 +791,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
             checkoutState.selectedPaymentMethodKey == 'cash') ...[
           const SizedBox(height: 10),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurface : Colors.white,
-              borderRadius: BorderRadius.circular(14),
+              color: isDark ? AppColors.darkCard : Colors.white,
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                color: isDark ? AppColors.darkBorder : AppColors.neutral200,
               ),
             ),
             child: Column(
@@ -864,20 +858,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
     bool isDark,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+          color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppColors.softShadow(isDark),
       ),
       child: Column(
         children: [
@@ -1011,20 +999,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
     required bool isDark,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+          color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppColors.softShadow(isDark),
       ),
       child: Column(
         children: [
@@ -1115,8 +1097,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ),
               Text(
                 '${NumberFormatter.formatSum(finalTotal.toInt())} ${'common.currency'.tr()}',
-                style: AppTextStyles.h3.copyWith(
+                style: AppTextStyles.priceLarge.copyWith(
                   color: AppColors.primary,
+                  fontSize: 22,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -1156,14 +1139,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
         color: isDark ? AppColors.darkSurface : Colors.white,
         border: Border(
           top: BorderSide(
-            color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+            color: isDark ? AppColors.darkBorder : AppColors.neutral200,
             width: 1,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-            blurRadius: 12,
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
+            blurRadius: 16,
             offset: const Offset(0, -4),
           ),
         ],
