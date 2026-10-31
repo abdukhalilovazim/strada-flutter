@@ -336,16 +336,16 @@ class _CheckoutOtpSheetState extends State<CheckoutOtpSheet> {
                     decoration: InputDecoration(
                       counterText: '',
                       filled: true,
-                      fillColor: isDark ? AppColors.darkSurface : AppColors.neutral50,
+                      fillColor: isDark ? AppColors.darkCard : AppColors.neutral50,
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide(
-                          color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                          color: isDark ? AppColors.darkBorder : AppColors.neutral200,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                        borderSide: const BorderSide(color: AppColors.primary, width: 2),
                       ),
                     ),
                   ),

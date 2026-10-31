@@ -157,10 +157,10 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.darkSurface : AppColors.neutral100,
+                      color: isDark ? AppColors.darkCard : AppColors.neutral50,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                        color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
                       ),
                     ),
                     child: Row(
@@ -226,19 +226,19 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
                         onTap: () {
                           context.read<CheckoutCubit>().setBranch(branch.id, branchTitle: branch.title);
                         },
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? (isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight)
-                                : (isDark ? AppColors.darkSurface : AppColors.neutral100),
-                            borderRadius: BorderRadius.circular(12),
+                                : (isDark ? AppColors.darkCard : AppColors.neutral50),
+                            borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: isSelected
                                   ? AppColors.primary
-                                  : (isDark ? AppColors.neutral800 : AppColors.neutral200),
-                              width: 1.5,
+                                  : (isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8)),
+                              width: isSelected ? 1.5 : 1,
                             ),
                           ),
                           child: Row(
@@ -308,12 +308,12 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary
-              : (isDark ? AppColors.darkSurface : AppColors.neutral100),
+              : (isDark ? AppColors.darkCard : AppColors.neutral100),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isSelected
                 ? AppColors.primary
-                : (isDark ? AppColors.neutral800 : AppColors.neutral200),
+                : (isDark ? AppColors.darkBorder : AppColors.neutral200),
           ),
         ),
         child: Row(

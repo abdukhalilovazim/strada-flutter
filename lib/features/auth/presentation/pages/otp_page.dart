@@ -84,20 +84,21 @@ class _OtpPageState extends State<OtpPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return BlocProvider(
       create: (_) => getIt<AuthCubit>(),
       child: Scaffold(
-        backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? AppColors.darkBackground
-            : Colors.white,
+        backgroundColor: isDark ? AppColors.darkBackground : Colors.white,
         appBar: AppBar(
-          backgroundColor: Theme.of(context).brightness == Brightness.dark
-              ? AppColors.darkBackground
-              : Colors.white,
+          backgroundColor: isDark ? AppColors.darkBackground : Colors.white,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: AppColors.neutral900, size: 20),
+            icon: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: isDark ? Colors.white : AppColors.neutral900,
+              size: 20,
+            ),
             onPressed: () => context.pop(),
           ),
         ),
@@ -224,6 +225,8 @@ class _OtpPageState extends State<OtpPage> {
   }
 
   Widget _buildOtpBox(BuildContext ctx, {required TextEditingController controller, required FocusNode focusNode, required int index}) {
+    final isDark = Theme.of(ctx).brightness == Brightness.dark;
+
     return SizedBox(
       width: 68,
       height: 68,
@@ -246,18 +249,23 @@ class _OtpPageState extends State<OtpPage> {
             _onConfirm(ctx);
           }
         },
-        style: AppTextStyles.h1.copyWith(color: AppColors.neutral900),
+        style: AppTextStyles.h1.copyWith(
+          color: isDark ? Colors.white : AppColors.neutral900,
+        ),
         decoration: InputDecoration(
           counterText: '',
           filled: true,
-          fillColor: AppColors.neutral50,
+          fillColor: isDark ? AppColors.darkCard : AppColors.neutral50,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: AppColors.neutral200, width: 1),
+            borderSide: BorderSide(
+              color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+              width: 1,
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+            borderSide: const BorderSide(color: AppColors.primary, width: 2),
           ),
         ),
       ),
