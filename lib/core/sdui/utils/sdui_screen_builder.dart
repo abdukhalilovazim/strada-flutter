@@ -78,7 +78,7 @@ class SDUIScreenBuilder {
         id: 'category_bar_section',
         type: 'horizontal_category_bar',
         properties: {
-          'sticky': true,
+          'sticky': false,
           'default_selected': selectedCategorySlug ?? categories.first.slug,
         },
         items: categories.map((cat) {

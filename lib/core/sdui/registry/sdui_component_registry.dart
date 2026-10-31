@@ -43,26 +43,17 @@ class SDUIComponentRegistry {
       );
     });
 
-    // 2. Horizontal Category Bar (Sticky / Pinned support)
+    // 2. Horizontal Category Bar
     registerSliver('horizontal_category_bar', (context, section, onAction, selectedCategorySlug) {
-      final isSticky = section.properties['sticky'] as bool? ?? true;
+      if (section.items.isEmpty) {
+        return const SliverToBoxAdapter(child: SizedBox.shrink());
+      }
       final categoryWidget = SDUICategoryBarComponent(
         section: section,
         onAction: onAction,
         selectedSlug: selectedCategorySlug,
       );
 
-      if (isSticky) {
-        return SliverPersistentHeader(
-          pinned: true,
-          delegate: _SDUIStickyCategoryDelegate(
-            child: SDUISafeErrorBoundary(
-              type: 'horizontal_category_bar',
-              child: categoryWidget,
-            ),
-          ),
-        );
-      }
       return SliverToBoxAdapter(
         child: SDUISafeErrorBoundary(
           type: 'horizontal_category_bar',
@@ -129,22 +120,4 @@ class SDUIComponentRegistry {
     }
     return builder(context, section, onAction, selectedCategorySlug);
   }
-}
-
-class _SDUIStickyCategoryDelegate extends SliverPersistentHeaderDelegate {
-  final Widget child;
-  _SDUIStickyCategoryDelegate({required this.child});
-
-  @override
-  double get minExtent => 54;
-  @override
-  double get maxExtent => 54;
-
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return child;
-  }
-
-  @override
-  bool shouldRebuild(_SDUIStickyCategoryDelegate oldDelegate) => true;
 }
