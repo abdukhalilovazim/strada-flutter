@@ -62,19 +62,25 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      child: BlocBuilder<CheckoutCubit, CheckoutState>(
-        builder: (context, state) {
-          final isDelivery = state.isDelivery;
+      child: SafeArea(
+        top: false,
+        child: BlocBuilder<CheckoutCubit, CheckoutState>(
+          builder: (context, state) {
+            final isDelivery = state.isDelivery;
 
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+            return SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
               // Drag Handle
               Center(
                 child: Container(
@@ -275,11 +281,13 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
                 text: 'common.yes'.tr(),
                 onTap: () => Navigator.pop(context),
               ),
-            ],
+              ],
+            ),
           );
         },
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildTypeButton(

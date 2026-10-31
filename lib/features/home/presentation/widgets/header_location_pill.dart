@@ -79,7 +79,7 @@ class HeaderLocationPill extends StatelessWidget {
                     style: AppTextStyles.labelSmall.copyWith(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: theme.textTheme.bodyLarge?.color,
+                      color: isDark ? Colors.white : AppColors.neutral900,
                       height: 1.15,
                     ),
                   ),

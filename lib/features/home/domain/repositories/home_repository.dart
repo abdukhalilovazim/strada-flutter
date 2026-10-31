@@ -6,4 +6,5 @@ abstract class HomeRepository {
   Future<Either<Failure, List<CategoryEntity>>> getCategories();
   Future<Either<Failure, List<ProductEntity>>> getProducts({String? categorySlug});
   Future<Either<Failure, SettingsEntity>> getSettings();
+  Future<Either<Failure, List<SliderEntity>>> getSliders();
 }

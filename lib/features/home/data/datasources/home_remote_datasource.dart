@@ -6,6 +6,7 @@ abstract class HomeRemoteDataSource {
   Future<List<CategoryModel>> getCategories();
   Future<List<ProductModel>> getProducts({int? categoryId, String? categorySlug});
   Future<SettingsModel> getSettings();
+  Future<List<SliderModel>> getSliders();
 }
 
 @LazySingleton(as: HomeRemoteDataSource)
@@ -40,6 +41,30 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   Future<SettingsModel> getSettings() async {
     final response = await _client.get('settings');
     return SettingsModel.fromJson(response as Map<String, dynamic>);
+  }
+
+  @override
+  Future<List<SliderModel>> getSliders() async {
+    try {
+      final response = await _client.get('sliders');
+      final List items;
+      if (response is List) {
+        items = response;
+      } else if (response is Map<String, dynamic> && response['sliders'] is List) {
+        items = response['sliders'] as List;
+      } else if (response is Map<String, dynamic> && response['data'] is List) {
+        items = response['data'] as List;
+      } else {
+        items = const [];
+      }
+      return items
+          .whereType<Map<String, dynamic>>()
+          .map(SliderModel.fromJson)
+          .where((s) => s.imageUrl.isNotEmpty)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
   }
 }
 

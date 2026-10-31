@@ -18,8 +18,12 @@ import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
 import 'package:pizza_strada/features/cart/presentation/widgets/checkout_otp_sheet.dart';
+import 'package:pizza_strada/features/cart/presentation/widgets/order_confirmation_sheet.dart';
+import 'package:pizza_strada/features/cart/presentation/widgets/order_type_bottom_sheet.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
+import 'package:pizza_strada/features/orders/data/models/order_model.dart';
+import 'package:pizza_strada/features/orders/domain/entities/order_entity.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Yagona va tezkor Buyurtma Rasmiylashtirish (Single-Step Checkout) sahifasi.
@@ -36,7 +40,6 @@ class CheckoutPage extends StatefulWidget {
 
 class _CheckoutPageState extends State<CheckoutPage> {
   List<CheckoutBranch> _branches = [];
-  bool _isLoadingBranches = false;
 
   final _commentController = TextEditingController();
   final _promoController = TextEditingController();
@@ -47,6 +50,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   bool _showPromoInput = false;
   bool _showChangeInput = false;
   bool _showCommentInput = false;
+  bool _isLoggedIn = false;
   String? _userName;
   String? _userPhone;
   bool _isTelegramChecking = false;
@@ -107,7 +111,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Future<void> _loadBranches() async {
-    setState(() => _isLoadingBranches = true);
     try {
       final response = await ApiClient().get('branches');
       if (response is List && mounted) {
@@ -133,16 +136,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
         });
       }
     } catch (_) {
-    } finally {
-      if (mounted) setState(() => _isLoadingBranches = false);
     }
   }
 
   Future<void> _loadUserData() async {
+    final token = await SecureStorage.getToken();
     final name = await SecureStorage.getUserName();
     final phone = await SecureStorage.getUserPhone();
     if (mounted) {
       setState(() {
+        _isLoggedIn = token != null && token.isNotEmpty && phone != null && phone.isNotEmpty;
         _userName = name;
         _userPhone = phone;
       });
@@ -154,6 +157,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
     if (k == 'payme' || k == '1') return 1;
     if (k == 'click' || k == '2') return 2;
     return 0;
+  }
+
+  String _getPaymentMethodTitle(CheckoutState state, List<PaymentMethodEntity> methods) {
+    final match = methods.where((m) => m.key == state.selectedPaymentMethodKey).firstOrNull;
+    if (match != null) return match.value;
+    final id = _getPaymentMethodId(state.selectedPaymentMethodKey);
+    if (id == 1) return 'Payme';
+    if (id == 2) return 'Click';
+    return 'checkout.cash_payment'.tr();
   }
 
   double _computeDiscount(CheckoutState state, double subtotal) {
@@ -240,24 +252,22 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   isDark: isDark,
                 ),
                 const SizedBox(height: 10),
-                _buildDeliveryTypeSegment(context, checkoutState, isDark),
-                const SizedBox(height: 12),
-                if (checkoutState.isDelivery)
-                  _buildAddressCard(context, checkoutState, isDark)
-                else
-                  _buildBranchSelector(context, checkoutState, isDark),
+                _buildDeliverySelectionCard(context, checkoutState, isDark),
 
                 const SizedBox(height: 20),
 
-                // ── 2. Qabul qiluvchi ma'lumotlari ──
-                _buildSectionHeader(
-                  context,
-                  icon: Icons.person_rounded,
-                  title: 'checkout.recipient'.tr(),
-                  isDark: isDark,
-                ),
-                const SizedBox(height: 10),
-                _buildRecipientCard(context, isDark),
+                // ── 2. Qabul qiluvchi ma'lumotlari (faqat login qilmagan mehmonlar uchun) ──
+                if (!_isLoggedIn) ...[
+                  _buildSectionHeader(
+                    context,
+                    icon: Icons.person_rounded,
+                    title: 'checkout.recipient'.tr(),
+                    isDark: isDark,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildRecipientCard(context, isDark),
+                  const SizedBox(height: 20),
+                ],
 
                 const SizedBox(height: 20),
 
@@ -311,6 +321,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
             context,
             checkoutState: checkoutState,
             cartState: cartState,
+            paymentMethods: paymentMethods,
+            subtotal: subtotal,
+            deliveryFee: deliveryFee,
+            discount: discount,
             finalTotal: finalTotal,
             isDark: isDark,
           ),
@@ -350,69 +364,53 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
-  /// Yetkazish / Olib ketish segmentli tugmalari (HomePage bilan 100% sinxron)
-  Widget _buildDeliveryTypeSegment(
-    BuildContext context,
-    CheckoutState checkoutState,
-    bool isDark,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.neutral100,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppColors.neutral800 : AppColors.neutral200,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _DeliveryTypeTab(
-              label: 'checkout.delivery'.tr(),
-              icon: Icons.delivery_dining_rounded,
-              isSelected: checkoutState.isDelivery,
-              onTap: () => context.read<CheckoutCubit>().setDeliveryType(true),
-            ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: _DeliveryTypeTab(
-              label: 'checkout.pickup'.tr(),
-              icon: Icons.storefront_rounded,
-              isSelected: !checkoutState.isDelivery,
-              onTap: () => context.read<CheckoutCubit>().setDeliveryType(false),
-            ),
-          ),
-        ],
-      ),
+  void _openOrderTypeBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const OrderTypeBottomSheet(),
     );
   }
 
-  /// Yetkazib berish manzili kartasi
-  Widget _buildAddressCard(
+  /// Yetkazib berish usuli va Manzil / Filial tanlangan ixcham kartochkasi.
+  /// Bosilganda OrderTypeBottomSheet ochiladi.
+  Widget _buildDeliverySelectionCard(
     BuildContext context,
     CheckoutState checkoutState,
     bool isDark,
   ) {
+    final isDelivery = checkoutState.isDelivery;
     final hasAddress = checkoutState.address != null && checkoutState.address!.isNotEmpty;
+    final hasBranch = checkoutState.branchTitle != null && checkoutState.branchTitle!.isNotEmpty;
+
+    final String title = isDelivery
+        ? 'checkout.delivery'.tr()
+        : 'checkout.pickup'.tr();
+
+    final String subtitle = isDelivery
+        ? (hasAddress ? checkoutState.address! : 'checkout.select_address'.tr())
+        : (hasBranch ? checkoutState.branchTitle! : 'checkout.select_branch'.tr());
+
+    final IconData icon = isDelivery
+        ? Icons.delivery_dining_rounded
+        : Icons.storefront_rounded;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => _openMapPicker(context),
-        borderRadius: BorderRadius.circular(14),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+        onTap: () => _openOrderTypeBottomSheet(context),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkSurface : Colors.white,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: hasAddress
-                  ? (isDark ? AppColors.neutral700 : AppColors.neutral300)
+              color: (isDelivery ? hasAddress : hasBranch)
+                  ? (isDark ? AppColors.neutral800 : AppColors.neutral200)
                   : AppColors.primary,
-              width: hasAddress ? 1 : 1.5,
+              width: (isDelivery ? hasAddress : hasBranch) ? 1 : 1.5,
             ),
             boxShadow: [
               BoxShadow(
@@ -425,81 +423,59 @@ class _CheckoutPageState extends State<CheckoutPage> {
           child: Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
-                  Icons.location_on_rounded,
-                  color: AppColors.primary,
-                  size: 22,
-                ),
+                child: Icon(icon, color: AppColors.primary, size: 24),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'checkout.delivery_location'.tr(),
-                      style: AppTextStyles.bodyExtraSmall.copyWith(
-                        color: isDark ? AppColors.neutral400 : AppColors.neutral600,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            title,
+                            style: AppTextStyles.bodyExtraSmall.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        if (isDelivery && checkoutState.deliveryPrice > 0) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            '${NumberFormatter.formatSum(checkoutState.deliveryPrice.toInt())} ${'common.currency'.tr()}',
+                            style: AppTextStyles.bodyExtraSmall.copyWith(
+                              color: isDark ? AppColors.neutral300 : AppColors.neutral700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 6),
                     Text(
-                      hasAddress ? checkoutState.address! : 'checkout.select_address'.tr(),
+                      subtitle,
                       style: AppTextStyles.labelMedium.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: hasAddress
+                        color: (isDelivery ? hasAddress : hasBranch)
                             ? Theme.of(context).textTheme.bodyLarge?.color
                             : AppColors.primary,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (hasAddress) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          if (checkoutState.loadingDelivery) ...[
-                            const SizedBox(
-                              width: 12,
-                              height: 12,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 1.8,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'checkout.calculating'.tr(),
-                              style: AppTextStyles.bodyExtraSmall.copyWith(
-                                color: AppColors.neutral500,
-                              ),
-                            ),
-                          ] else if (checkoutState.deliveryPrice > 0) ...[
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                '${'cart.delivery'.tr()}: ${NumberFormatter.formatSum(checkoutState.deliveryPrice.toInt())} ${'common.currency'.tr()}',
-                                style: AppTextStyles.bodyExtraSmall.copyWith(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -510,158 +486,29 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   color: isDark ? AppColors.neutral800 : AppColors.neutral100,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  hasAddress ? 'common.change'.tr() : 'cart.add'.tr(),
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'common.change'.tr(),
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 11,
+                      color: AppColors.primary,
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  /// Olib ketish uchun filiallar tanlovi
-  Widget _buildBranchSelector(
-    BuildContext context,
-    CheckoutState checkoutState,
-    bool isDark,
-  ) {
-    if (_isLoadingBranches) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 20),
-        child: Center(
-          child: SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.primary),
-          ),
-        ),
-      );
-    }
-
-    if (_branches.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : AppColors.neutral100,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Text(
-          'checkout.select_branch'.tr(),
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: isDark ? AppColors.neutral400 : AppColors.neutral600,
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      children: _branches.map((branch) {
-        final isSelected = checkoutState.branchId == branch.id;
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => context.read<CheckoutCubit>().setBranch(
-                    branch.id,
-                    branchTitle: branch.title,
-                  ),
-              borderRadius: BorderRadius.circular(14),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? (isDark
-                          ? AppColors.primary.withValues(alpha: 0.15)
-                          : AppColors.primary.withValues(alpha: 0.08))
-                      : (isDark ? AppColors.darkSurface : Colors.white),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: isSelected
-                        ? AppColors.primary
-                        : (isDark ? AppColors.neutral800 : AppColors.neutral200),
-                    width: isSelected ? 1.5 : 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isSelected
-                          ? AppColors.primary.withValues(alpha: 0.15)
-                          : Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-                      blurRadius: isSelected ? 8 : 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.primary.withValues(alpha: 0.15)
-                            : (isDark ? AppColors.neutral800 : AppColors.neutral100),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.storefront_rounded,
-                        color: isSelected ? AppColors.primary : AppColors.neutral500,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        branch.title,
-                        style: AppTextStyles.labelMedium.copyWith(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                          color: isSelected
-                              ? AppColors.primary
-                              : Theme.of(context).textTheme.bodyLarge?.color,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isSelected
-                              ? AppColors.primary
-                              : (isDark ? AppColors.neutral700 : AppColors.neutral300),
-                          width: 2,
-                        ),
-                      ),
-                      child: isSelected
-                          ? Center(
-                              child: Container(
-                                width: 10,
-                                height: 10,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.primary,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            )
-                          : null,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 
@@ -1297,6 +1144,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
     BuildContext context, {
     required CheckoutState checkoutState,
     required CartState cartState,
+    required List<PaymentMethodEntity> paymentMethods,
+    required double subtotal,
+    required double deliveryFee,
+    required double discount,
     required double finalTotal,
     required bool isDark,
   }) {
@@ -1384,11 +1235,23 @@ class _CheckoutPageState extends State<CheckoutPage> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: needsAddress
-                    ? () => _openMapPicker(context)
-                    : (canSubmit ? () => _submitOrder(context, cartState) : null),
+                onPressed: (needsAddress || needsBranch)
+                    ? () => _openOrderTypeBottomSheet(context)
+                    : (canSubmit
+                        ? () => _submitOrder(
+                              checkoutState: checkoutState,
+                              cartState: cartState,
+                              paymentMethods: paymentMethods,
+                              subtotal: subtotal,
+                              deliveryFee: deliveryFee,
+                              discount: discount,
+                              finalTotal: finalTotal,
+                            )
+                        : null),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: needsAddress ? AppColors.secondary : AppColors.primary,
+                  backgroundColor: (needsAddress || needsBranch)
+                      ? AppColors.secondary
+                      : AppColors.primary,
                   foregroundColor: Colors.white,
                   disabledBackgroundColor:
                       isDark ? AppColors.neutral700 : AppColors.neutral300,
@@ -1407,7 +1270,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            needsAddress
+                            (needsAddress || needsBranch)
                                 ? Icons.location_on_rounded
                                 : Icons.check_circle_outline_rounded,
                             size: 20,
@@ -1416,7 +1279,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           Text(
                             needsAddress
                                 ? 'checkout.select_address'.tr()
-                                : '${'checkout.submit_order'.tr()} • ${NumberFormatter.formatSum(finalTotal.toInt())} ${'common.currency'.tr()}',
+                                : (needsBranch
+                                    ? 'checkout.select_branch'.tr()
+                                    : '${'checkout.submit_order'.tr()} • ${NumberFormatter.formatSum(finalTotal.toInt())} ${'common.currency'.tr()}'),
                             style: AppTextStyles.labelLarge.copyWith(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
@@ -1431,18 +1296,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
         ),
       ),
     );
-  }
-
-  Future<void> _openMapPicker(BuildContext context) async {
-    final result = await context.push<Map<String, dynamic>>('/map-picker');
-    if (result != null && context.mounted) {
-      final lat = result['lat'] as double?;
-      final lng = result['lng'] as double?;
-      final addr = result['address'] as String;
-      if (lat != null && lng != null) {
-        context.read<CheckoutCubit>().setAddressAndCalculateDelivery(lat, lng, addr);
-      }
-    }
   }
 
   Future<void> _startTelegramAuth() async {
@@ -1486,10 +1339,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
             await SecureStorage.saveUserInfo(name: fullName, phone: phone);
 
             if (mounted) {
+              await _loadUserData();
+              if (!mounted) return;
               setState(() {
                 _isTelegramChecking = false;
-                _userName = fullName;
-                _userPhone = phone;
               });
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Text('checkout.auth_success'.tr()),
@@ -1510,15 +1363,32 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
-  Future<void> _submitOrder(BuildContext context, CartState cartState) async {
-    final token = await SecureStorage.getToken();
-    final bool isGuest = token == null || token.isEmpty || _userPhone == null || _userPhone!.isEmpty;
+  Future<void> _submitOrder({
+    required CheckoutState checkoutState,
+    required CartState cartState,
+    required List<PaymentMethodEntity> paymentMethods,
+    required double subtotal,
+    required double deliveryFee,
+    required double discount,
+    required double finalTotal,
+  }) async {
+    // 1. Manzil / Filial tekshiruvi
+    if (checkoutState.isDelivery && (checkoutState.address == null || checkoutState.address!.isEmpty)) {
+      _openOrderTypeBottomSheet(context);
+      return;
+    }
+    if (!checkoutState.isDelivery && checkoutState.branchId == null) {
+      _openOrderTypeBottomSheet(context);
+      return;
+    }
 
-    if (isGuest) {
+    // 2. Agar hali login qilinmagan bo'lsa (mehmon)
+    if (!_isLoggedIn) {
       final name = _guestNameController.text.trim();
       final phoneDigits = _guestPhoneController.text.trim();
 
       if (name.isEmpty) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('checkout.enter_name_error'.tr()),
           backgroundColor: AppColors.error,
@@ -1526,6 +1396,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         return;
       }
       if (phoneDigits.length != 9) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('checkout.enter_phone_error'.tr()),
           backgroundColor: AppColors.error,
@@ -1554,7 +1425,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
         if (verified != true) return;
 
+        // OTP tasdiqlangach login saqlanib qoladi
         await _loadUserData();
+        if (!mounted) return;
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -1565,6 +1438,27 @@ class _CheckoutPageState extends State<CheckoutPage> {
       }
     }
 
+    if (!mounted) return;
+
+    // 3. Hammasini bitta ko'rsatib buyurtmani tasdiqlash
+    final paymentMethodName = _getPaymentMethodTitle(checkoutState, paymentMethods);
+
+    OrderConfirmationSheet.show(
+      context,
+      checkoutState: checkoutState,
+      cartState: cartState,
+      userName: _userName ?? '',
+      userPhone: _userPhone ?? '',
+      paymentMethodName: paymentMethodName,
+      subtotal: subtotal,
+      deliveryFee: deliveryFee,
+      discount: discount,
+      finalTotal: finalTotal,
+      onConfirm: () => _executeSubmitOrder(context, cartState),
+    );
+  }
+
+  void _executeSubmitOrder(BuildContext context, CartState cartState) {
     final products = cartState.items.map((item) {
       final variantId = item.variant?.id ?? item.product.variants.firstOrNull?.id ?? 0;
       return {
@@ -1574,7 +1468,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
       };
     }).toList();
 
-    if (!context.mounted) return;
     context.read<CheckoutCubit>().submitOrder(products: products);
   }
 
@@ -1589,6 +1482,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
       paymentMethod: paymentMethod,
       isDelivery: context.read<CheckoutCubit>().state.isDelivery,
     );
+
+    OrderEntity? orderEntity;
+    try {
+      orderEntity = OrderModel.fromJson(data);
+    } catch (_) {}
 
     final paymentUrl = data['payment_url'] as String?;
     if (paymentUrl != null && paymentUrl.isNotEmpty) {
@@ -1609,7 +1507,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       context.read<CartCubit>().clear();
       context.read<CheckoutCubit>().resetAfterOrder();
       if (orderId.isNotEmpty) {
-        context.go('/order/$orderId');
+        context.go('/order/$orderId', extra: orderEntity);
       } else {
         context.go('/orders');
       }
@@ -1618,71 +1516,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
 }
 
 // ── Sub-widgets ──
-
-class _DeliveryTypeTab extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _DeliveryTypeTab({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary
-              : (isDark ? AppColors.darkSurface : Colors.transparent),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.25),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: isSelected
-                  ? Colors.white
-                  : (isDark ? AppColors.neutral400 : AppColors.neutral600),
-              size: 18,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: AppTextStyles.labelMedium.copyWith(
-                fontWeight: FontWeight.bold,
-                color: isSelected
-                    ? Colors.white
-                    : (isDark ? AppColors.neutral300 : AppColors.neutral700),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _SwitchRow extends StatelessWidget {
   final IconData icon;
@@ -1715,7 +1548,7 @@ class _SwitchRow extends StatelessWidget {
         Switch.adaptive(
           value: value,
           onChanged: onChanged,
-          activeColor: AppColors.primary,
+          activeTrackColor: AppColors.primary,
         ),
       ],
     );

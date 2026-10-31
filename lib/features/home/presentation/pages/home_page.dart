@@ -7,13 +7,16 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_icons.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
+import 'package:pizza_strada/core/theme/theme_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
 import 'package:pizza_strada/features/cart/presentation/widgets/order_type_bottom_sheet.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
+import 'package:pizza_strada/features/home/presentation/widgets/header_location_pill.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_card.dart';
+import 'package:pizza_strada/features/home/presentation/widgets/product_detail_modal.dart';
 import 'package:pizza_strada/core/widgets/app_shimmer.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
 
@@ -32,12 +35,6 @@ class _HomePageState extends State<HomePage> {
   String? _activeCategory;
   bool _isScrollingToCategory = false;
 
-  // Search
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
-  bool _isSearchActive = false;
-  Timer? _debounce;
-
   // Carousel
   final PageController _carouselController = PageController();
   int _carouselIndex = 0;
@@ -53,8 +50,6 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     _scrollController.dispose();
     _categoryScrollController.dispose();
-    _searchController.dispose();
-    _debounce?.cancel();
     _carouselController.dispose();
     _carouselTimer?.cancel();
     super.dispose();
@@ -74,62 +69,17 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _onSearchChanged(String query) {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        setState(() => _searchQuery = query.trim().toLowerCase());
-      }
-    });
-  }
 
-  void _openSearch() => setState(() => _isSearchActive = true);
-
-  void _closeSearch() {
-    _debounce?.cancel();
-    _searchController.clear();
-    setState(() {
-      _isSearchActive = false;
-      _searchQuery = '';
-    });
-  }
-
-  /// Mahsulot kartasiga tegish: variant > 1 bo'lsa tanlash sheetini ochish,
-  /// 1 ta (yoki variantsiz) bo'lsa ProductDetailPage ga o'tish.
+  /// Mahsulot kartasiga tegish: dizayn skrinshotidagi to'liq ProductDetailModal dialogini ochish.
   void _handleProductTap(ProductEntity product) {
-    if (product.variants.length > 1) {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (_) => VariantPickerSheet(
-          product: product,
-          onPick: (variant) {
-            context.read<CartCubit>().addToCart(product, variant: variant);
-          },
-        ),
-      );
-    } else {
-      // Variantsiz yoki 1 ta variant: to'g'ridan-to'g'ri detail sahifaga
-      context.push('/product/${product.slug}', extra: product);
-    }
+    ProductDetailModal.show(context, product);
   }
 
   /// `+` tugmasi: variantsiz/1 ta variant → to'g'ridan-to'g'ri savatga,
-  /// > 1 variant → variant sheet.
+  /// > 1 variant → ProductDetailModal dialogi.
   void _handleAddToCart(ProductEntity product) {
     if (product.variants.length > 1) {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (_) => VariantPickerSheet(
-          product: product,
-          onPick: (variant) {
-            context.read<CartCubit>().addToCart(product, variant: variant);
-          },
-        ),
-      );
+      ProductDetailModal.show(context, product);
     } else {
       final variant =
           product.variants.isNotEmpty ? product.variants.first : null;
@@ -167,9 +117,9 @@ class _HomePageState extends State<HomePage> {
     List<CategoryEntity> categories,
     List<ProductEntity> allProducts,
   ) {
-    double currentOffset = 0.0;
-    final double gridItemWidth = (screenWidth - 48) / 2;
-    final double rowHeight = (gridItemWidth / 0.62) + 16;
+    double currentOffset = 175.0; // Banner va padding balandligi
+    final double gridItemWidth = (screenWidth - 46) / 2;
+    final double rowHeight = (gridItemWidth / 0.61) + 14;
 
     for (final cat in categories) {
       if (cat.slug == targetSlug) return currentOffset;
@@ -180,7 +130,7 @@ class _HomePageState extends State<HomePage> {
           .toList();
       if (catProducts.isEmpty) continue;
       final int rows = (catProducts.length / 2).ceil();
-      final double sectionHeight = 56.0 + (rows * rowHeight) + 16.0;
+      final double sectionHeight = 56.0 + (rows * rowHeight) + 14.0;
       currentOffset += sectionHeight;
     }
     return currentOffset;
@@ -192,13 +142,13 @@ class _HomePageState extends State<HomePage> {
     List<CategoryEntity> categories,
     List<ProductEntity> allProducts,
   ) {
-    double currentOffset = 0.0;
+    double currentOffset = 175.0;
     if (scrollOffset < currentOffset) {
       return categories.firstOrNull?.slug ?? '';
     }
 
-    final double gridItemWidth = (screenWidth - 48) / 2;
-    final double rowHeight = (gridItemWidth / 0.62) + 16;
+    final double gridItemWidth = (screenWidth - 46) / 2;
+    final double rowHeight = (gridItemWidth / 0.61) + 14;
 
     for (final cat in categories) {
       final catProducts = allProducts
@@ -209,7 +159,7 @@ class _HomePageState extends State<HomePage> {
       if (catProducts.isEmpty) continue;
 
       final int rows = (catProducts.length / 2).ceil();
-      final double sectionHeight = 56.0 + (rows * rowHeight) + 16.0;
+      final double sectionHeight = 56.0 + (rows * rowHeight) + 14.0;
 
       if (scrollOffset >= currentOffset &&
           scrollOffset < currentOffset + sectionHeight) {
@@ -265,10 +215,10 @@ class _HomePageState extends State<HomePage> {
             child: CustomScrollView(
               controller: _scrollController,
               slivers: [
-                // ── AppBar ──
+                // ── Header (Logo + Location + Theme + Language) ──
                 SliverAppBar(
                   pinned: true,
-                  toolbarHeight: 60,
+                  toolbarHeight: 62,
                   backgroundColor:
                       Theme.of(context).appBarTheme.backgroundColor,
                   surfaceTintColor: Colors.transparent,
@@ -279,107 +229,99 @@ class _HomePageState extends State<HomePage> {
                       height: 1,
                       color: isDark
                           ? AppColors.neutral800
-                          : AppColors.neutral200,
+                          : AppColors.neutral200.withValues(alpha: 0.7),
                     ),
                   ),
-                  titleSpacing: 16,
-                  title: Image.asset(
-                    'assets/icons/logo.png',
-                    height: 38,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Text(
-                      'Pizza strada',
-                      style: AppTextStyles.h3.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  actions: [
-                    // Search toggle
-                    if (_isSearchActive)
-                      IconButton(
-                        icon: Icon(
-                          Icons.close_rounded,
-                          color: isDark ? Colors.white : AppColors.neutral900,
-                        ),
-                        onPressed: _closeSearch,
-                      )
-                    else
-                      IconButton(
-                        icon: Icon(
-                          Icons.search_rounded,
-                          color: isDark ? Colors.white : AppColors.neutral900,
-                        ),
-                        onPressed: _openSearch,
-                      ),
-                    // Cart badge (AppBar)
-                    BlocBuilder<CartCubit, CartState>(
-                      builder: (ctx, cartState) {
-                        final count = cartState.items.length;
-                        return Stack(
-                          children: [
-                            IconButton(
-                              icon: Icon(
-                                AppIcons.cart,
-                                color: isDark
-                                    ? Colors.white
-                                    : AppColors.neutral900,
-                              ),
-                              onPressed: () => context.push('/cart'),
-                            ),
-                            if (count > 0)
-                              Positioned(
-                                right: 8,
-                                top: 8,
-                                child: Container(
-                                  width: 16,
-                                  height: 16,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.primary,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      '$count',
-                                      style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w700),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  // Search bar (AppBar bottom da)
-                  flexibleSpace: _isSearchActive
-                      ? FlexibleSpaceBar(
-                          background: Align(
-                            alignment: Alignment.bottomCenter,
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                              child: TextField(
-                                controller: _searchController,
-                                autofocus: true,
-                                onChanged: _onSearchChanged,
-                                decoration: InputDecoration(
-                                  hintText: 'home.search_hint'.tr(),
-                                  prefixIcon: const Icon(
-                                      Icons.search_rounded,
-                                      color: AppColors.neutral400,
-                                      size: 20),
-                                ),
-                              ),
+                  titleSpacing: 12,
+                  title: Row(
+                    children: [
+                      // 1. Logo
+                      GestureDetector(
+                        onTap: () {
+                          _scrollController.animateTo(
+                            0,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          );
+                        },
+                        child: Image.asset(
+                          'assets/icons/logo.png',
+                          height: 32,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => Text(
+                            'Strada',
+                            style: AppTextStyles.h3.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        )
-                      : null,
-                  expandedHeight: _isSearchActive ? 116 : null,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // 2. Location Pill
+                      Expanded(
+                        child: BlocBuilder<CheckoutCubit, CheckoutState>(
+                          builder: (context, checkoutState) {
+                            return HeaderLocationPill(
+                              orderType: checkoutState.isDelivery ? 0 : 1,
+                              addressName: checkoutState.address,
+                              branchTitle: checkoutState.branchTitle,
+                              onTap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (_) =>
+                                      const OrderTypeBottomSheet(),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // 3. Theme toggle (Sun / Moon)
+                      BlocBuilder<ThemeCubit, ThemeMode>(
+                        builder: (context, themeMode) {
+                          final isDarkMode = themeMode == ThemeMode.dark;
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => context.read<ThemeCubit>().toggle(),
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                width: 38,
+                                height: 38,
+                                decoration: BoxDecoration(
+                                  color: isDarkMode
+                                      ? AppColors.neutral800
+                                      : AppColors.neutral100,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isDarkMode
+                                        ? AppColors.neutral700
+                                        : AppColors.neutral200,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Icon(
+                                  isDarkMode
+                                      ? Icons.light_mode_rounded
+                                      : Icons.dark_mode_rounded,
+                                  size: 20,
+                                  color: isDarkMode
+                                      ? const Color(0xFFFFB800)
+                                      : AppColors.neutral800,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
 
                 // ── Loading skeleti ──
@@ -505,311 +447,128 @@ class _HomePageState extends State<HomePage> {
                 // ── Loaded holati ──
                 else if (state is HomeLoaded) ...[
 
-                  // ── Yetkazib berish / Manzil tanlash paneli ──
-                  if (!_isSearchActive)
+                  // ── 2. Banner (API dan kelgan sliderlar) ──
+                  if (state.sliders.isNotEmpty)
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-                        child: BlocBuilder<CheckoutCubit, CheckoutState>(
-                          builder: (context, checkoutState) {
-                            final isDelivery = checkoutState.isDelivery;
-                            final String modeLabel = isDelivery
-                                ? 'checkout.delivery'.tr()
-                                : 'checkout.pickup'.tr();
-                            final String displayTitle = isDelivery
-                                ? (checkoutState.address != null &&
-                                        checkoutState.address!.isNotEmpty
-                                    ? checkoutState.address!
-                                    : 'checkout.select_address'.tr())
-                                : (checkoutState.branchTitle != null &&
-                                        checkoutState.branchTitle!.isNotEmpty
-                                    ? checkoutState.branchTitle!
-                                    : 'checkout.select_branch'.tr());
-
-                            return Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    backgroundColor: Colors.transparent,
-                                    builder: (_) =>
-                                        const OrderTypeBottomSheet(),
-                                  );
-                                },
-                                borderRadius: BorderRadius.circular(16),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 14, vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: isDark
-                                        ? AppColors.darkSurface
-                                        : Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: isDark
-                                          ? AppColors.neutral800
-                                          : AppColors.neutral200,
-                                      width: 1,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(
-                                            alpha: isDark ? 0.2 : 0.04),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 3),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 40,
-                                        height: 40,
-                                        decoration: BoxDecoration(
-                                          color: isDelivery
-                                              ? AppColors.primary
-                                                  .withValues(alpha: 0.1)
-                                              : AppColors.secondary
-                                                  .withValues(alpha: 0.1),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        child: Icon(
-                                          isDelivery
-                                              ? Icons.delivery_dining_rounded
-                                              : Icons.storefront_rounded,
-                                          color: isDelivery
-                                              ? AppColors.primary
-                                              : AppColors.secondary,
-                                          size: 24,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Container(
-                                                  width: 7,
-                                                  height: 7,
-                                                  decoration: BoxDecoration(
-                                                    color: isDelivery
-                                                        ? AppColors.primary
-                                                        : AppColors.secondary,
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 6),
-                                                Text(
-                                                  modeLabel,
-                                                  style: AppTextStyles
-                                                      .bodyExtraSmall
-                                                      .copyWith(
-                                                    fontSize: 11,
-                                                    fontWeight:
-                                                        FontWeight.w600,
-                                                    color: isDelivery
-                                                        ? AppColors.primary
-                                                        : AppColors.secondary,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 3),
-                                            Text(
-                                              displayTitle,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: AppTextStyles.labelMedium
-                                                  .copyWith(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w700,
-                                                color: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyLarge
-                                                    ?.color,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: isDark
-                                              ? AppColors.neutral800
-                                              : AppColors.neutral100,
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              'common.change'.tr(),
-                                              style: AppTextStyles
-                                                  .bodyExtraSmall
-                                                  .copyWith(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w600,
-                                                color: AppColors.primary,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 2),
-                                            const Icon(
-                                              Icons.keyboard_arrow_down_rounded,
-                                              size: 16,
-                                              color: AppColors.primary,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
+                        child: _BannerCarousel(
+                          sliders: state.sliders,
+                          controller: _carouselController,
+                          currentIndex: _carouselIndex,
+                          onPageChanged: (i) {
+                            setState(() => _carouselIndex = i);
                           },
                         ),
                       ),
                     ),
 
-                  // ── Banner Carousel ──
-                  if (state.sliders.isNotEmpty)
-                    SliverToBoxAdapter(
-                      child: _BannerCarousel(
-                        sliders: state.sliders,
-                        controller: _carouselController,
-                        currentIndex: _carouselIndex,
-                        onPageChanged: (i) {
-                          setState(() => _carouselIndex = i);
-                        },
+                  // ── 3. Menu (Kategoriyalar gorizontal tablari) ──
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _StickyCategoryDelegate(
+                      child: Container(
+                        color: Theme.of(context)
+                            .appBarTheme
+                            .backgroundColor,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Expanded(
+                              child: ListView.builder(
+                                controller: _categoryScrollController,
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16),
+                                itemCount: state.categories.length,
+                                itemBuilder: (_, i) {
+                                  final cat = state.categories[i];
+                                  final selected =
+                                      _activeCategory == cat.slug;
+                                  return _CategoryUnderlineTab(
+                                    title: cat.title,
+                                    isSelected: selected,
+                                    isDark: isDark,
+                                    onTap: () {
+                                      setState(() {
+                                        _activeCategory = cat.slug;
+                                        _isScrollingToCategory = true;
+                                      });
+                                      final offset = _getTargetOffset(
+                                        cat.slug,
+                                        screenWidth,
+                                        state.categories,
+                                        state.fullProducts,
+                                      );
+                                      _scrollController
+                                          .animateTo(
+                                        offset,
+                                        duration: const Duration(
+                                            milliseconds: 350),
+                                        curve: Curves.easeInOut,
+                                      )
+                                          .then((_) {
+                                        _isScrollingToCategory = false;
+                                      });
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                            // Pastki ajratuvchi chiziq
+                            Container(
+                              height: 1,
+                              color: isDark
+                                  ? AppColors.neutral800
+                                  : AppColors.neutral200.withValues(alpha: 0.7),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                  ),
 
-                  // ── Sticky kategoriya chiplari (Pill uslubi) ──
-                  if (!_isSearchActive)
-                    SliverPersistentHeader(
-                      pinned: true,
-                      delegate: _StickyCategoryDelegate(
-                        child: Container(
-                          color: Theme.of(context)
-                              .appBarTheme
-                              .backgroundColor,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Expanded(
-                                child: ListView.builder(
-                                  controller: _categoryScrollController,
-                                  scrollDirection: Axis.horizontal,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 8),
-                                  itemCount: state.categories.length,
-                                  itemBuilder: (_, i) {
-                                    final cat = state.categories[i];
-                                    final selected =
-                                        _activeCategory == cat.slug;
-                                    return _CategoryPillChip(
-                                      title: cat.title,
-                                      isSelected: selected,
-                                      isDark: isDark,
-                                      onTap: () {
-                                        setState(() {
-                                          _activeCategory = cat.slug;
-                                          _isScrollingToCategory = true;
-                                        });
-                                        final offset = _getTargetOffset(
-                                          cat.slug,
-                                          screenWidth,
-                                          state.categories,
-                                          state.fullProducts,
-                                        );
-                                        _scrollController
-                                            .animateTo(
-                                          offset,
-                                          duration: const Duration(
-                                              milliseconds: 350),
-                                          curve: Curves.easeInOut,
-                                        )
-                                            .then((_) {
-                                          _isScrollingToCategory = false;
-                                        });
-                                      },
-                                    );
-                                  },
-                                ),
-                              ),
-                              // Pastki ajratuvchi chiziq
-                              Container(
-                                height: 1,
-                                color: isDark
-                                    ? AppColors.neutral800
-                                    : AppColors.neutral200,
-                              ),
-                            ],
+                  // ── 4. Mahsulotlar (Kategoriyali bo'limlar) ──
+                  for (final cat in state.categories) ...[
+                    SliverPadding(
+                      padding:
+                          const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                      sliver: SliverToBoxAdapter(
+                        child: Text(
+                          cat.title,
+                          style: AppTextStyles.h3.copyWith(
+                            color: isDark ? Colors.white : AppColors.neutral900,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 22,
                           ),
                         ),
                       ),
                     ),
-
-                  // ── Search natijalari ──
-                  if (_isSearchActive) ...[
                     Builder(builder: (context) {
-                      final query = _searchQuery;
-                      final results = query.isEmpty
-                          ? state.fullProducts
-                          : state.fullProducts
-                              .where((p) {
-                                final t = p.title.toLowerCase();
-                                final d =
-                                    (p.description ?? '').toLowerCase();
-                                return t.contains(query) ||
-                                    d.contains(query);
-                              })
-                              .toList();
-
-                      if (results.isEmpty) {
-                        return SliverFillRemaining(
-                          child: Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.search_off_rounded,
-                                    size: 56,
-                                    color: AppColors.neutral300),
-                                const SizedBox(height: 16),
-                                Text('home.search_empty'.tr(),
-                                    style: AppTextStyles.bodyMedium
-                                        .copyWith(
-                                            color: AppColors.neutral500)),
-                              ],
-                            ),
-                          ),
-                        );
+                      final catProducts = state.fullProducts
+                          .where((p) =>
+                              (p.category?.id != 0 &&
+                                  p.category?.id == cat.id) ||
+                              (p.category?.slug == cat.slug))
+                          .toList();
+                      if (catProducts.isEmpty) {
+                        return const SliverToBoxAdapter(
+                            child: SizedBox.shrink());
                       }
-
                       return SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16),
                         sliver: SliverGrid(
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
-                            mainAxisSpacing: 16,
-                            crossAxisSpacing: 16,
-                            childAspectRatio: 0.62,
+                            mainAxisSpacing: 14,
+                            crossAxisSpacing: 14,
+                            childAspectRatio: 0.61,
                           ),
                           delegate: SliverChildBuilderDelegate(
                             (ctx, i) {
-                              final product = results[i];
+                              final product = catProducts[i];
                               return BlocBuilder<CartCubit, CartState>(
                                 builder: (context, cartState) {
                                   final qty = cartState.items
@@ -817,13 +576,16 @@ class _HomePageState extends State<HomePage> {
                                           item.product.slug ==
                                           product.slug)
                                       .fold<int>(
-                                          0, (s, item) => s + item.quantity);
+                                          0,
+                                          (s, item) =>
+                                              s + item.quantity);
                                   return ProductCard(
                                     product: product,
                                     quantityInCart: qty,
                                     onTap: () =>
                                         _handleProductTap(product),
-                                    onAdd: () => _handleAddToCart(product),
+                                    onAdd: () =>
+                                        _handleAddToCart(product),
                                     onRemove: () {
                                       final cartItem = cartState.items
                                           .where((item) =>
@@ -833,106 +595,21 @@ class _HomePageState extends State<HomePage> {
                                       if (cartItem != null) {
                                         context
                                             .read<CartCubit>()
-                                            .updateQuantity(cartItem, -1);
+                                            .updateQuantity(
+                                                cartItem, -1);
                                       }
                                     },
                                   );
                                 },
                               );
                             },
-                            childCount: results.length,
+                            childCount: catProducts.length,
                           ),
                         ),
                       );
                     }),
-                  ]
-
-                  // ── Kategoriyali mahsulot bo'limlari ──
-                  else ...[
-                    for (final cat in state.categories) ...[
-                      SliverPadding(
-                        padding:
-                            const EdgeInsets.fromLTRB(16, 24, 16, 12),
-                        sliver: SliverToBoxAdapter(
-                          child: Text(
-                            cat.title,
-                            style: AppTextStyles.h3.copyWith(
-                              color: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium
-                                  ?.color,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Builder(builder: (context) {
-                        final catProducts = state.fullProducts
-                            .where((p) =>
-                                (p.category?.id != 0 &&
-                                    p.category?.id == cat.id) ||
-                                (p.category?.slug == cat.slug))
-                            .toList();
-                        if (catProducts.isEmpty) {
-                          return const SliverToBoxAdapter(
-                              child: SizedBox.shrink());
-                        }
-                        return SliverPadding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16),
-                          sliver: SliverGrid(
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 16,
-                              crossAxisSpacing: 16,
-                              childAspectRatio: 0.62,
-                            ),
-                            delegate: SliverChildBuilderDelegate(
-                              (ctx, i) {
-                                final product = catProducts[i];
-                                return BlocBuilder<CartCubit, CartState>(
-                                  builder: (context, cartState) {
-                                    final qty = cartState.items
-                                        .where((item) =>
-                                            item.product.slug ==
-                                            product.slug)
-                                        .fold<int>(
-                                            0,
-                                            (s, item) =>
-                                                s + item.quantity);
-                                    return ProductCard(
-                                      product: product,
-                                      quantityInCart: qty,
-                                      onTap: () =>
-                                          _handleProductTap(product),
-                                      onAdd: () =>
-                                          _handleAddToCart(product),
-                                      onRemove: () {
-                                        final cartItem = cartState.items
-                                            .where((item) =>
-                                                item.product.slug ==
-                                                product.slug)
-                                            .firstOrNull;
-                                        if (cartItem != null) {
-                                          context
-                                              .read<CartCubit>()
-                                              .updateQuantity(
-                                                  cartItem, -1);
-                                        }
-                                      },
-                                    );
-                                  },
-                                );
-                              },
-                              childCount: catProducts.length,
-                            ),
-                          ),
-                        );
-                      }),
-                    ],
-                    const SliverToBoxAdapter(child: SizedBox(height: 120)),
                   ],
+                  const SliverToBoxAdapter(child: SizedBox(height: 120)),
                 ],
               ],
             ),
@@ -1064,9 +741,12 @@ class _BannerCarousel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (sliders.isEmpty) return const SizedBox.shrink();
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 8, 0, 16),
+      padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           AspectRatio(
             aspectRatio: 16 / 7,
@@ -1079,19 +759,28 @@ class _BannerCarousel extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     child: CachedNetworkImage(
                       imageUrl: slider.imageUrl,
                       fit: BoxFit.cover,
                       placeholder: (_, __) => Container(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.neutral800
-                            : const Color(0xFFF1F5F9),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.neutral800
+                              : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
                       errorWidget: (_, __, ___) => Container(
-                        color: AppColors.neutral100,
-                        child: const Icon(Icons.image_outlined,
-                            color: AppColors.neutral400, size: 48),
+                        decoration: BoxDecoration(
+                          color: AppColors.neutral100,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.image_outlined,
+                          color: AppColors.neutral400,
+                          size: 48,
+                        ),
                       ),
                     ),
                   ),
@@ -1100,18 +789,20 @@ class _BannerCarousel extends StatelessWidget {
             ),
           ),
           if (sliders.length > 1) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(sliders.length, (i) {
                 final isActive = i == currentIndex;
                 return AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
+                  duration: const Duration(milliseconds: 250),
                   margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: isActive ? 20 : 6,
-                  height: 6,
+                  width: isActive ? 16 : 5,
+                  height: 5,
                   decoration: BoxDecoration(
-                    color: isActive ? AppColors.primary : AppColors.neutral300,
+                    color: isActive
+                        ? const Color(0xFF0091FF)
+                        : AppColors.neutral300,
                     borderRadius: BorderRadius.circular(3),
                   ),
                 );
@@ -1124,14 +815,14 @@ class _BannerCarousel extends StatelessWidget {
   }
 }
 
-/// Pill uslubidagi kategoriya chip (Uzum Tezkor uslubi)
-class _CategoryPillChip extends StatelessWidget {
+/// Kategoriyalar uchun qizil chiziqli gorizontal tab (Uzum / Strada veb uslubi)
+class _CategoryUnderlineTab extends StatelessWidget {
   final String title;
   final bool isSelected;
   final bool isDark;
   final VoidCallback onTap;
 
-  const _CategoryPillChip({
+  const _CategoryUnderlineTab({
     required this.title,
     required this.isSelected,
     required this.isDark,
@@ -1140,50 +831,52 @@ class _CategoryPillChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary
-              : (isDark ? AppColors.neutral800 : AppColors.neutral100),
-          borderRadius: BorderRadius.circular(999),
-          boxShadow: isSelected
-              ? const [
-                  BoxShadow(
-                    color: Color(0x22D32F2F),
-                    blurRadius: 6,
-                    offset: Offset(0, 2),
-                  )
-                ]
-              : null,
-        ),
-        child: Text(
-          title,
-          style: AppTextStyles.labelSmall.copyWith(
-            fontSize: 13,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected
-                ? Colors.white
-                : (isDark ? AppColors.neutral300 : AppColors.neutral700),
-          ),
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      child: Container(
+        margin: const EdgeInsets.only(right: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              title,
+              style: AppTextStyles.labelMedium.copyWith(
+                fontSize: 15,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: isSelected
+                    ? AppColors.primary
+                    : (isDark ? AppColors.neutral400 : AppColors.neutral700),
+              ),
+            ),
+            const SizedBox(height: 6),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              height: 3,
+              width: isSelected ? 30 : 0,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : Colors.transparent,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
+
 class _StickyCategoryDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   const _StickyCategoryDelegate({required this.child});
 
   @override
-  double get minExtent => 52;
+  double get minExtent => 48;
   @override
-  double get maxExtent => 52;
+  double get maxExtent => 48;
 
   @override
   Widget build(

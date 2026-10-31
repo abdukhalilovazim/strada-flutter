@@ -7,6 +7,7 @@ import 'package:pizza_strada/core/services/analytics_service.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
+import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 
@@ -83,21 +84,23 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 color:
                     isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
                 padding: const EdgeInsets.all(24),
-                child: CachedNetworkImage(
-                  imageUrl: product.photo.isNotEmpty
-                      ? product.photo
-                      : product.thumbnail,
-                  fit: BoxFit.contain,
-                  placeholder: (_, __) => Container(
-                      color: isDark
-                          ? AppColors.neutral800
-                          : const Color(0xFFF8F9FA)),
-                  errorWidget: (_, __, ___) => Icon(
-                    Icons.image_not_supported_outlined,
-                    size: 64,
-                    color: AppColors.neutral400,
-                  ),
-                ),
+                child: (product.photo.isNotEmpty || product.thumbnail.isNotEmpty)
+                    ? CachedNetworkImage(
+                        imageUrl: product.photo.isNotEmpty
+                            ? product.photo
+                            : product.thumbnail,
+                        fit: BoxFit.contain,
+                        placeholder: (_, __) => const Opacity(
+                          opacity: 0.35,
+                          child: PizzaImagePlaceholder(fit: BoxFit.contain),
+                        ),
+                        errorWidget: (_, __, ___) => const PizzaImagePlaceholder(
+                          fit: BoxFit.contain,
+                        ),
+                      )
+                    : const PizzaImagePlaceholder(
+                        fit: BoxFit.contain,
+                      ),
               ),
             ),
           ),

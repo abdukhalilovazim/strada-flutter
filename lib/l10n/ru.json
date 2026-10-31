@@ -26,7 +26,11 @@
   "home.categories": "Категории",
   "home.products": "Продукты",
   "product.open": "Выбрать",
+  "product.open_btn": "Открыть",
   "product.add_to_cart": "В корзину",
+  "product.add_to_cart_full": "Добавить в корзину",
+  "product.buy_now": "Купить сейчас",
+  "product.choose": "Выбрать:",
   "product.size": "Выберите размер",
   "product.price": "Цена",
   "product.added": "Добавлено в корзину",
@@ -174,5 +178,11 @@
   "checkout.otp_title_sms": "Код отправлен по SMS",
   "checkout.otp_sent_sms": "Код подтверждения отправлен по SMS на номер {phone} 💬",
   "checkout.open_telegram_bot": "Открыть Telegram-бот",
-  "checkout.resend_via_sms": "Отправить по SMS"
+  "checkout.resend_via_sms": "Отправить по SMS",
+  "checkout.confirm_order_title": "Подтверждение заказа",
+  "checkout.confirm_order_btn": "Подтвердить заказ",
+  "checkout.delivery_method": "Способ доставки",
+  "checkout.order_items_title": "Состав заказа",
+  "checkout.recipient_title": "Получатель",
+  "checkout.payment_method_title": "Способ оплаты"
 }

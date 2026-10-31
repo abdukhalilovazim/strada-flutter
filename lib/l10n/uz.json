@@ -26,9 +26,11 @@
   "home.categories": "Kategoriyalar",
   "home.products": "Mahsulotlar",
   "product.open": "Tanlash",
-  "product.select_variant": "Tanlash",
-  "product.select_variant_title": "O'lchamni tanlang",
+  "product.open_btn": "Ochish",
   "product.add_to_cart": "Savatga qo'shish",
+  "product.add_to_cart_full": "Savatga qo'shish",
+  "product.buy_now": "Hozir xarid qilish",
+  "product.choose": "Tanlash:",
   "product.size": "O'lchamni tanlang",
   "product.price": "Narx",
   "product.added": "Savatga qo'shildi",
@@ -174,5 +176,11 @@
   "checkout.otp_title_sms": "SMS orqali kod yuborildi",
   "checkout.otp_sent_sms": "Tasdiqlash kodi {phone} raqamiga SMS orqali yuborildi 💬",
   "checkout.open_telegram_bot": "Telegram botni ochish",
-  "checkout.resend_via_sms": "SMS orqali yuborish"
+  "checkout.resend_via_sms": "SMS orqali yuborish",
+  "checkout.confirm_order_title": "Buyurtmani tasdiqlash",
+  "checkout.confirm_order_btn": "Buyurtmani tasdiqlash",
+  "checkout.delivery_method": "Yetkazib berish usuli",
+  "checkout.order_items_title": "Buyurtma tarkibi",
+  "checkout.recipient_title": "Qabul qiluvchi",
+  "checkout.payment_method_title": "To'lov usuli"
 }

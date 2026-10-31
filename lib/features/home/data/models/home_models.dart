@@ -1,3 +1,4 @@
+import 'package:pizza_strada/core/constants/api_constants.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 
 class CategoryModel extends CategoryEntity {
@@ -99,6 +100,42 @@ class PaymentMethodModel extends PaymentMethodEntity {
     return PaymentMethodModel(
       key: json['key']?.toString() ?? '',
       value: json['value']?.toString() ?? '',
+    );
+  }
+}
+
+class SliderModel extends SliderEntity {
+  const SliderModel({
+    required super.id,
+    required super.imageUrl,
+    super.link,
+    super.title,
+  });
+
+  factory SliderModel.fromJson(Map<String, dynamic> json) {
+    final rawImage = json['image_url'] ??
+        json['image'] ??
+        json['photo'] ??
+        json['file'] ??
+        json['path'] ??
+        '';
+    final imageStr = rawImage.toString().trim();
+
+    final String fullImageUrl;
+    if (imageStr.isEmpty) {
+      fullImageUrl = '';
+    } else if (imageStr.startsWith('http://') || imageStr.startsWith('https://')) {
+      fullImageUrl = imageStr;
+    } else {
+      final cleanPath = imageStr.startsWith('/') ? imageStr.substring(1) : imageStr;
+      fullImageUrl = '${ApiConstants.baseUrl}/$cleanPath';
+    }
+
+    return SliderModel(
+      id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      imageUrl: fullImageUrl,
+      link: json['link'] as String? ?? json['url'] as String?,
+      title: json['title'] as String? ?? json['name'] as String?,
     );
   }
 }

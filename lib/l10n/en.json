@@ -26,9 +26,11 @@
   "home.categories": "Categories",
   "home.products": "Products",
   "product.open": "Select",
-  "product.select_variant": "Select",
-  "product.select_variant_title": "Select size",
+  "product.open_btn": "Open",
   "product.add_to_cart": "Add to cart",
+  "product.add_to_cart_full": "Add to cart",
+  "product.buy_now": "Buy now",
+  "product.choose": "Choose:",
   "product.size": "Select size",
   "product.price": "Price",
   "product.added": "Added to cart",
@@ -174,5 +176,11 @@
   "checkout.otp_title_sms": "Code sent via SMS",
   "checkout.otp_sent_sms": "Confirmation code sent via SMS to {phone} 💬",
   "checkout.open_telegram_bot": "Open Telegram bot",
-  "checkout.resend_via_sms": "Send via SMS"
+  "checkout.resend_via_sms": "Send via SMS",
+  "checkout.confirm_order_title": "Confirm Order",
+  "checkout.confirm_order_btn": "Confirm Order",
+  "checkout.delivery_method": "Delivery method",
+  "checkout.order_items_title": "Order items",
+  "checkout.recipient_title": "Recipient",
+  "checkout.payment_method_title": "Payment method"
 }

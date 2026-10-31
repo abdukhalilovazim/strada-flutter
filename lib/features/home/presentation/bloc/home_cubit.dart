@@ -1,7 +1,9 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
+import 'package:pizza_strada/core/di/injection.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
+import 'package:pizza_strada/features/home/domain/repositories/home_repository.dart';
 import 'package:pizza_strada/features/home/domain/usecases/home_usecases.dart';
 
 abstract class HomeState extends Equatable {
@@ -56,26 +58,42 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> init() async {
     emit(HomeLoading());
-    final categoriesCol = await _getCategoriesUseCase();
-    final productsCol   = await _getProductsUseCase();
-    final settingsCol   = await _getSettingsUseCase();
+    try {
+      final categoriesFuture = _getCategoriesUseCase();
+      final productsFuture   = _getProductsUseCase();
+      final settingsFuture   = _getSettingsUseCase();
+      final slidersFuture    = getIt<HomeRepository>().getSliders();
 
-    categoriesCol.fold(
-      (f) => emit(HomeFailure(f.messageKey)),
-      (categories) => productsCol.fold(
+      final categoriesCol = await categoriesFuture;
+      final productsCol   = await productsFuture;
+      final settingsCol   = await settingsFuture;
+      final slidersCol    = await slidersFuture;
+
+      categoriesCol.fold(
         (f) => emit(HomeFailure(f.messageKey)),
-        (products) => settingsCol.fold(
+        (categories) => productsCol.fold(
           (f) => emit(HomeFailure(f.messageKey)),
-          (settings) => emit(HomeLoaded(
-            categories: categories,
-            fullProducts: products,
-            products: products,
-            settings: settings,
-            sliders: const [], // API dan slider endpoint qo'shilganda to'ldiriladi
-          )),
+          (products) => settingsCol.fold(
+            (f) => emit(HomeFailure(f.messageKey)),
+            (settings) {
+              final sliders = slidersCol.fold(
+                (_) => const <SliderEntity>[],
+                (s) => s,
+              );
+              emit(HomeLoaded(
+                categories: categories,
+                fullProducts: products,
+                products: products,
+                settings: settings,
+                sliders: sliders,
+              ));
+            },
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      emit(const HomeFailure('error.unknown'));
+    }
   }
 
   Future<void> selectCategory(String slug) async {

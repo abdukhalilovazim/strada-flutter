@@ -2,9 +2,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
+import 'package:pizza_strada/features/orders/data/models/order_model.dart';
 import 'package:pizza_strada/features/orders/domain/entities/order_entity.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -12,22 +14,149 @@ import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 
-class OrderDetailPage extends StatelessWidget {
+class OrderDetailPage extends StatefulWidget {
   final String orderId;
   final OrderEntity? order;
 
   const OrderDetailPage({super.key, required this.orderId, this.order});
 
   @override
+  State<OrderDetailPage> createState() => _OrderDetailPageState();
+}
+
+class _OrderDetailPageState extends State<OrderDetailPage> {
+  OrderEntity? _order;
+  bool _isLoading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _order = widget.order;
+    if (_order == null) {
+      _fetchOrder();
+    }
+  }
+
+  Future<void> _fetchOrder() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final client = ApiClient();
+      dynamic response;
+      try {
+        response = await client.get('orders/${widget.orderId}');
+      } catch (_) {
+        response = await client.get('orders');
+      }
+
+      if (!mounted) return;
+
+      if (response is Map<String, dynamic>) {
+        final data = response['data'] is Map<String, dynamic>
+            ? response['data'] as Map<String, dynamic>
+            : response;
+        setState(() {
+          _order = OrderModel.fromJson(data);
+          _isLoading = false;
+        });
+        return;
+      } else if (response is List) {
+        final list = response.map((e) => OrderModel.fromJson(e as Map<String, dynamic>)).toList();
+        final match = list.where((o) => o.id.toString() == widget.orderId).firstOrNull;
+        if (match != null) {
+          setState(() {
+            _order = match;
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+
+      setState(() {
+        _isLoading = false;
+        _error = 'error.not_found'.tr();
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'error.unknown'.tr();
+        });
+      }
+    }
+  }
+
+  Widget _buildBackButton(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return IconButton(
+      icon: Icon(
+        Icons.arrow_back_ios_new_rounded,
+        color: isDark ? Colors.white : AppColors.neutral900,
+        size: 20,
+      ),
+      onPressed: () {
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/orders');
+        }
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (order == null) {
+    if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text('#$orderId')),
-        body: Center(child: Text('error.not_found'.tr())),
+        appBar: AppBar(
+          title: Text('#${widget.orderId}', style: AppTextStyles.h2),
+          backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+          elevation: 0,
+          leading: _buildBackButton(context),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
-    final o = order!;
+    if (_order == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('#${widget.orderId}', style: AppTextStyles.h2),
+          backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+          elevation: 0,
+          leading: _buildBackButton(context),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                _error ?? 'error.not_found'.tr(),
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _fetchOrder,
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text('common.retry'.tr()),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final o = _order!;
     Color statusColor = AppColors.neutral700;
     if (o.status == 6) statusColor = Colors.green;
     if (o.status == 1) statusColor = Colors.red;
@@ -40,14 +169,7 @@ class OrderDetailPage extends StatelessWidget {
         title: Text('#${o.id}', style: AppTextStyles.h2),
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.neutral900,
-            size: 20,
-          ),
-          onPressed: () => context.pop(),
-        ),
+        leading: _buildBackButton(context),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
