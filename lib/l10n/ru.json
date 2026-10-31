@@ -27,6 +27,7 @@
   "home.products": "Продукты",
   "product.open": "Выбрать",
   "product.open_btn": "Открыть",
+  "product.variants_count": "{count} размера",
   "product.add_to_cart": "В корзину",
   "product.add_to_cart_full": "Добавить в корзину",
   "product.buy_now": "Купить сейчас",

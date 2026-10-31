@@ -11,11 +11,8 @@ import 'package:pizza_strada/features/cart/domain/entities/cart_item_entity.dart
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 
-/// Modal popup for product detail & variant selection.
-///
-/// Matches the Strada Pizza UI dialog with image on top,
-/// category tag, title, description, variant segmented selector,
-/// price stepper, and action buttons ("Добавить в корзину" & "Купить сейчас").
+/// 🍕 Modal popup for product detail & variant selection.
+/// Built strictly conforming to ui-ux-design tokens.
 class ProductDetailModal extends StatefulWidget {
   final ProductEntity product;
 
@@ -81,6 +78,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
         duration: const Duration(seconds: 2),
         backgroundColor: AppColors.secondary,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -99,10 +97,9 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasVariants = widget.product.variants.length > 1;
-    final categoryName = widget.product.category?.title ?? 'ПИЦЦА';
+    final categoryName = widget.product.category?.title ?? 'PITSA';
 
     final selectedSubtitle = _selectedVariant != null
         ? _getVariantSubtitle(_selectedVariant!)
@@ -113,8 +110,8 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
         : widget.product.thumbnail;
 
     return Dialog(
-      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      backgroundColor: isDark ? AppColors.darkCard : Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       clipBehavior: Clip.antiAlias,
       child: Stack(
@@ -126,9 +123,9 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
               children: [
                 // ── 1. Rasm bloki ──
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(22),
                     child: AspectRatio(
                       aspectRatio: 1,
                       child: imageUrl.isNotEmpty
@@ -147,21 +144,28 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
 
                 // ── 2. Ma'lumotlar bloki ──
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Kategoriya teg (orange / red)
-                      Text(
-                        categoryName.toUpperCase(),
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: const Color(0xFFFF5722),
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
-                          letterSpacing: 0.6,
+                      // Kategoriya teg
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          categoryName.toUpperCase(),
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 11,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
 
                       // Mahsulot nomi
                       Text(
@@ -181,7 +185,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                           widget.product.description!,
                           style: AppTextStyles.bodyMedium.copyWith(
                             fontSize: 13,
-                            height: 1.4,
+                            height: 1.45,
                             color: isDark
                                 ? AppColors.neutral400
                                 : AppColors.neutral600,
@@ -191,14 +195,13 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
 
                       // ── 3. Variantlar (O'lchamlar tanlash) ──
                       if (hasVariants) ...[
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 18),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               'product.choose'.tr(),
-                              style: TextStyle(
-                                fontSize: 14,
+                              style: AppTextStyles.labelMedium.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: isDark
                                     ? Colors.white
@@ -208,10 +211,9 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                             if (selectedSubtitle != null)
                               Text(
                                 selectedSubtitle,
-                                style: const TextStyle(
-                                  fontSize: 13,
+                                style: AppTextStyles.labelSmall.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFFFF5722),
+                                  color: AppColors.primary,
                                 ),
                               ),
                           ],
@@ -224,12 +226,12 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                           decoration: BoxDecoration(
                             color: isDark
                                 ? AppColors.neutral900
-                                : const Color(0xFFF1F5F9),
+                                : AppColors.neutral100,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isDark
-                                  ? AppColors.neutral800
-                                  : AppColors.neutral200,
+                                  ? AppColors.darkBorder
+                                  : AppColors.neutral200.withValues(alpha: 0.7),
                               width: 1,
                             ),
                           ),
@@ -251,7 +253,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                     decoration: BoxDecoration(
                                       color: isSelected
                                           ? (isDark
-                                              ? AppColors.darkSurface
+                                              ? AppColors.darkCard
                                               : Colors.white)
                                           : Colors.transparent,
                                       borderRadius: BorderRadius.circular(12),
@@ -273,13 +275,13 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                           title,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 14,
+                                          style: AppTextStyles.labelMedium.copyWith(
+                                            fontSize: 13,
                                             fontWeight: isSelected
                                                 ? FontWeight.w800
                                                 : FontWeight.w600,
                                             color: isSelected
-                                                ? const Color(0xFFFF5722)
+                                                ? AppColors.primary
                                                 : (isDark
                                                     ? Colors.white
                                                     : AppColors.neutral800),
@@ -291,13 +293,13 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                             subtitle,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
+                                            style: AppTextStyles.bodySmall.copyWith(
                                               fontSize: 11,
                                               fontWeight: isSelected
                                                   ? FontWeight.w700
-                                                  : FontWeight.w400,
+                                                  : FontWeight.w500,
                                               color: isSelected
-                                                  ? const Color(0xFFFF5722)
+                                                  ? AppColors.primary
                                                   : AppColors.neutral500,
                                             ),
                                           ),
@@ -317,7 +319,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                         height: 1,
                         margin: const EdgeInsets.symmetric(vertical: 16),
                         color: isDark
-                            ? AppColors.neutral800
+                            ? AppColors.darkBorder
                             : AppColors.neutral200.withValues(alpha: 0.8),
                       ),
 
@@ -328,10 +330,9 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                           // Narx
                           Text(
                             '${NumberFormatter.formatSum(_currentPrice * _quantity)} ${'common.currency'.tr()}',
-                            style: const TextStyle(
-                              color: Color(0xFFFF3D00),
-                              fontWeight: FontWeight.w900,
+                            style: AppTextStyles.priceLarge.copyWith(
                               fontSize: 22,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
 
@@ -340,7 +341,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                             decoration: BoxDecoration(
                               color: isDark
                                   ? AppColors.neutral800
-                                  : const Color(0xFFF1F5F9),
+                                  : AppColors.neutral100,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             padding: const EdgeInsets.symmetric(
@@ -377,8 +378,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                       horizontal: 14),
                                   child: Text(
                                     '$_quantity',
-                                    style: TextStyle(
-                                      fontSize: 16,
+                                    style: AppTextStyles.labelLarge.copyWith(
                                       fontWeight: FontWeight.w800,
                                       color: isDark
                                           ? Colors.white
@@ -412,7 +412,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 18),
 
                       // ── 5. Amallar tugmalari ("Добавить в корзину" & "Купить сейчас") ──
                       Row(
@@ -420,17 +420,17 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                           // 1. "Добавить в корзину"
                           Expanded(
                             child: SizedBox(
-                              height: 48,
+                              height: 50,
                               child: OutlinedButton(
                                 onPressed: () => _onAddToCart(context),
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFFFF3D00),
+                                  foregroundColor: AppColors.primary,
                                   side: const BorderSide(
-                                    color: Color(0xFFFF3D00),
+                                    color: AppColors.primary,
                                     width: 1.5,
                                   ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(24),
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 8),
@@ -439,10 +439,10 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                   'product.add_to_cart_full'.tr(),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
+                                  style: AppTextStyles.labelMedium.copyWith(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFFFF3D00),
+                                    color: AppColors.primary,
                                   ),
                                 ),
                               ),
@@ -453,15 +453,15 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                           // 2. "Купить сейчас"
                           Expanded(
                             child: SizedBox(
-                              height: 48,
+                              height: 50,
                               child: ElevatedButton(
                                 onPressed: () => _onBuyNow(context),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFFF3D00),
+                                  backgroundColor: AppColors.primary,
                                   foregroundColor: Colors.white,
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(24),
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 8),
@@ -470,7 +470,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                   'product.buy_now'.tr(),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
+                                  style: AppTextStyles.labelMedium.copyWith(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
                                     color: Colors.white,
@@ -498,8 +498,8 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                 onTap: () => Navigator.of(context).pop(),
                 borderRadius: BorderRadius.circular(20),
                 child: Container(
-                  width: 32,
-                  height: 32,
+                  width: 34,
+                  height: 34,
                   decoration: BoxDecoration(
                     color: isDark
                         ? AppColors.neutral800.withValues(alpha: 0.9)
@@ -507,16 +507,16 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
                   child: Icon(
                     Icons.close_rounded,
-                    size: 18,
-                    color: isDark ? Colors.white : AppColors.neutral600,
+                    size: 20,
+                    color: isDark ? Colors.white : AppColors.neutral700,
                   ),
                 ),
               ),

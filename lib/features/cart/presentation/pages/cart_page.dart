@@ -98,31 +98,24 @@ class CartPage extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(16),
+                        color: isDark ? AppColors.darkCard : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: isDark
-                              ? AppColors.neutral800
-                              : AppColors.neutral200,
+                              ? AppColors.darkBorder
+                              : AppColors.neutral200.withValues(alpha: 0.7),
                           width: 1,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                                Colors.black.withValues(alpha: isDark ? 0.1 : 0.03),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: AppColors.softShadow(isDark),
                       ),
                       child: Row(
                         children: [
                           // Mahsulot rasmi
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                             child: Container(
-                              width: 72,
-                              height: 72,
+                              width: 76,
+                              height: 76,
                               color: isDark
                                   ? AppColors.neutral800
                                   : const Color(0xFFF8F9FA),
@@ -150,12 +143,10 @@ class CartPage extends StatelessWidget {
                               children: [
                                 Text(
                                   item.product.title,
-                                  style: AppTextStyles.labelMedium.copyWith(
+                                  style: AppTextStyles.h4.copyWith(
+                                    fontSize: 15,
                                     fontWeight: FontWeight.w700,
-                                    color: Theme.of(context)
-                                        .textTheme
-                                        .bodyLarge
-                                        ?.color,
+                                    color: isDark ? Colors.white : AppColors.neutral900,
                                   ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
@@ -187,8 +178,9 @@ class CartPage extends StatelessWidget {
                                           ],
                                           TextSpan(
                                             text: '${NumberFormatter.formatSum(item.totalPrice.toInt())} ${'common.currency'.tr()}',
-                                            style: AppTextStyles.labelMedium.copyWith(
+                                            style: AppTextStyles.priceMedium.copyWith(
                                               color: AppColors.primary,
+                                              fontSize: 15,
                                               fontWeight: FontWeight.w800,
                                             ),
                                           ),
@@ -221,17 +213,17 @@ class CartPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
+                  color: isDark ? AppColors.darkSurface : Colors.white,
                   border: Border(
                     top: BorderSide(
-                      color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                      color: isDark ? AppColors.darkBorder : AppColors.neutral200,
                       width: 1,
                     ),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 12,
+                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
+                      blurRadius: 16,
                       offset: const Offset(0, -4),
                     ),
                   ],
@@ -248,16 +240,15 @@ class CartPage extends StatelessWidget {
                             'cart.total'.tr(),
                             style: AppTextStyles.labelLarge.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: Theme.of(context)
-                                  .textTheme
-                                  .bodyLarge
-                                  ?.color,
+                              color: isDark ? AppColors.neutral300 : AppColors.neutral700,
                             ),
                           ),
                           Text(
                             '${NumberFormatter.formatSum(state.subtotal)} ${'common.currency'.tr()}',
-                            style: AppTextStyles.h2.copyWith(
+                            style: AppTextStyles.priceLarge.copyWith(
                               color: AppColors.primary,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                         ],
@@ -311,7 +302,7 @@ class _QuantityStepper extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppColors.neutral800 : AppColors.neutral100,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isDark ? AppColors.neutral700 : AppColors.neutral200,
           width: 1,
@@ -324,8 +315,8 @@ class _QuantityStepper extends StatelessWidget {
           GestureDetector(
             onTap: onDecrement,
             child: Container(
-              width: 34,
-              height: 34,
+              width: 36,
+              height: 36,
               alignment: Alignment.center,
               child: Icon(
                 quantity <= 1 ? Icons.delete_outline_rounded : Icons.remove_rounded,
@@ -341,7 +332,7 @@ class _QuantityStepper extends StatelessWidget {
               '$quantity',
               textAlign: TextAlign.center,
               style: AppTextStyles.labelMedium.copyWith(
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w800,
                 color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
@@ -350,8 +341,8 @@ class _QuantityStepper extends StatelessWidget {
           GestureDetector(
             onTap: onIncrement,
             child: Container(
-              width: 34,
-              height: 34,
+              width: 36,
+              height: 36,
               alignment: Alignment.center,
               child: const Icon(
                 Icons.add_rounded,

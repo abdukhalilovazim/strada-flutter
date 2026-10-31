@@ -27,6 +27,7 @@
   "home.products": "Mahsulotlar",
   "product.open": "Tanlash",
   "product.open_btn": "Ochish",
+  "product.variants_count": "{count} xil o'lcham",
   "product.add_to_cart": "Savatga qo'shish",
   "product.add_to_cart_full": "Savatga qo'shish",
   "product.buy_now": "Hozir xarid qilish",

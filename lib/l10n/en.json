@@ -27,6 +27,7 @@
   "home.products": "Products",
   "product.open": "Select",
   "product.open_btn": "Open",
+  "product.variants_count": "{count} sizes",
   "product.add_to_cart": "Add to cart",
   "product.add_to_cart_full": "Add to cart",
   "product.buy_now": "Buy now",

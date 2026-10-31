@@ -400,34 +400,28 @@ class _CheckoutPageState extends State<CheckoutPage> {
       color: Colors.transparent,
       child: InkWell(
         onTap: () => _openOrderTypeBottomSheet(context),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.darkSurface : Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            color: isDark ? AppColors.darkCard : Colors.white,
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: (isDelivery ? hasAddress : hasBranch)
-                  ? (isDark ? AppColors.neutral800 : AppColors.neutral200)
+                  ? (isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8))
                   : AppColors.primary,
               width: (isDelivery ? hasAddress : hasBranch) ? 1 : 1.5,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            boxShadow: AppColors.softShadow(isDark),
           ),
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(icon, color: AppColors.primary, size: 24),
               ),
@@ -484,7 +478,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.neutral800 : AppColors.neutral100,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -518,20 +512,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     if (!isGuest) {
       return Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          color: isDark ? AppColors.darkCard : Colors.white,
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+            color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          boxShadow: AppColors.softShadow(isDark),
         ),
         child: Row(
           children: [

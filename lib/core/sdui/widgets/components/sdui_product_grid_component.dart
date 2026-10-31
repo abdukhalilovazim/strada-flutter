@@ -73,9 +73,9 @@ class SDUIProductGridComponent extends StatelessWidget {
             return RepaintBoundary(
               child: BlocBuilder<CartCubit, CartState>(
                 builder: (context, cartState) {
-                  final quantity = cartState.items
-                      .where((ci) => ci.product.slug == product.slug)
-                      .fold<int>(0, (sum, ci) => sum + ci.quantity);
+                  final matchingItems = cartState.items.where((ci) => ci.product.slug == product.slug).toList();
+                  final quantity = matchingItems.fold<int>(0, (sum, ci) => sum + ci.quantity);
+                  final firstCartItem = matchingItems.firstOrNull;
 
                   return ProductCard(
                     product: product,
@@ -85,6 +85,21 @@ class SDUIProductGridComponent extends StatelessWidget {
                         onAction(item.action!);
                       } else {
                         context.push('/product/${product.slug}', extra: product);
+                      }
+                    },
+                    onAdd: () {
+                      if (product.variants.length > 1) {
+                        context.push('/product/${product.slug}', extra: product);
+                      } else {
+                        context.read<CartCubit>().addToCart(
+                              product,
+                              variant: product.variants.firstOrNull,
+                            );
+                      }
+                    },
+                    onRemove: () {
+                      if (firstCartItem != null) {
+                        context.read<CartCubit>().updateQuantity(firstCartItem, -1);
                       }
                     },
                   );
