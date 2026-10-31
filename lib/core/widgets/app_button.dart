@@ -37,6 +37,7 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final bool isDisabled = widget.onTap == null || widget.isLoading;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTapDown: _onTapDown,
@@ -54,7 +55,7 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
           decoration: BoxDecoration(
             color: widget.isOutlined
                 ? Colors.transparent
-                : (isDisabled ? AppColors.neutral200 : AppColors.primary),
+                : (isDisabled ? (isDark ? AppColors.neutral800 : AppColors.neutral200) : AppColors.primary),
             borderRadius: AppDim.radiusLg,
             border: widget.isOutlined
                 ? Border.all(color: AppColors.primary, width: 1.5)
@@ -72,9 +73,10 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
               : Text(
                   widget.text,
                   style: AppTextStyles.labelLarge.copyWith(
+                    fontWeight: FontWeight.w700,
                     color: widget.isOutlined
                         ? AppColors.primary
-                        : (isDisabled ? AppColors.neutral400 : Colors.white),
+                        : (isDisabled ? (isDark ? AppColors.neutral600 : AppColors.neutral400) : Colors.white),
                   ),
                 ),
         ),

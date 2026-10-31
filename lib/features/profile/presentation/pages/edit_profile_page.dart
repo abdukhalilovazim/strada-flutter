@@ -105,7 +105,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text('profile.edit'.tr()),
         leading: IconButton(
@@ -125,10 +128,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
               decoration: InputDecoration(
                 hintText: 'auth.name_hint'.tr(),
                 filled: true,
-                fillColor: Theme.of(context).cardColor,
+                fillColor: isDark ? AppColors.darkCard : Colors.white,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.neutral200),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.neutral200),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
@@ -143,10 +154,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
               decoration: InputDecoration(
                 hintText: '',
                 filled: true,
-                fillColor: Theme.of(context).cardColor,
+                fillColor: isDark ? AppColors.neutral900 : AppColors.neutral100,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.neutral200),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.neutral200),
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
@@ -160,9 +175,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.neutral300),
+                  color: isDark ? AppColors.darkCard : Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.neutral300),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
