@@ -55,6 +55,21 @@ class OrderModel extends OrderEntity {
         case 1:
           statusTextStr = 'orders.status_rejected';
           break;
+        case 2:
+          statusTextStr = 'orders.status_pending';
+          break;
+        case 3:
+          statusTextStr = 'orders.status_approved';
+          break;
+        case 4:
+          statusTextStr = 'orders.status_in_progress';
+          break;
+        case 5:
+          statusTextStr = 'orders.status_delivering';
+          break;
+        case 7:
+          statusTextStr = 'orders.status_pickup_ready';
+          break;
         default:
           statusTextStr = 'orders.status_pending';
           break;

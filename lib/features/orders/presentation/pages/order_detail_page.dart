@@ -1,18 +1,20 @@
+import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/network/api_client.dart';
+import 'package:pizza_strada/core/storage/shared_prefs.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
-import 'package:pizza_strada/features/orders/data/models/order_model.dart';
-import 'package:pizza_strada/features/orders/domain/entities/order_entity.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
+import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
+import 'package:pizza_strada/features/orders/data/models/order_model.dart';
+import 'package:pizza_strada/features/orders/domain/entities/order_entity.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class OrderDetailPage extends StatefulWidget {
   final String orderId;
@@ -29,13 +31,100 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   bool _isLoading = false;
   String? _error;
 
+  // ⏱ Exponential backoff polling interval: 5 -> 10 -> 20 -> 40 -> 80 -> 160 -> 320 -> 360
+  static const List<int> _pollingIntervals = [5, 10, 20, 40, 80, 160, 320, 360];
+  int _intervalIndex = 0;
+  Timer? _pollingTimer;
+
+  // ⭐ Rating state
+  int _selectedRating = 5;
+  final _commentController = TextEditingController();
+  bool _isSubmittingRating = false;
+  bool _isRated = false;
+
   @override
   void initState() {
     super.initState();
     _order = widget.order;
+    _checkRatedStatus();
+
     if (_order == null) {
       _fetchOrder();
+    } else {
+      _startPolling();
     }
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  void _checkRatedStatus() {
+    final id = int.tryParse(widget.orderId) ?? _order?.id ?? 0;
+    if (id > 0) {
+      _isRated = SharedPrefs.isOrderRated(id);
+    }
+  }
+
+  void _startPolling() {
+    _pollingTimer?.cancel();
+    if (!mounted) return;
+
+    final status = _order?.status ?? 0;
+    // Faqat yakunlanmagan (aktiv) buyurtmada polling ishlaydi (6: Yetkazildi, 1: Bekor qilindi)
+    if (status == 6 || status == 1) return;
+
+    final delay = _pollingIntervals[_intervalIndex];
+    _pollingTimer = Timer(Duration(seconds: delay), () async {
+      if (!mounted) return;
+      await _fetchOrderSilently();
+
+      // Intervalni oshirib borish, 360 soniyaga yetganda yana 5 soniyadan boshlanadi
+      if (_intervalIndex < _pollingIntervals.length - 1) {
+        _intervalIndex++;
+      } else {
+        _intervalIndex = 0;
+      }
+
+      _startPolling();
+    });
+  }
+
+  Future<void> _fetchOrderSilently() async {
+    try {
+      final client = ApiClient();
+      dynamic response;
+      try {
+        response = await client.get('orders/${widget.orderId}');
+      } catch (_) {
+        response = await client.get('orders');
+      }
+
+      if (!mounted) return;
+
+      if (response is Map<String, dynamic>) {
+        final data = response['data'] is Map<String, dynamic>
+            ? response['data'] as Map<String, dynamic>
+            : response;
+        final updatedOrder = OrderModel.fromJson(data);
+        setState(() {
+          _order = updatedOrder;
+        });
+        _checkRatedStatus();
+      } else if (response is List) {
+        final list = response.map((e) => OrderModel.fromJson(e as Map<String, dynamic>)).toList();
+        final match = list.where((o) => o.id.toString() == widget.orderId).firstOrNull;
+        if (match != null) {
+          setState(() {
+            _order = match;
+          });
+          _checkRatedStatus();
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchOrder() async {
@@ -63,6 +152,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
           _order = OrderModel.fromJson(data);
           _isLoading = false;
         });
+        _checkRatedStatus();
+        _startPolling();
         return;
       } else if (response is List) {
         final list = response.map((e) => OrderModel.fromJson(e as Map<String, dynamic>)).toList();
@@ -72,6 +163,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
             _order = match;
             _isLoading = false;
           });
+          _checkRatedStatus();
+          _startPolling();
           return;
         }
       }
@@ -86,6 +179,49 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
           _isLoading = false;
           _error = 'error.unknown'.tr();
         });
+      }
+    }
+  }
+
+  Future<void> _submitRating() async {
+    final orderId = _order?.id ?? int.tryParse(widget.orderId) ?? 0;
+    if (orderId == 0) return;
+
+    setState(() => _isSubmittingRating = true);
+
+    try {
+      final client = ApiClient();
+      final text = _commentController.text.trim();
+      final commentPayload = text.isNotEmpty
+          ? 'Baho: $_selectedRating/5. $text'
+          : 'Baho: $_selectedRating/5';
+
+      await client.post('orders/$orderId/comment', body: {
+        'comment': commentPayload,
+      });
+
+      await SharedPrefs.setOrderRated(orderId);
+
+      if (mounted) {
+        setState(() {
+          _isSubmittingRating = false;
+          _isRated = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('orders.rate_thank_you'.tr()),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isSubmittingRating = false);
+        // Fallback local save even if network failed
+        await SharedPrefs.setOrderRated(orderId);
+        setState(() => _isRated = true);
       }
     }
   }
@@ -105,6 +241,367 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
           context.go('/orders');
         }
       },
+    );
+  }
+
+  int _calculateActiveStep(int status) {
+    switch (status) {
+      case 1: // REJECTED
+        return -1;
+      case 2: // PAYMENT_PENDING
+      case 3: // APPROVED
+        return 0; // 1-bosqich: Qabul qilindi
+      case 4: // IN_PROGRESS
+        return 1; // 2-bosqich: Tayyorlanmoqda
+      case 5: // DELIVERING
+      case 7: // PICKUP_READY
+        return 2; // 3-bosqich: Yo'lda / Tayyor
+      case 6: // COMPLETED
+        return 3; // 4-bosqich: Yetkazildi
+      default:
+        return 0;
+    }
+  }
+
+  Widget _buildStatusStepper(BuildContext context, OrderEntity o, bool isDark) {
+    final activeStep = _calculateActiveStep(o.status);
+    final isRejected = o.status == 1;
+
+    if (isRejected) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                color: AppColors.error,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'orders.status_rejected'.tr(),
+                    style: AppTextStyles.h3.copyWith(color: AppColors.error),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    o.comment != null && o.comment!.isNotEmpty
+                        ? o.comment!
+                        : 'Buyurtmangiz bekor qilindi',
+                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral600),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final isPickup = o.type?.toLowerCase().contains('pickup') == true ||
+        o.type?.toLowerCase().contains('olib') == true ||
+        (o.address == null || o.address!.isEmpty);
+
+    final steps = [
+      {'title': 'orders.status_approved'.tr(), 'icon': Icons.receipt_long_rounded},
+      {'title': 'orders.status_in_progress'.tr(), 'icon': Icons.soup_kitchen_rounded},
+      {
+        'title': isPickup ? 'orders.status_pickup_ready'.tr() : 'orders.status_delivering'.tr(),
+        'icon': isPickup ? Icons.storefront_rounded : Icons.delivery_dining_rounded,
+      },
+      {'title': 'orders.status_completed'.tr(), 'icon': Icons.check_circle_rounded},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                o.statusText.startsWith('orders.status_') ? o.statusText.tr() : o.statusText,
+                style: AppTextStyles.h3.copyWith(
+                  color: activeStep == 3 ? AppColors.success : AppColors.primary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              if (o.estimatedTime != null && o.estimatedTime!.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.timer_outlined, size: 14, color: AppColors.primary),
+                      const SizedBox(width: 4),
+                      Text(
+                        o.estimatedTime!,
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Stepper Visual Nodes & Connectors
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: List.generate(steps.length * 2 - 1, (index) {
+              if (index.isOdd) {
+                final stepIndex = index ~/ 2;
+                final isDone = activeStep > stepIndex;
+                return Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 18),
+                    height: 3,
+                    color: isDone
+                        ? AppColors.success
+                        : (isDark ? AppColors.neutral700 : AppColors.neutral200),
+                  ),
+                );
+              }
+
+              final stepIndex = index ~/ 2;
+              final isDone = activeStep > stepIndex;
+              final isActive = activeStep == stepIndex;
+              final icon = steps[stepIndex]['icon'] as IconData;
+              final title = steps[stepIndex]['title'] as String;
+
+              Color nodeBg;
+              Color iconColor;
+              if (isDone) {
+                nodeBg = AppColors.success;
+                iconColor = Colors.white;
+              } else if (isActive) {
+                nodeBg = AppColors.primary;
+                iconColor = Colors.white;
+              } else {
+                nodeBg = isDark ? AppColors.neutral800 : AppColors.neutral100;
+                iconColor = isDark ? AppColors.neutral500 : AppColors.neutral400;
+              }
+
+              return SizedBox(
+                width: 64,
+                child: Column(
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: nodeBg,
+                        shape: BoxShape.circle,
+                        boxShadow: isActive
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.primary.withValues(alpha: 0.35),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Icon(
+                        isDone ? Icons.check_rounded : icon,
+                        color: iconColor,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodyExtraSmall.copyWith(
+                        fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                        color: isActive
+                            ? AppColors.primary
+                            : (isDone
+                                ? (isDark ? Colors.white : AppColors.neutral900)
+                                : AppColors.neutral500),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRatingSection(BuildContext context, OrderEntity o, bool isDark) {
+    if (o.status != 6) return const SizedBox.shrink();
+
+    if (_isRated) {
+      return Container(
+        margin: const EdgeInsets.only(top: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.success.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.verified_rounded, color: AppColors.success, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'orders.rate_thank_you'.tr(),
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.success,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.amber.shade200, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.amber.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.star_rounded, color: Colors.amber, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                'orders.rate_order'.tr(),
+                style: AppTextStyles.h4.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'orders.rate_desc'.tr(),
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500),
+          ),
+          const SizedBox(height: 16),
+
+          // Star selector
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (index) {
+              final starNum = index + 1;
+              final isFilled = starNum <= _selectedRating;
+              return GestureDetector(
+                onTap: () {
+                  setState(() => _selectedRating = starNum);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Icon(
+                    isFilled ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: Colors.amber,
+                    size: 38,
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 16),
+
+          // Feedback comment input
+          TextField(
+            controller: _commentController,
+            maxLines: 2,
+            decoration: InputDecoration(
+              hintText: 'orders.rate_comment_hint'.tr(),
+              hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400),
+              filled: true,
+              fillColor: isDark ? AppColors.neutral800 : AppColors.neutral100,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: ElevatedButton(
+              onPressed: _isSubmittingRating ? null : _submitRating,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: _isSubmittingRating
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : Text(
+                      'orders.rate_submit'.tr(),
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -157,10 +654,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     }
 
     final o = _order!;
-    Color statusColor = AppColors.neutral700;
-    if (o.status == 6) statusColor = Colors.green;
-    if (o.status == 1) statusColor = Colors.red;
-    if (o.status == 4) statusColor = Colors.orange;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final showPayNow = o.paymentUrl != null && o.status != 6 && o.status != 1;
 
     return Scaffold(
@@ -170,50 +664,35 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         leading: _buildBackButton(context),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: () {
+              _fetchOrderSilently();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Yangilandi'),
+                  duration: Duration(milliseconds: 600),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Status Card
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.receipt_long_rounded, color: statusColor),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          o.statusText.startsWith('orders.status_')
-                              ? o.statusText.tr()
-                              : o.statusText,
-                          style: AppTextStyles.h4.copyWith(color: statusColor),
-                        ),
-                        Text(o.type ?? '', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // 1. Interactive Visual Status Stepper
+            _buildStatusStepper(context, o, isDark),
             const SizedBox(height: 16),
 
-            // Products List
+            // 2. Customer Rating Card (If delivered)
+            _buildRatingSection(context, o, isDark),
+            const SizedBox(height: 16),
+
+            // 3. Products List
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -270,7 +749,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
             ),
             const SizedBox(height: 16),
 
-            // Order Details Card
+            // 4. Order Details Card
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -295,10 +774,6 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     _DetailRow(label: 'checkout.branch'.tr(), value: o.branch!),
                     const Divider(height: 24),
                   ],
-                  if (o.estimatedTime != null && o.estimatedTime!.isNotEmpty) ...[
-                    _DetailRow(label: 'orders.estimated_time'.tr(), value: o.estimatedTime!),
-                    const Divider(height: 24),
-                  ],
                   if (o.paymentMethodText != null && o.paymentMethodText!.isNotEmpty) ...[
                     _DetailRow(label: 'checkout.payment'.tr(), value: o.paymentMethodText!),
                     if (o.comment != null && o.comment!.isNotEmpty) const Divider(height: 24),
@@ -310,7 +785,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
             ),
             const SizedBox(height: 16),
 
-            // Totals
+            // 5. Totals Card
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -514,7 +989,6 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     context.read<CartCubit>().clear();
 
     for (final orderItem in order.products) {
-      // Find matching product
       final matchedProductList = fullProducts.where((p) => p.slug == orderItem.slug);
       if (matchedProductList.isEmpty) {
         someFailed = true;
@@ -532,7 +1006,6 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         matchedVariant = matchedVariantList.first;
       }
 
-      // Add to cart with correct quantity
       for (int i = 0; i < orderItem.quantity; i++) {
         context.read<CartCubit>().addToCart(matchedProduct, variant: matchedVariant);
       }
@@ -558,7 +1031,6 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       );
     }
 
-    // Go to cart
     context.go('/cart');
   }
 }
@@ -581,12 +1053,17 @@ class _PriceRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: isTotal ? AppTextStyles.labelLarge.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color) : AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500)),
+        Text(
+          label,
+          style: isTotal
+              ? AppTextStyles.labelLarge.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)
+              : AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500),
+        ),
         Text(
           "${isNegative ? '- ' : ''}${NumberFormatter.formatSum(price)} ${'common.currency'.tr()}",
           style: isTotal
-            ? AppTextStyles.h4.copyWith(color: AppColors.primary)
-            : AppTextStyles.labelSmall.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
+              ? AppTextStyles.h4.copyWith(color: AppColors.primary)
+              : AppTextStyles.labelSmall.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
         ),
       ],
     );

@@ -26,5 +26,12 @@ class SharedPrefs {
     final val = _prefs.getString(_themeKey);
     return val == 'dark' ? ThemeMode.dark : ThemeMode.light;
   }
-}
 
+  /// Checks if an order was already rated by the customer
+  static bool isOrderRated(int orderId) =>
+      _prefs.getBool('order_rated_$orderId') ?? false;
+
+  /// Marks an order as rated by the customer
+  static Future<void> setOrderRated(int orderId) =>
+      _prefs.setBool('order_rated_$orderId', true);
+}
