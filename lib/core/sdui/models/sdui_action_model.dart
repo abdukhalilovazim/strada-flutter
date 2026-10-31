@@ -31,3 +31,4 @@ class SDUIAction extends Equatable {
   @override
   List<Object?> get props => [type, target, payload];
 }
+

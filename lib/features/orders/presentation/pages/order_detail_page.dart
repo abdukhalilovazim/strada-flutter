@@ -1,43 +1,175 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
+import 'package:pizza_strada/features/orders/data/models/order_model.dart';
 import 'package:pizza_strada/features/orders/domain/entities/order_entity.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
+import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
+import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 
-class OrderDetailPage extends StatelessWidget {
+class OrderDetailPage extends StatefulWidget {
   final String orderId;
   final OrderEntity? order;
 
   const OrderDetailPage({super.key, required this.orderId, this.order});
 
   @override
+  State<OrderDetailPage> createState() => _OrderDetailPageState();
+}
+
+class _OrderDetailPageState extends State<OrderDetailPage> {
+  OrderEntity? _order;
+  bool _isLoading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _order = widget.order;
+    if (_order == null) {
+      _fetchOrder();
+    }
+  }
+
+  Future<void> _fetchOrder() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final client = ApiClient();
+      dynamic response;
+      try {
+        response = await client.get('orders/${widget.orderId}');
+      } catch (_) {
+        response = await client.get('orders');
+      }
+
+      if (!mounted) return;
+
+      if (response is Map<String, dynamic>) {
+        final data = response['data'] is Map<String, dynamic>
+            ? response['data'] as Map<String, dynamic>
+            : response;
+        setState(() {
+          _order = OrderModel.fromJson(data);
+          _isLoading = false;
+        });
+        return;
+      } else if (response is List) {
+        final list = response.map((e) => OrderModel.fromJson(e as Map<String, dynamic>)).toList();
+        final match = list.where((o) => o.id.toString() == widget.orderId).firstOrNull;
+        if (match != null) {
+          setState(() {
+            _order = match;
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+
+      setState(() {
+        _isLoading = false;
+        _error = 'error.not_found'.tr();
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'error.unknown'.tr();
+        });
+      }
+    }
+  }
+
+  Widget _buildBackButton(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return IconButton(
+      icon: Icon(
+        Icons.arrow_back_ios_new_rounded,
+        color: isDark ? Colors.white : AppColors.neutral900,
+        size: 20,
+      ),
+      onPressed: () {
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/orders');
+        }
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (order == null) {
+    if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text('#$orderId')),
-        body: Center(child: Text('error.not_found'.tr())),
+        appBar: AppBar(
+          title: Text('#${widget.orderId}', style: AppTextStyles.h2),
+          backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+          elevation: 0,
+          leading: _buildBackButton(context),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
-    final o = order!;
+    if (_order == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('#${widget.orderId}', style: AppTextStyles.h2),
+          backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+          elevation: 0,
+          leading: _buildBackButton(context),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                _error ?? 'error.not_found'.tr(),
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _fetchOrder,
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text('common.retry'.tr()),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final o = _order!;
     Color statusColor = AppColors.neutral700;
     if (o.status == 6) statusColor = Colors.green;
     if (o.status == 1) statusColor = Colors.red;
     if (o.status == 4) statusColor = Colors.orange;
+    final showPayNow = o.paymentUrl != null && o.status != 6 && o.status != 1;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: Text('#${o.id}', style: AppTextStyles.h2),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.neutral900),
-          onPressed: () => context.pop(),
-        ),
+        leading: _buildBackButton(context),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -47,7 +179,7 @@ class OrderDetailPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -56,7 +188,7 @@ class OrderDetailPage extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
+                      color: statusColor.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.receipt_long_rounded, color: statusColor),
@@ -66,7 +198,12 @@ class OrderDetailPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(o.statusText, style: AppTextStyles.h4.copyWith(color: statusColor)),
+                        Text(
+                          o.statusText.startsWith('orders.status_')
+                              ? o.statusText.tr()
+                              : o.statusText,
+                          style: AppTextStyles.h4.copyWith(color: statusColor),
+                        ),
                         Text(o.type ?? '', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
                       ],
                     ),
@@ -80,7 +217,7 @@ class OrderDetailPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Column(
@@ -133,11 +270,51 @@ class OrderDetailPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
+            // Order Details Card
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'product.info'.tr(), 
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (o.address != null && o.address!.isNotEmpty) ...[
+                    _DetailRow(label: 'checkout.address'.tr(), value: o.address!),
+                    const Divider(height: 24),
+                  ],
+                  if (o.branch != null && o.branch!.isNotEmpty) ...[
+                    _DetailRow(label: 'checkout.branch'.tr(), value: o.branch!),
+                    const Divider(height: 24),
+                  ],
+                  if (o.estimatedTime != null && o.estimatedTime!.isNotEmpty) ...[
+                    _DetailRow(label: 'orders.estimated_time'.tr(), value: o.estimatedTime!),
+                    const Divider(height: 24),
+                  ],
+                  if (o.paymentMethodText != null && o.paymentMethodText!.isNotEmpty) ...[
+                    _DetailRow(label: 'checkout.payment'.tr(), value: o.paymentMethodText!),
+                    if (o.comment != null && o.comment!.isNotEmpty) const Divider(height: 24),
+                  ],
+                  if (o.comment != null && o.comment!.isNotEmpty)
+                    _DetailRow(label: 'checkout.comment'.tr(), value: o.comment!),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
             // Totals
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Column(
@@ -161,24 +338,228 @@ class OrderDetailPage extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: o.paymentUrl != null && o.status != 6 && o.status != 1
+      bottomNavigationBar: (showPayNow || o.status == 6 || (o.phone != null && o.phone!.isNotEmpty))
           ? Container(
-              padding: const EdgeInsets.all(20),
-              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
               child: SafeArea(
-                  child: ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: Text('orders.pay_now'.tr(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: Builder(
+                  builder: (context) {
+                    if (showPayNow) {
+                      return SizedBox(
+                        height: 50,
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final url = o.paymentUrl;
+                            if (url != null && url.isNotEmpty) {
+                              final uri = Uri.tryParse(url);
+                              if (uri != null) {
+                                try {
+                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                } catch (e) {
+                                  debugPrint('Could not launch payment URL: $e');
+                                }
+                              }
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text(
+                            'orders.pay_now'.tr(),
+                            style: AppTextStyles.labelMedium.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    if (o.status != 6 && o.status != 1 && o.phone != null && o.phone!.isNotEmpty) {
+                      return SizedBox(
+                        height: 50,
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            final uri = Uri.tryParse('tel:${o.phone}');
+                            if (uri != null && await canLaunchUrl(uri)) {
+                              await launchUrl(uri);
+                            }
+                          },
+                          icon: const Icon(Icons.phone, color: AppColors.primary),
+                          label: Text(
+                            'orders.call_branch'.tr(),
+                            style: AppTextStyles.labelMedium.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.primary, width: 1.5),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      );
+                    }
+
+                    if (o.status == 6) {
+                      return SizedBox(
+                        height: 50,
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => _handleReorder(context, o),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text(
+                            'orders.reorder'.tr(),
+                            style: AppTextStyles.labelMedium.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    
+                    return const SizedBox.shrink();
+                  },
                 ),
               ),
             )
           : null,
     );
+  }
+
+  void _handleReorder(BuildContext context, OrderEntity order) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: Theme.of(dialogContext).cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'orders.reorder_confirm_title'.tr(),
+            style: AppTextStyles.h3.copyWith(
+              color: Theme.of(dialogContext).textTheme.headlineMedium?.color,
+            ),
+          ),
+          content: Text(
+            'orders.reorder_confirm_desc'.tr(),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(dialogContext).textTheme.bodyMedium?.color,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                'common.no'.tr(),
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.neutral600,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _executeReorder(context, order);
+              },
+              child: Text(
+                'common.yes'.tr(),
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _executeReorder(BuildContext context, OrderEntity order) {
+    final homeState = context.read<HomeCubit>().state;
+    if (homeState is! HomeLoaded) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('orders.reorder_error'.tr()),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    final fullProducts = homeState.fullProducts;
+    bool someFailed = false;
+
+    // Clear cart first
+    context.read<CartCubit>().clear();
+
+    for (final orderItem in order.products) {
+      // Find matching product
+      final matchedProductList = fullProducts.where((p) => p.slug == orderItem.slug);
+      if (matchedProductList.isEmpty) {
+        someFailed = true;
+        continue;
+      }
+      final matchedProduct = matchedProductList.first;
+
+      VariantEntity? matchedVariant;
+      if (orderItem.variantName != null) {
+        final matchedVariantList = matchedProduct.variants.where((v) => v.title == orderItem.variantName);
+        if (matchedVariantList.isEmpty) {
+          someFailed = true;
+          continue;
+        }
+        matchedVariant = matchedVariantList.first;
+      }
+
+      // Add to cart with correct quantity
+      for (int i = 0; i < orderItem.quantity; i++) {
+        context.read<CartCubit>().addToCart(matchedProduct, variant: matchedVariant);
+      }
+    }
+
+    if (someFailed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('orders.reorder_error'.tr()),
+          backgroundColor: AppColors.warning,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('orders.reorder_success'.tr()),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
+
+    // Go to cart
+    context.go('/cart');
   }
 }
 
@@ -200,12 +581,43 @@ class _PriceRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: isTotal ? AppTextStyles.labelLarge : AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500)),
+        Text(label, style: isTotal ? AppTextStyles.labelLarge.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color) : AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500)),
         Text(
           "${isNegative ? '- ' : ''}${NumberFormatter.formatSum(price)} ${'common.currency'.tr()}",
           style: isTotal
             ? AppTextStyles.h4.copyWith(color: AppColors.primary)
-            : AppTextStyles.labelSmall.copyWith(color: AppColors.neutral900),
+            : AppTextStyles.labelSmall.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
+        ),
+      ],
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _DetailRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+            ),
+          ),
         ),
       ],
     );

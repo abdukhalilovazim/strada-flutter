@@ -52,3 +52,4 @@ class SDUIPageModel extends Equatable {
   @override
   List<Object?> get props => [version, screenId, meta, sections];
 }
+

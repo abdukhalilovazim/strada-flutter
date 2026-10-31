@@ -3,12 +3,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pizza_strada/core/services/analytics_service.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
-import 'package:pizza_strada/core/theme/app_dimensions.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
-import 'package:pizza_strada/core/widgets/app_button.dart';
-import 'package:pizza_strada/core/theme/app_icons.dart';
+import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 
@@ -24,14 +23,20 @@ class ProductDetailPage extends StatefulWidget {
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
   VariantEntity? _selectedVariant;
+  int _quantity = 1;
 
   @override
   void initState() {
     super.initState();
-    // Point 7: default tanlanmagan bo'lishi kerak.
-    // Point 5: agar option 1 ta bo'lsa uni ko'rsatish shart emas.
-    if (widget.product != null && widget.product!.variants.length == 1) {
-      _selectedVariant = widget.product!.variants.first;
+    if (widget.product != null) {
+      if (widget.product!.variants.length == 1) {
+        _selectedVariant = widget.product!.variants.first;
+      }
+      AnalyticsService.instance.logProductView(
+        id: widget.product!.id.toString(),
+        title: widget.product!.title,
+        price: widget.product!.price,
+      );
     }
   }
 
@@ -42,64 +47,160 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
 
     final product = widget.product!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasVariants = product.variants.length > 1;
+    final displayPrice = _selectedVariant?.price ?? product.price;
+    final totalPrice = displayPrice * _quantity;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
+          // ── SliverAppBar (rasm katta, tepalikda) ──
           SliverAppBar(
-            expandedHeight: 300,
+            expandedHeight: MediaQuery.of(context).size.width,
             pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              background: CachedNetworkImage(
-                imageUrl: product.photo,
-                fit: BoxFit.cover,
-                placeholder: (_, __) => Container(color: AppColors.neutral100),
-                errorWidget: (_, __, ___) => const Icon(AppIcons.pizza, size: 64, color: AppColors.neutral200),
+            backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+            surfaceTintColor: Colors.transparent,
+            leading: Container(
+              margin: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppColors.darkSurface.withValues(alpha: 0.9)
+                    : Colors.white.withValues(alpha: 0.9),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  size: 18,
+                  color: isDark ? Colors.white : AppColors.neutral900,
+                ),
+                onPressed: () => context.pop(),
               ),
             ),
-            backgroundColor: AppColors.primary,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => context.pop(),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                color:
+                    isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
+                padding: const EdgeInsets.all(24),
+                child: (product.photo.isNotEmpty || product.thumbnail.isNotEmpty)
+                    ? CachedNetworkImage(
+                        imageUrl: product.photo.isNotEmpty
+                            ? product.photo
+                            : product.thumbnail,
+                        fit: BoxFit.contain,
+                        placeholder: (_, __) => const Opacity(
+                          opacity: 0.35,
+                          child: PizzaImagePlaceholder(fit: BoxFit.contain),
+                        ),
+                        errorWidget: (_, __, ___) => const PizzaImagePlaceholder(
+                          fit: BoxFit.contain,
+                        ),
+                      )
+                    : const PizzaImagePlaceholder(
+                        fit: BoxFit.contain,
+                      ),
+              ),
             ),
           ),
+
+          // ── Kontent ──
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(AppDim.lg),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(product.title, style: AppTextStyles.h2),
-                  const SizedBox(height: 8),
-                  if (product.description != null)
+                  // Nom + narx
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          product.title,
+                          style: AppTextStyles.h2.copyWith(
+                            color: Theme.of(context)
+                                .textTheme
+                                .headlineMedium
+                                ?.color,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          if (product.oldPrice != null &&
+                              product.oldPrice! > displayPrice)
+                            Text(
+                              '${NumberFormatter.formatSum(product.oldPrice!)} ${'common.currency'.tr()}',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.neutral400,
+                                decoration: TextDecoration.lineThrough,
+                                decorationColor: AppColors.neutral400,
+                              ),
+                            ),
+                          Text(
+                            '${NumberFormatter.formatSum(displayPrice)} ${'common.currency'.tr()}',
+                            style: AppTextStyles.h3.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  if (product.description != null &&
+                      product.description!.isNotEmpty) ...[
+                    const SizedBox(height: 12),
                     Text(
                       product.description!,
-                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color:
+                            isDark ? AppColors.neutral400 : AppColors.neutral600,
+                        height: 1.6,
+                      ),
                     ),
-                  const SizedBox(height: 24),
-                  
-                  // Variants (Size selection) - Point 5: 1 tadan ko'p bo'lsa ko'rsatamiz
+                  ],
+
+                  // ── Variantlar ──
                   if (hasVariants) ...[
-                    Text('product.size'.tr(), style: AppTextStyles.labelLarge),
+                    const SizedBox(height: 24),
+                    Text(
+                      'product.size'.tr(),
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
                     const SizedBox(height: 12),
-                    // Point 1 & 7: Scroll bo'lmasligi kerak va kichikroq UI
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: product.variants.map((v) {
                         final isSelected = _selectedVariant?.id == v.id;
                         return InkWell(
-                          onTap: () => setState(() => _selectedVariant = v),
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          onTap: () =>
+                              setState(() => _selectedVariant = v),
+                          borderRadius: BorderRadius.circular(16),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 10),
                             decoration: BoxDecoration(
-                              color: isSelected ? AppColors.primary : AppColors.neutral100,
-                              borderRadius: BorderRadius.circular(12),
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: isSelected ? AppColors.primary : AppColors.neutral200,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : (isDark
+                                        ? AppColors.neutral700
+                                        : AppColors.neutral200),
+                                width: 1.5,
                               ),
                             ),
                             child: Column(
@@ -108,13 +209,22 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                 Text(
                                   v.title,
                                   style: AppTextStyles.labelSmall.copyWith(
-                                    color: isSelected ? Colors.white : AppColors.neutral900,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.color,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                                 Text(
-                                  "${NumberFormatter.formatSum(v.price)} ${'product.currency'.tr()}",
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: isSelected ? Colors.white70 : AppColors.neutral400,
+                                  '${NumberFormatter.formatSum(v.price)} ${'common.currency'.tr()}',
+                                  style: AppTextStyles.bodyExtraSmall
+                                      .copyWith(
+                                    color: isSelected
+                                        ? Colors.white.withValues(alpha: 0.8)
+                                        : AppColors.neutral400,
                                   ),
                                 ),
                               ],
@@ -123,61 +233,222 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         );
                       }).toList(),
                     ),
-                    const SizedBox(height: 24),
                   ],
 
-                  // Additional info
+                  // ── Qo'shimcha ma'lumotlar ──
                   if (product.values.isNotEmpty) ...[
-                    Text('product.info'.tr(), style: AppTextStyles.labelLarge),
-                    const SizedBox(height: 12),
-                    ...product.values.map((kv) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(kv.key, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400)),
-                          Text(kv.value, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral900)),
-                        ],
+                    const SizedBox(height: 24),
+                    Text(
+                      'product.info'.tr(),
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
-                    )),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isDark
+                              ? AppColors.neutral800
+                              : AppColors.neutral200,
+                        ),
+                      ),
+                      child: Column(
+                        children: product.values.asMap().entries.map((entry) {
+                          final idx = entry.key;
+                          final kv = entry.value;
+                          return Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      kv.key,
+                                      style: AppTextStyles.bodyMedium
+                                          .copyWith(
+                                              color: AppColors.neutral500),
+                                    ),
+                                    Text(
+                                      kv.value,
+                                      style: AppTextStyles.labelSmall
+                                          .copyWith(
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.color,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (idx < product.values.length - 1)
+                                Divider(
+                                  height: 1,
+                                  color: isDark
+                                      ? AppColors.neutral800
+                                      : AppColors.neutral200,
+                                ),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
                   ],
+
+                  const SizedBox(height: 100), // bottomBar uchun joy
                 ],
               ),
             ),
           ),
         ],
       ),
+
+      // ── Bottom Bar: Stepper (qizil pill) + Savatga qo'shish ──
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: AppDim.lg, vertical: 16),
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? AppColors.darkSurface : Colors.white,
+          border: Border(
+            top: BorderSide(
+              color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+              width: 1,
+            ),
+          ),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4)),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, -4),
+            ),
           ],
         ),
         child: SafeArea(
-          child: AppButton(
-            text: _selectedVariant != null 
-                ? "${'product.add_to_cart'.tr()} - ${NumberFormatter.formatSum(_selectedVariant!.price)} UZS"
-                : 'product.add_to_cart'.tr(),
-            onTap: () {
-              // Point 2 & 7: Savatga qo'shish uchun tanlash shart
-              if (hasVariants && _selectedVariant == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('product.select_variant_error'.tr()),
-                    backgroundColor: AppColors.error,
-                  ),
-                );
-                return;
-              }
+          top: false,
+          child: Row(
+            children: [
+              // Qizil pill stepper
+              Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(999),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x33D32F2F),
+                      blurRadius: 8,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        if (_quantity > 1) {
+                          setState(() => _quantity--);
+                        }
+                      },
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.remove_rounded,
+                          size: 20,
+                          color: _quantity > 1
+                              ? Colors.white
+                              : Colors.white.withValues(alpha: 0.4),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 32,
+                      child: Text(
+                        '$_quantity',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => setState(() => _quantity++),
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        alignment: Alignment.center,
+                        child: const Icon(
+                          Icons.add_rounded,
+                          size: 20,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
-              context.read<CartCubit>().addToCart(product, variant: _selectedVariant);
-              context.pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('product.added'.tr())),
-              );
-            },
+              // Savatga qo'shish tugmasi (pill uslubi)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (hasVariants && _selectedVariant == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('product.select_variant_error'.tr()),
+                              backgroundColor: AppColors.error,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                          );
+                          return;
+                        }
+                        for (int i = 0; i < _quantity; i++) {
+                          context.read<CartCubit>().addToCart(
+                                product,
+                                variant: _selectedVariant,
+                              );
+                        }
+                        AnalyticsService.instance.logAddToCart(
+                          id: product.id.toString(),
+                          title: product.title,
+                          quantity: _quantity,
+                          price: displayPrice,
+                          variant: _selectedVariant?.title,
+                        );
+                        context.pop();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        minimumSize: const Size(0, 48),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        '${'product.add_to_cart'.tr()} • ${NumberFormatter.formatSum(totalPrice)} ${'common.currency'.tr()}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

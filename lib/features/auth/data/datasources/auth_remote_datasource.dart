@@ -1,71 +1,99 @@
-import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:injectable/injectable.dart';
+import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:pizza_strada/features/auth/data/models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
-  Future<bool> login({required String fullName, required String phone});
-  Future<UserModel> confirmOtp({required String phone, required int code});
+  Future<bool> login({required String fullName, required String phone, bool forceSms = false});
+  Future<Map<String, dynamic>> loginWithChannel({required String fullName, required String phone, bool forceSms = false});
+  Future<UserModel> confirmOtp({required String phone, required String code});
+  Future<UserModel> getMe();
+  Future<UserModel> updateProfile({required String fullName, String? birthdate});
+  Future<Map<String, dynamic>> telegramStart();
+  Future<Map<String, dynamic>> telegramCheck({required String ticket});
 }
 
 @LazySingleton(as: AuthRemoteDataSource)
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
-  final GraphQLClient _client;
+  final ApiClient _client;
 
   AuthRemoteDataSourceImpl(this._client);
 
   @override
-  Future<bool> login({required String fullName, required String phone}) async {
-    const String mutation = r'''
-      mutation login($full_name: String!, $phone: String!) {
-        login(full_name: $full_name, phone: $phone)
-      }
-    ''';
-
-    final options = MutationOptions(
-      document: gql(mutation),
-      variables: {
-        'full_name': fullName,
-        'phone': phone,
-      },
-    );
-
-    final result = await _client.mutate(options);
-
-    if (result.hasException) {
-      throw result.exception!;
-    }
-
-    return result.data?['login'] ?? false;
+  Future<bool> login({required String fullName, required String phone, bool forceSms = false}) async {
+    final res = await loginWithChannel(fullName: fullName, phone: phone, forceSms: forceSms);
+    return res['sent'] == true || res['success'] == true;
   }
 
   @override
-  Future<UserModel> confirmOtp({required String phone, required int code}) async {
-    const String mutation = r'''
-      mutation confirmOtp($phone: String!, $code: Int!) {
-        confirmOtp(phone: $phone, code: $code) {
-          id
-          full_name
-          phone
-          token
-        }
-      }
-    ''';
+  Future<Map<String, dynamic>> loginWithChannel({
+    required String fullName,
+    required String phone,
+    bool forceSms = false,
+  }) async {
+    final response = await _client.post(
+      'auth/login',
+      body: {
+        'full_name': fullName,
+        'phone': phone,
+        'force_sms': forceSms,
+        'channel_supported': true,
+      },
+    );
+    if (response is Map<String, dynamic>) {
+      return response;
+    }
+    return {'sent': true, 'channel': 'sms'};
+  }
 
-    final options = MutationOptions(
-      document: gql(mutation),
-      variables: {
+  @override
+  Future<UserModel> confirmOtp({required String phone, required String code}) async {
+    final response = await _client.post(
+      'auth/confirm-otp',
+      body: {
         'phone': phone,
         'code': code,
       },
-      operationName: 'confirmOtp', // Used by SplitLink
     );
+    return UserModel.fromJson(response as Map<String, dynamic>);
+  }
 
-    final result = await _client.mutate(options);
+  @override
+  Future<UserModel> getMe() async {
+    final response = await _client.get('me');
+    return UserModel.fromJson(response as Map<String, dynamic>);
+  }
 
-    if (result.hasException) {
-      throw result.exception!;
+  @override
+  Future<UserModel> updateProfile({required String fullName, String? birthdate}) async {
+    final response = await _client.put(
+      'me',
+      body: {
+        'full_name': fullName,
+        if (birthdate != null) 'birth_date': birthdate,
+      },
+    );
+    return UserModel.fromJson(response as Map<String, dynamic>);
+  }
+
+  @override
+  Future<Map<String, dynamic>> telegramStart() async {
+    final response = await _client.post('auth/telegram-start');
+    if (response is Map<String, dynamic>) {
+      return response;
     }
+    return {};
+  }
 
-    return UserModel.fromJson(result.data?['confirmOtp']);
+  @override
+  Future<Map<String, dynamic>> telegramCheck({required String ticket}) async {
+    final response = await _client.post(
+      'auth/telegram-check',
+      body: {'ticket': ticket},
+    );
+    if (response is Map<String, dynamic>) {
+      return response;
+    }
+    return {};
   }
 }
+

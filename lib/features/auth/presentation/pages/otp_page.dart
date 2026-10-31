@@ -7,12 +7,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
+import 'package:pizza_strada/core/utils/phone_number_formatter.dart';
 import 'package:pizza_strada/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:pizza_strada/core/di/injection.dart';
 
 class OtpPage extends StatefulWidget {
   final String phone;
-  const OtpPage({super.key, required this.phone});
+  final String fullName;
+  const OtpPage({super.key, required this.phone, this.fullName = ''});
 
   @override
   State<OtpPage> createState() => _OtpPageState();
@@ -56,22 +58,26 @@ class _OtpPageState extends State<OtpPage> {
   @override
   void dispose() {
     _timer?.cancel();
-    for (final c in _controllers) c.dispose();
-    for (final f in _focusNodes) f.dispose();
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    for (final f in _focusNodes) {
+      f.dispose();
+    }
     super.dispose();
   }
 
   void _onConfirm(BuildContext ctx) {
     final codeStr = _controllers.map((c) => c.text).join();
     if (codeStr.length == 4) {
-      ctx.read<AuthCubit>().confirmOtp(phone: widget.phone, code: int.parse(codeStr));
+      ctx.read<AuthCubit>().confirmOtp(phone: widget.phone, code: codeStr);
     }
   }
 
   void _onResend(BuildContext ctx) {
     if (_canResend) {
-      // API call to resend OTP
-      ctx.read<AuthCubit>().login(phone: widget.phone, fullName: ""); // fullName empty because they already entered it
+      final name = widget.fullName.trim().isNotEmpty ? widget.fullName.trim() : 'Mijoz';
+      ctx.read<AuthCubit>().login(phone: widget.phone, fullName: name);
       _startTimer();
     }
   }
@@ -81,12 +87,17 @@ class _OtpPageState extends State<OtpPage> {
     return BlocProvider(
       create: (_) => getIt<AuthCubit>(),
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? AppColors.darkBackground
+            : Colors.white,
         appBar: AppBar(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.darkBackground
+              : Colors.white,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.neutral900, size: 20),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                color: AppColors.neutral900, size: 20),
             onPressed: () => context.pop(),
           ),
         ),
@@ -109,14 +120,47 @@ class _OtpPageState extends State<OtpPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 24),
-                    Text("auth.otp_title".tr(), style: AppTextStyles.h1.copyWith(color: AppColors.neutral900, fontSize: 32)),
                     const SizedBox(height: 8),
-                    Text(
-                      "auth.otp_subtitle".tr(namedArgs: {"phone": widget.phone}),
-                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
+                    // SMS ikonkasi
+                    Center(
+                      child: Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.sms_rounded,
+                          color: AppColors.primary,
+                          size: 36,
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 24),
+                    Center(
+                      child: Text(
+                        'auth.otp_title'.tr(),
+                        style: AppTextStyles.h1.copyWith(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : AppColors.neutral900,
+                          fontSize: 26,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: Text(
+                        'auth.otp_subtitle'.tr(
+                            namedArgs: {'phone': PhoneNumberFormatter.formatFull(widget.phone)}),
+                        style: AppTextStyles.bodyMedium
+                            .copyWith(color: AppColors.neutral500),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
 
                     // OTP inputs
                     Row(

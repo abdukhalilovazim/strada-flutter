@@ -11,6 +11,8 @@ class OrderEntity {
   final double? longitude;
   final String? paymentMethodText;
   final String? paymentMethod;
+  final String? phone;
+  final String? estimatedTime;
   final double subtotalPrice;
   final double discountAmount;
   final double deliveryPrice;
@@ -30,6 +32,8 @@ class OrderEntity {
     this.longitude,
     this.paymentMethodText,
     this.paymentMethod,
+    this.phone,
+    this.estimatedTime,
     required this.subtotalPrice,
     required this.discountAmount,
     required this.deliveryPrice,

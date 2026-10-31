@@ -55,6 +55,20 @@ class CartCubit extends Cubit<CartState> {
     }
   }
 
+  void addMultipleToCart(List<CartItemEntity> newItems) {
+    final items = List<CartItemEntity>.from(state.items);
+    for (final newItem in newItems) {
+      final index = items.indexWhere((item) =>
+          item.product.slug == newItem.product.slug && item.variant?.id == newItem.variant?.id);
+      if (index != -1) {
+        items[index] = items[index].copyWith(quantity: items[index].quantity + newItem.quantity);
+      } else {
+        items.add(newItem);
+      }
+    }
+    emit(CartState(items: items));
+  }
+
   void clear() {
     emit(const CartState(items: []));
   }

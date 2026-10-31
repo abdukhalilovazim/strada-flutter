@@ -1,9 +1,104 @@
+# ==============================================================================
+# Strada Pizza — Comprehensive .gitignore
+# Optimized for Flutter/Dart + Firebase + GraphQL project
+# ==============================================================================
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Flutter / Dart SDK & Pub
+# ──────────────────────────────────────────────────────────────────────────────
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+**/doc/api/
+**/ios/Flutter/.last_build_id
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Build Outputs (ALL platforms)
+# ──────────────────────────────────────────────────────────────────────────────
+/build/
+/coverage/
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Android Build & Gradle Caches
+# ──────────────────────────────────────────────────────────────────────────────
+android/.gradle/
+android/app/build/
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/local.properties
+android/key.properties
+**/gradle-wrapper.jar
+.gradle/
+
+# ──────────────────────────────────────────────────────────────────────────────
+# iOS — CocoaPods, Symlinks & Xcode Artifacts
+# ──────────────────────────────────────────────────────────────────────────────
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+**/xcuserdata/
+**/*.xcuserstate
+**/*.mode1v3
+**/*.mode2v3
+**/*.perspectivev3
+**/derivedData/
+**/*.moved-aside
+
+# ──────────────────────────────────────────────────────────────────────────────
+# macOS / Linux / Windows Build Caches
+# ──────────────────────────────────────────────────────────────────────────────
+macos/Flutter/ephemeral/
+linux/flutter/ephemeral/
+windows/flutter/ephemeral/
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Environment Variables & Credentials (SECURITY)
+# ──────────────────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+**/google-services.json
+**/GoogleService-Info.plist
+
+# ──────────────────────────────────────────────────────────────────────────────
+# IDE & Editor
+# ──────────────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+*.swp
+*.swo
+*~
+
+# ──────────────────────────────────────────────────────────────────────────────
+# OS-specific Junk
+# ──────────────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Symbolication & Obfuscation
+# ──────────────────────────────────────────────────────────────────────────────
+app.*.symbols
+app.*.map.json
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Miscellaneous
+# ──────────────────────────────────────────────────────────────────────────────
 *.class
 *.log
 *.pyc
-*.swp
-.DS_Store
 .atom/
 .build/
 .buildlog/
@@ -11,36 +106,3 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
-
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins-dependencies
-.pub-cache/
-.pub/
-/build/
-/coverage/
-
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
-.env

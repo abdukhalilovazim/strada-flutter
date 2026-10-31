@@ -10,52 +10,136 @@ import 'package:pizza_strada/features/orders/domain/entities/order_entity.dart';
 import 'package:pizza_strada/features/orders/presentation/bloc/order_cubit.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
 
-class OrdersPage extends StatelessWidget {
+import 'package:pizza_strada/core/storage/secure_storage.dart';
+import 'package:pizza_strada/core/widgets/app_button.dart';
+
+class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => getIt<OrderCubit>()..getOrders(),
-      child: Scaffold(
-        backgroundColor: AppColors.surface,
-        appBar: AppBar(
-          title: Text('orders.title'.tr(), style: AppTextStyles.h2.copyWith(color: AppColors.neutral900)),
-          backgroundColor: Colors.white,
-          elevation: 0,
-          centerTitle: true,
-        ),
-        body: BlocBuilder<OrderCubit, OrderState>(
-          builder: (context, state) {
-            if (state is OrderLoading) {
-              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-            } else if (state is OrderFailure) {
-              return Center(child: Text(state.message, style: AppTextStyles.bodyMedium));
-            } else if (state is OrderLoaded) {
-              if (state.orders.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(AppIcons.noOrders, size: 64, color: AppColors.neutral200),
-                      const SizedBox(height: 16),
-                      Text('orders.empty'.tr(), style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400)),
-                    ],
-                  ),
-                );
-              }
+  State<OrdersPage> createState() => _OrdersPageState();
+}
 
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                itemCount: state.orders.length,
-                itemBuilder: (context, index) {
-                  final order = state.orders[index];
-                  return OrderCard(order: order);
-                },
-              );
-            }
-            return const SizedBox();
-          },
+class _OrdersPageState extends State<OrdersPage> {
+  bool _isLoading = true;
+  String? _token;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    final token = await SecureStorage.getToken();
+    if (mounted) {
+      setState(() {
+        _token = token;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(
+          'orders.title'.tr(), 
+          style: AppTextStyles.h2.copyWith(
+            color: Theme.of(context).textTheme.headlineMedium?.color,
+          ),
+        ),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : (_token == null || _token!.isEmpty)
+              ? _buildGuestView(context, isDark)
+              : BlocProvider(
+                  create: (context) => getIt<OrderCubit>()..getOrders(),
+                  child: BlocBuilder<OrderCubit, OrderState>(
+                    builder: (context, state) {
+                      if (state is OrderLoading) {
+                        return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                      } else if (state is OrderFailure) {
+                        return Center(child: Text(state.message, style: AppTextStyles.bodyMedium));
+                      } else if (state is OrderLoaded) {
+                        if (state.orders.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(AppIcons.noOrders, size: 64, color: AppColors.neutral200),
+                                const SizedBox(height: 16),
+                                Text('orders.empty'.tr(), style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400)),
+                              ],
+                            ),
+                          );
+                        }
+
+                        return ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                          itemCount: state.orders.length,
+                          itemBuilder: (context, index) {
+                            final order = state.orders[index];
+                            return OrderCard(order: order);
+                          },
+                        );
+                      }
+                      return const SizedBox();
+                    },
+                  ),
+                ),
+    );
+  }
+
+  Widget _buildGuestView(BuildContext context, bool isDark) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.receipt_long_rounded, size: 40, color: AppColors.primary),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'orders.guest_title'.tr(),
+              style: AppTextStyles.h3.copyWith(
+                color: Theme.of(context).textTheme.titleLarge?.color,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'orders.guest_desc'.tr(),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            AppButton(
+              text: 'auth.login_button'.tr(),
+              onTap: () async {
+                await context.push('/auth/login');
+                _checkAuth();
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -66,22 +150,55 @@ class OrderCard extends StatelessWidget {
   final OrderEntity order;
   const OrderCard({super.key, required this.order});
 
+  Widget _buildInfoRow(BuildContext context, String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.neutral500,
+          ),
+        ),
+        Text(
+          value,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Determine status color
-    Color statusColor = AppColors.neutral700;
-    if (order.status == 6) statusColor = Colors.green; // Completed
-    if (order.status == 1) statusColor = Colors.red; // Rejected
-    if (order.status == 4) statusColor = Colors.orange; // In Progress
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Status rang — Laravel `status-1`..`status-7` ga mos
+    Color statusColor = AppColors.neutral500;
+    switch (order.status) {
+      case 1: statusColor = const Color(0xFFEF4444); break; // Bekor qilindi — qizil
+      case 2: statusColor = const Color(0xFFF59E0B); break; // Yangi
+      case 3: statusColor = const Color(0xFF3B82F6); break; // Qabul qilindi
+      case 4: statusColor = const Color(0xFFF97316); break; // Tayyorlanmoqda
+      case 5: statusColor = const Color(0xFF8B5CF6); break; // Yetkazilmoqda
+      case 6: statusColor = const Color(0xFF10B981); break; // Bajarildi — yashil
+      case 7: statusColor = AppColors.neutral500; break;    // Arxiv
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -90,37 +207,31 @@ class OrderCard extends StatelessWidget {
       child: InkWell(
         onTap: () => context.push('/order/${order.id}', extra: order),
         borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header: ID and Status
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header: ID and Status
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '#${order.id}',
-                        style: AppTextStyles.h4.copyWith(color: AppColors.neutral900),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        order.type ?? '',
-                        style: AppTextStyles.bodyExtraSmall.copyWith(color: AppColors.neutral500),
-                      ),
-                    ],
+                  Text(
+                    '#${order.id}',
+                    style: AppTextStyles.h4.copyWith(
+                      color: Theme.of(context).textTheme.headlineMedium?.color,
+                    ),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
+                      color: statusColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      order.statusText,
+                      order.statusText.startsWith('orders.status_')
+                          ? order.statusText.tr()
+                          : order.statusText,
                       style: AppTextStyles.labelSmall.copyWith(
                         color: statusColor,
                         fontWeight: FontWeight.bold,
@@ -129,21 +240,42 @@ class OrderCard extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-            const Divider(height: 1, color: AppColors.neutral100),
+              const SizedBox(height: 16),
 
-            // Total Price & Short Info
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
+              // Info rows: Type, Branch, Payment Method, Items count
+              if (order.type != null && order.type!.isNotEmpty) ...[
+                _buildInfoRow(context, 'orders.type'.tr(), order.type!),
+                const SizedBox(height: 8),
+              ],
+              if (order.branch != null && order.branch!.isNotEmpty) ...[
+                _buildInfoRow(context, 'orders.branch'.tr(), order.branch!),
+                const SizedBox(height: 8),
+              ],
+              if (order.paymentMethodText != null && order.paymentMethodText!.isNotEmpty) ...[
+                _buildInfoRow(context, 'orders.payment_method'.tr(), order.paymentMethodText!),
+                const SizedBox(height: 8),
+              ],
+              _buildInfoRow(
+                context,
+                'orders.items'.tr(),
+                'orders.items_count'.tr(namedArgs: {'count': order.products.length.toString()}),
+              ),
+
+              const Divider(height: 24, color: AppColors.neutral100),
+
+              // Bottom Price & Chevron indicator
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'orders.items_count'.tr(namedArgs: {'count': order.products.length.toString()}),
-                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral700),
+                        'cart.total'.tr(),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.neutral500,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -155,8 +287,8 @@ class OrderCard extends StatelessWidget {
                   const Icon(Icons.chevron_right_rounded, color: AppColors.neutral300),
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -6,10 +6,17 @@ import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/theme/app_icons.dart';
+import 'package:pizza_strada/core/theme/theme_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
-import 'package:pizza_strada/core/utils/yandex_key_manager.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:pizza_strada/features/profile/presentation/pages/inquiry_page.dart';
+import 'package:pizza_strada/features/profile/presentation/pages/branches_web_view_page.dart';
+import 'package:pizza_strada/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:pizza_strada/core/utils/phone_number_formatter.dart';
+import 'package:pizza_strada/core/widgets/app_button.dart';
 
+import 'package:pizza_strada/core/di/injection.dart';
+import 'package:pizza_strada/features/auth/domain/entities/user_entity.dart';
+import 'package:pizza_strada/features/auth/domain/usecases/get_me_usecase.dart';
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -18,8 +25,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String _name = 'Mijoz';
-  String _phone = '';
+  UserEntity? _user;
 
   @override
   void initState() {
@@ -27,141 +33,312 @@ class _ProfilePageState extends State<ProfilePage> {
     _loadUserInfo();
   }
 
+
   Future<void> _loadUserInfo() async {
     final name = await SecureStorage.getUserName();
     final phone = await SecureStorage.getUserPhone();
-    if (mounted) {
+    if (mounted && name != null && phone != null) {
       setState(() {
-        if (name != null) _name = name;
-        if (phone != null) _phone = phone;
+        _user = UserEntity(id: 0, fullName: name, phone: phone, token: '');
       });
+    }
+
+    final token = await SecureStorage.getToken();
+    if (token != null) {
+      final getMe = getIt<GetMeUseCase>();
+      final result = await getMe();
+      result.fold(
+        (failure) => null,
+        (user) async {
+          await SecureStorage.saveUserInfo(name: user.fullName, phone: user.phone);
+          if (mounted) {
+            setState(() {
+              _user = user;
+            });
+          }
+        },
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.surface,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('profile.title'.tr(), style: AppTextStyles.h2.copyWith(color: AppColors.neutral900)),
-        backgroundColor: Colors.white,
+        title: Text('profile.title'.tr(), style: AppTextStyles.h2.copyWith(color: Theme.of(context).textTheme.headlineMedium?.color)),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             // User Card
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.neutral200),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(AppIcons.profile, color: AppColors.primary, size: 32),
+            if (_user != null)
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isDark ? AppColors.neutral800 : AppColors.neutral200,
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primaryLight,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(AppIcons.profile, color: AppColors.primary, size: 32),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_user!.fullName, style: AppTextStyles.labelLarge.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)),
+                          const SizedBox(height: 4),
+                          Text(
+                            PhoneNumberFormatter.formatFull(_user!.phone),
+                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
+                          ),
+                          if (_user?.birthdate != null) ...[
+                            const SizedBox(height: 4),
+                            Text(_user!.birthdate!, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
+                          ]
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit_rounded, color: AppColors.primary),
+                      onPressed: () async {
+                        final updated = await Navigator.push(context, MaterialPageRoute(
+                          builder: (_) => EditProfilePage(user: _user!),
+                        ));
+                        if (updated != null && updated is UserEntity && mounted) {
+                          setState(() => _user = updated);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
                       children: [
-                        Text(_name, style: AppTextStyles.labelLarge.copyWith(color: AppColors.neutral900)),
-                        const SizedBox(height: 4),
-                        Text(_phone, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600)),
+                        Container(
+                          width: 54,
+                          height: 54,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.person_outline_rounded, color: AppColors.primary, size: 30),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'profile.guest_greeting'.tr(),
+                                style: AppTextStyles.labelLarge.copyWith(
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'profile.guest_login_prompt'.tr(),
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    AppButton(
+                      text: 'auth.login_button'.tr(),
+                      onTap: () async {
+                        await context.push('/auth/login');
+                        _loadUserInfo();
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
 
             // Settings Items
-            _buildItem(
-              icon: Icons.notifications_none_rounded,
-              title: 'profile.notifications'.tr(),
-              onTap: () {},
-            ),
             _buildItem(
               icon: Icons.language_rounded,
               title: 'profile.change_language'.tr(),
               onTap: () => _showLanguagePicker(),
             ),
-            _buildItem(
-              icon: Icons.map_rounded,
-              title: "Next Map Key (Debug)",
-              subtitle: "Xarita ishlamasa bosing va appni restart qiling",
-              onTap: () async {
-                await YandexMapKeyManager.switchToNextKey();
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Xarita kaliti o\'zgartirildi. Ilovani restart qiling!')));
-                }
-              },
-            ),
-            
-            // Phone call from settings
-            BlocBuilder<HomeCubit, HomeState>(
-              builder: (context, state) {
-                String? supportPhone;
-                if (state is HomeLoaded) {
-                  supportPhone = state.settings?.supportPhone;
-                }
-                return _buildItem(
-                  icon: AppIcons.support,
-                  title: 'profile.call_support'.tr(),
-                  subtitle: supportPhone,
-                  onTap: () async {
-                    if (supportPhone != null) {
-                      final uri = Uri.parse('tel:$supportPhone');
-                      if (await canLaunchUrl(uri)) {
-                        await launchUrl(uri);
-                      }
-                    }
-                  },
+
+            // Dark mode toggle
+            BlocBuilder<ThemeCubit, ThemeMode>(
+              builder: (context, themeMode) {
+                final isDarkMode = themeMode == ThemeMode.dark;
+                return _buildToggleItem(
+                  icon: isDarkMode
+                      ? Icons.dark_mode_rounded
+                      : Icons.light_mode_rounded,
+                  title: 'profile.dark_mode'.tr(),
+                  value: isDarkMode,
+                  onChanged: (val) =>
+                      context.read<ThemeCubit>().toggle(),
                 );
               },
             ),
 
-            const SizedBox(height: 32),
-
-            // Logout
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.neutral200),
-              ),
-              child: ListTile(
-                onTap: () async {
-                  await SecureStorage.clearAll();
-                  if (mounted) context.go('/auth/login');
-                },
-                leading: const Icon(Icons.logout_rounded, color: AppColors.error, size: 22),
-                title: Text('profile.logout'.tr(), style: AppTextStyles.labelLarge.copyWith(color: AppColors.error)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            // Filiallar (WebView)
+            _buildItem(
+              icon: Icons.store_rounded,
+              title: 'profile.branches'.tr(),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BranchesWebViewPage()),
               ),
             ),
+            _buildItem(
+              icon: Icons.chat_bubble_outline_rounded,
+              title: 'profile.support_inquiry'.tr(),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const InquiryPage()),
+              ),
+            ),
+
+
+            if (_user != null) ...[
+              const SizedBox(height: 32),
+
+              // Logout
+              Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                  ),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                  child: ListTile(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (dialogContext) {
+                          return AlertDialog(
+                            backgroundColor: Theme.of(dialogContext).cardColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            title: Text(
+                              'profile.logout'.tr(),
+                              style: AppTextStyles.h3.copyWith(
+                                color: Theme.of(dialogContext).textTheme.headlineMedium?.color,
+                              ),
+                            ),
+                            content: Text(
+                              'profile.logout_confirm'.tr(),
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: Theme.of(dialogContext).textTheme.bodyMedium?.color,
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(dialogContext),
+                                child: Text(
+                                  'common.no'.tr(),
+                                  style: AppTextStyles.labelMedium.copyWith(
+                                    color: AppColors.neutral600,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () async {
+                                  Navigator.pop(dialogContext);
+                                  await SecureStorage.clearAll();
+                                  if (!context.mounted) return;
+                                  setState(() => _user = null);
+                                },
+                                child: Text(
+                                  'common.yes'.tr(),
+                                  style: AppTextStyles.labelMedium.copyWith(
+                                    color: AppColors.error,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    leading: const Icon(Icons.logout_rounded, color: AppColors.error, size: 22),
+                    title: Text('profile.logout'.tr(), style: AppTextStyles.labelLarge.copyWith(color: AppColors.error)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _showLanguagePicker() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20))),
       builder: (context) {
         return SafeArea(
@@ -185,18 +362,62 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildLanguageOption(String title, Locale locale) {
     final isSelected = context.locale == locale;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: ListTile(
-        title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: isSelected ? AppColors.primary : AppColors.neutral900)),
-        trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
-        onTap: () async {
-          await context.setLocale(locale);
-          if (context.mounted) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.08)
+            : (isDark ? AppColors.darkSurface : AppColors.neutral50),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isSelected ? AppColors.primary : (isDark ? AppColors.neutral800 : AppColors.neutral200),
+          width: isSelected ? 1.5 : 1.0,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () async {
+            await context.setLocale(locale);
+            if (!mounted) return;
             context.read<HomeCubit>().init();
             Navigator.pop(context);
-          }
-        },
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected
+                          ? AppColors.primary
+                          : (isDark ? Colors.white : AppColors.neutral900),
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.primary
+                          : (isDark ? AppColors.neutral700 : AppColors.neutral300),
+                      width: isSelected ? 5.5 : 1.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -205,36 +426,86 @@ class _ProfilePageState extends State<ProfilePage> {
     required IconData icon,
     required String title,
     String? subtitle,
+    Widget? trailing,
     required VoidCallback onTap,
+  }) {
+    final isDarkItem = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDarkItem ? AppColors.neutral800 : AppColors.neutral200,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: ListTile(
+          onTap: onTap,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          leading: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 24),
+          ),
+          title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color)),
+          subtitle: subtitle != null ? Text(subtitle, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)) : null,
+          trailing: trailing ?? const Icon(Icons.chevron_right_rounded, color: AppColors.neutral400),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+      ),
+    );
+  }
+
+  /// Toggle item — Switch bilan, dark/light mode uchun.
+  Widget _buildToggleItem({
+    required IconData icon,
+    required String title,
+    required bool value,
+    required ValueChanged<bool> onChanged,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: ListTile(
-        onTap: onTap,
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppColors.neutral50,
-            borderRadius: BorderRadius.circular(10),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: ListTile(
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.neutral50,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.neutral700, size: 20),
           ),
-          child: Icon(icon, color: AppColors.neutral700, size: 20),
+          title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color)),
+          trailing: Switch.adaptive(
+            value: value,
+            onChanged: onChanged,
+            activeTrackColor: AppColors.primary,
+          ),
+          onTap: () => onChanged(!value),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
-        title: Text(title, style: AppTextStyles.labelMedium.copyWith(color: AppColors.neutral900)),
-        subtitle: subtitle != null ? Text(subtitle, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400)) : null,
-        trailing: const Icon(AppIcons.arrowRight, color: AppColors.neutral400, size: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }
+
 }
+

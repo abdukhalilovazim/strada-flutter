@@ -1,25 +1,18 @@
 import 'package:equatable/equatable.dart';
 
 class CategoryEntity extends Equatable {
+  final int id;
   final String slug;
   final String title;
 
-  const CategoryEntity({required this.slug, required this.title});
+  const CategoryEntity({
+    this.id = 0,
+    required this.slug,
+    required this.title,
+  });
 
   @override
-  List<Object?> get props => [slug, title];
-}
-
-class SliderEntity extends Equatable {
-  final String image;
-  final String? caption;
-  final String? button;
-  final String? buttonUrl;
-
-  const SliderEntity({required this.image, this.caption, this.button, this.buttonUrl});
-
-  @override
-  List<Object?> get props => [image, caption, button, buttonUrl];
+  List<Object?> get props => [id, slug, title];
 }
 
 class VariantEntity extends Equatable {
@@ -44,30 +37,52 @@ class KeyValueEntity extends Equatable {
 }
 
 class ProductEntity extends Equatable {
+  final int id;
   final String slug;
   final String title;
   final String? description;
   final String thumbnail;
   final String photo;
   final double price;
+  final double? oldPrice;
   final CategoryEntity? category;
   final List<VariantEntity> variants;
   final List<KeyValueEntity> values;
 
   const ProductEntity({
+    this.id = 0,
     required this.slug,
     required this.title,
     this.description,
     required this.thumbnail,
     required this.photo,
     required this.price,
+    this.oldPrice,
     this.category,
     required this.variants,
     required this.values,
   });
 
   @override
-  List<Object?> get props => [slug, title, description, thumbnail, photo, price, category, variants, values];
+  List<Object?> get props => [id, slug, title, description, thumbnail, photo, price, oldPrice, category, variants, values];
+}
+
+/// Banner slider entity (Swiper Slider uchun)
+class SliderEntity extends Equatable {
+  final int id;
+  final String imageUrl;
+  final String? link;
+  final String? title;
+
+  const SliderEntity({
+    required this.id,
+    required this.imageUrl,
+    this.link,
+    this.title,
+  });
+
+  @override
+  List<Object?> get props => [id, imageUrl, link, title];
 }
 
 class SettingsEntity extends Equatable {
