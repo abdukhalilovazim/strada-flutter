@@ -100,12 +100,17 @@ class SDUIScreenBuilder {
     }
 
     // 5. Section Header for active category
-    final activeTitle = categories.isNotEmpty
-        ? (categories.firstWhere(
-            (c) => c.slug == selectedCategorySlug,
-            orElse: () => categories.first,
-          ).title)
-        : 'Menyu';
+    String activeTitle = 'Menyu';
+    if (categories.isNotEmpty) {
+      CategoryEntity? matched;
+      for (final cat in categories) {
+        if (cat.slug == selectedCategorySlug) {
+          matched = cat;
+          break;
+        }
+      }
+      activeTitle = (matched ?? categories.first).title;
+    }
 
     sections.add(SDUISectionModel(
       id: 'category_title_section',

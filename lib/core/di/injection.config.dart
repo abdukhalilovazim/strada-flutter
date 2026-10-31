@@ -114,6 +114,7 @@ extension GetItInjectableX on _i174.GetIt {
         ));
     gh.factory<_i528.HomeCubit>(() => _i528.HomeCubit(
           gh<_i918.GetCategoriesUseCase>(),
+          gh<_i918.GetSlidersUseCase>(),
           gh<_i918.GetProductsUseCase>(),
           gh<_i918.GetSettingsUseCase>(),
         ));

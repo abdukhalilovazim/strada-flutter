@@ -48,6 +48,7 @@ class SDUISafeErrorBoundary extends StatefulWidget {
 }
 
 class _SDUISafeErrorBoundaryState extends State<SDUISafeErrorBoundary> {
+  // ignore: prefer_final_fields
   bool _hasError = false;
 
   @override
