@@ -121,7 +121,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         'latitude': state.isDelivery ? state.lat : null,
         'longitude': state.isDelivery ? state.lng : null,
         'address': state.isDelivery ? state.address : null,
-        'payment_method': int.tryParse(state.selectedPaymentMethodKey) ?? 0,
+        'payment_method': (state.selectedPaymentMethodKey == '1' || state.selectedPaymentMethodKey == 'payme') ? 1 : 0,
         'change': state.changeAmount?.toInt(),
         'comment': state.comment,
         'promo_code': state.appliedPromoCode,

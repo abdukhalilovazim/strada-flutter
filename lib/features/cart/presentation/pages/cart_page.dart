@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/services/analytics_service.dart';
@@ -96,115 +97,152 @@ class CartPage extends StatelessWidget {
                   itemCount: state.items.length,
                   itemBuilder: (context, index) {
                     final item = state.items[index];
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkCard : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isDark
-                              ? AppColors.darkBorder
-                              : AppColors.neutral200.withValues(alpha: 0.7),
-                          width: 1,
-                        ),
-                        boxShadow: AppColors.softShadow(isDark),
-                      ),
-                      child: Row(
-                        children: [
-                          // Mahsulot rasmi
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              width: 76,
-                              height: 76,
-                              color: isDark
-                                  ? AppColors.neutral800
-                                  : const Color(0xFFF8F9FA),
-                              padding: const EdgeInsets.all(4),
-                              child: item.product.hasValidImage
-                                  ? CachedNetworkImage(
-                                      imageUrl: item.product.validImageUrl,
-                                      fit: BoxFit.contain,
-                                      placeholder: (_, __) => Container(
-                                          color: isDark
-                                              ? AppColors.neutral800
-                                              : AppColors.neutral100),
-                                      errorWidget: (_, __, ___) => const PizzaImagePlaceholder(
-                                          fit: BoxFit.contain),
-                                    )
-                                  : const PizzaImagePlaceholder(fit: BoxFit.contain),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
+                    final itemKey = '${item.product.slug}_${item.variant?.id ?? 0}';
 
-                          // Nom + variant + narx
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item.product.title,
-                                  style: AppTextStyles.h4.copyWith(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: isDark ? Colors.white : AppColors.neutral900,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                if (item.variant != null) ...[
-                                  const SizedBox(height: 2),
+                    return Dismissible(
+                      key: ValueKey('cart_item_$itemKey'),
+                      direction: DismissDirection.horizontal,
+                      background: _buildSwipeDeleteBackground(isLeft: true),
+                      secondaryBackground: _buildSwipeDeleteBackground(isLeft: false),
+                      onDismissed: (_) {
+                        HapticFeedback.mediumImpact();
+                        final removedItem = item;
+                        context.read<CartCubit>().removeFromCart(item);
+
+                        ScaffoldMessenger.of(context).clearSnackBars();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '${removedItem.product.title} ${'cart.removed_from_cart'.tr()}',
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            action: SnackBarAction(
+                              label: 'common.undo'.tr(),
+                              textColor: AppColors.primary,
+                              onPressed: () {
+                                context.read<CartCubit>().addToCart(
+                                      removedItem.product,
+                                      variant: removedItem.variant,
+                                    );
+                              },
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: isDark ? AppColors.darkCard : AppColors.neutral900,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.darkCard : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isDark
+                                ? AppColors.darkBorder
+                                : AppColors.neutral200.withValues(alpha: 0.7),
+                            width: 1,
+                          ),
+                          boxShadow: AppColors.softShadow(isDark),
+                        ),
+                        child: Row(
+                          children: [
+                            // Mahsulot rasmi
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                width: 76,
+                                height: 76,
+                                color: isDark
+                                    ? AppColors.neutral800
+                                    : const Color(0xFFF8F9FA),
+                                padding: const EdgeInsets.all(4),
+                                child: item.product.hasValidImage
+                                    ? CachedNetworkImage(
+                                        imageUrl: item.product.validImageUrl,
+                                        fit: BoxFit.contain,
+                                        placeholder: (_, __) => Container(
+                                            color: isDark
+                                                ? AppColors.neutral800
+                                                : AppColors.neutral100),
+                                        errorWidget: (_, __, ___) => const PizzaImagePlaceholder(
+                                            fit: BoxFit.contain),
+                                      )
+                                    : const PizzaImagePlaceholder(fit: BoxFit.contain),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+
+                            // Nom + variant + narx
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                                   Text(
-                                    item.variant!.title,
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      color: AppColors.neutral500,
+                                    item.product.title,
+                                    style: AppTextStyles.h4.copyWith(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: isDark ? Colors.white : AppColors.neutral900,
                                     ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ],
-                                const SizedBox(height: 6),
-                                Builder(
-                                  builder: (context) {
-                                    final unitPrice = item.variant?.price ?? item.product.price;
-                                    return Text.rich(
-                                      TextSpan(
-                                        children: [
-                                          if (item.quantity > 1) ...[
+                                  if (item.variant != null) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      item.variant!.title,
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: AppColors.neutral500,
+                                      ),
+                                    ),
+                                  ],
+                                  const SizedBox(height: 6),
+                                  Builder(
+                                    builder: (context) {
+                                      final unitPrice = item.variant?.price ?? item.product.price;
+                                      return Text.rich(
+                                        TextSpan(
+                                          children: [
+                                            if (item.quantity > 1) ...[
+                                              TextSpan(
+                                                text: '${NumberFormatter.formatSum(unitPrice.toInt())} × ${item.quantity} = ',
+                                                style: AppTextStyles.bodySmall.copyWith(
+                                                  color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
                                             TextSpan(
-                                              text: '${NumberFormatter.formatSum(unitPrice.toInt())} × ${item.quantity} = ',
-                                              style: AppTextStyles.bodySmall.copyWith(
-                                                color: isDark ? AppColors.neutral400 : AppColors.neutral600,
-                                                fontWeight: FontWeight.w600,
+                                              text: '${NumberFormatter.formatSum(item.totalPrice.toInt())} ${'common.currency'.tr()}',
+                                              style: AppTextStyles.priceMedium.copyWith(
+                                                color: AppColors.primary,
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w800,
                                               ),
                                             ),
                                           ],
-                                          TextSpan(
-                                            text: '${NumberFormatter.formatSum(item.totalPrice.toInt())} ${'common.currency'.tr()}',
-                                            style: AppTextStyles.priceMedium.copyWith(
-                                              color: AppColors.primary,
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
 
-                          // Stepper (- qty +)
-                          _QuantityStepper(
-                            quantity: item.quantity,
-                            onDecrement: () =>
-                                context.read<CartCubit>().updateQuantity(item, -1),
-                            onIncrement: () =>
-                                context.read<CartCubit>().updateQuantity(item, 1),
-                            isDark: isDark,
-                          ),
-                        ],
+                            // Stepper (- qty +)
+                            _QuantityStepper(
+                              quantity: item.quantity,
+                              onDecrement: () =>
+                                  context.read<CartCubit>().updateQuantity(item, -1),
+                              onIncrement: () =>
+                                  context.read<CartCubit>().updateQuantity(item, 1),
+                              isDark: isDark,
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -446,6 +484,46 @@ class CartPage extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSwipeDeleteBackground({required bool isLeft}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: BoxDecoration(
+        color: AppColors.error,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      alignment: isLeft ? Alignment.centerLeft : Alignment.centerRight,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isLeft) ...[
+            const Icon(Icons.delete_sweep_rounded, color: Colors.white, size: 26),
+            const SizedBox(width: 8),
+            Text(
+              'common.delete'.tr(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 14,
+              ),
+            ),
+          ] else ...[
+            Text(
+              'common.delete'.tr(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.delete_sweep_rounded, color: Colors.white, size: 26),
+          ],
+        ],
+      ),
     );
   }
 }

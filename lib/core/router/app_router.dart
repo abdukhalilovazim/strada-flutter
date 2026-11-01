@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/constants/app_constants.dart';
@@ -7,6 +8,7 @@ import 'package:pizza_strada/core/services/analytics_service.dart';
 import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
+import 'package:pizza_strada/core/utils/number_formatter.dart';
 import 'package:pizza_strada/features/auth/presentation/pages/login_page.dart';
 import 'package:pizza_strada/features/auth/presentation/pages/otp_page.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
@@ -32,68 +34,160 @@ class MainScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentIndex = _calculateSelectedIndex(context);
+    final String location = GoRouterState.of(context).matchedLocation;
+    final bool isCartPage = location.startsWith('/cart');
 
     return Scaffold(
       body: SafeArea(bottom: false, child: child),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : Colors.white,
-          border: Border(
-            top: BorderSide(
-              color: isDark ? AppColors.neutral800 : AppColors.neutral200,
-              width: 1,
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ── Global Floating Sticky Cart Bar (Dodo Pizza & Uzum Tezkor benchmark) ──
+          if (!isCartPage)
+            BlocBuilder<CartCubit, CartState>(
+              builder: (context, cartState) {
+                if (cartState.items.isEmpty) return const SizedBox.shrink();
+
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Material(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(20),
+                    elevation: 6,
+                    shadowColor: AppColors.primary.withValues(alpha: 0.45),
+                    child: InkWell(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        GoRouter.of(context).go('/cart');
+                      },
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        height: 52,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.22),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.shopping_bag_outlined,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                '${'cart.items_suffix'.tr(namedArgs: {'count': cartState.totalQuantity.toString()})} • ${NumberFormatter.formatSum(cartState.subtotal)} ${'common.currency'.tr()}',
+                                style: AppTextStyles.labelMedium.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              'cart.floating_cart'.tr(),
+                              style: AppTextStyles.labelMedium.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              color: Colors.white,
+                              size: 13,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: 62,
-            child: Row(
-              children: [
-                _NavItem(
-                  index: 0,
-                  currentIndex: currentIndex,
-                  icon: Icons.home_outlined,
-                  activeIcon: Icons.home_rounded,
-                  label: 'nav.home'.tr(),
-                  onTap: () => GoRouter.of(context).go('/home'),
+
+          // ── Modern Bottom Nav Bar ──
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : Colors.white,
+              border: Border(
+                top: BorderSide(
+                  color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                  width: 1,
                 ),
-                _NavItemWithBadge(
-                  index: 1,
-                  currentIndex: currentIndex,
-                  icon: Icons.shopping_bag_outlined,
-                  activeIcon: Icons.shopping_bag_rounded,
-                  label: 'nav.cart'.tr(),
-                  onTap: () => GoRouter.of(context).go('/cart'),
-                ),
-                _NavItem(
-                  index: 2,
-                  currentIndex: currentIndex,
-                  icon: Icons.receipt_long_outlined,
-                  activeIcon: Icons.receipt_long_rounded,
-                  label: 'nav.orders'.tr(),
-                  onTap: () => GoRouter.of(context).go('/orders'),
-                ),
-                _NavItem(
-                  index: 3,
-                  currentIndex: currentIndex,
-                  icon: Icons.person_outline_rounded,
-                  activeIcon: Icons.person_rounded,
-                  label: 'nav.profile'.tr(),
-                  onTap: () => GoRouter.of(context).go('/profile'),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, -5),
                 ),
               ],
             ),
+            child: SafeArea(
+              top: false,
+              child: SizedBox(
+                height: 62,
+                child: Row(
+                  children: [
+                    _NavItem(
+                      index: 0,
+                      currentIndex: currentIndex,
+                      icon: Icons.local_pizza_outlined,
+                      activeIcon: Icons.local_pizza_rounded,
+                      label: 'nav.home'.tr(),
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        GoRouter.of(context).go('/home');
+                      },
+                    ),
+                    _NavItemWithBadge(
+                      index: 1,
+                      currentIndex: currentIndex,
+                      icon: Icons.shopping_bag_outlined,
+                      activeIcon: Icons.shopping_bag_rounded,
+                      label: 'nav.cart'.tr(),
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        GoRouter.of(context).go('/cart');
+                      },
+                    ),
+                    _NavItem(
+                      index: 2,
+                      currentIndex: currentIndex,
+                      icon: Icons.receipt_long_outlined,
+                      activeIcon: Icons.receipt_long_rounded,
+                      label: 'nav.orders'.tr(),
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        GoRouter.of(context).go('/orders');
+                      },
+                    ),
+                    _NavItem(
+                      index: 3,
+                      currentIndex: currentIndex,
+                      icon: Icons.person_outline_rounded,
+                      activeIcon: Icons.person_rounded,
+                      label: 'nav.profile'.tr(),
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        GoRouter.of(context).go('/profile');
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
