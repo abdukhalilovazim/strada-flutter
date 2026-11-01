@@ -192,64 +192,34 @@ class HomeCubit extends Cubit<HomeState> {
       },
       (serverSduiPage) {
         // ⚡ 3. UI Version UUID Comparison
-        final String? oldVersionUuid = (state is HomeLoaded)
-            ? (state as HomeLoaded).sduiPage.versionUuid
-            : cachedPage?.versionUuid;
+        final String? oldVersionUuid = cachedPage?.versionUuid ??
+            ((state is HomeLoaded) ? (state as HomeLoaded).currentVersionUuid : null);
         final String newVersionUuid = serverSduiPage.versionUuid;
 
-        final bool isVersionMismatch = (oldVersionUuid == null || oldVersionUuid != newVersionUuid);
+        final bool isVersionMismatch = forceRefresh ||
+            oldVersionUuid == null ||
+            oldVersionUuid != newVersionUuid ||
+            cachedPage == null;
 
-        if (isVersionMismatch) {
-          if (kDebugMode) {
-            debugPrint('🔄 [SDUI Sync] UI Version changed: "$oldVersionUuid" -> "$newVersionUuid". Applying new layout & saving to cache.');
-          }
-
-          // Save new UI version to persistent cache
-          _cacheManager.savePage(serverSduiPage);
-
-          // Transition to the new UI structure
-          emit(HomeLoaded(
-            sliders: sliders,
-            categories: categories,
-            fullProducts: products,
-            products: initialProducts,
-            settings: settings,
-            selectedCategory: defaultSlug,
-            sduiPage: serverSduiPage,
-            currentVersionUuid: newVersionUuid,
-            isUpdatingUI: false,
-          ));
-        } else {
-          if (kDebugMode) {
-            debugPrint('✅ [SDUI Sync] UI Version matches "$oldVersionUuid". Preserving active UI layout intact!');
-          }
-
-          // UI has NOT changed: Keep existing layout tree intact, update only raw domain data
-          if (state is HomeLoaded) {
-            final currentState = state as HomeLoaded;
-            emit(currentState.copyWith(
-              sliders: sliders,
-              categories: categories,
-              fullProducts: products,
-              products: initialProducts,
-              settings: settings,
-              currentVersionUuid: newVersionUuid,
-              isUpdatingUI: false,
-            ));
-          } else {
-            emit(HomeLoaded(
-              sliders: sliders,
-              categories: categories,
-              fullProducts: products,
-              products: initialProducts,
-              settings: settings,
-              selectedCategory: defaultSlug,
-              sduiPage: serverSduiPage,
-              currentVersionUuid: newVersionUuid,
-              isUpdatingUI: false,
-            ));
-          }
+        if (kDebugMode) {
+          debugPrint('🔄 [SDUI Sync] UI Version: "$oldVersionUuid" -> "$newVersionUuid" (isMismatch: $isVersionMismatch)');
         }
+
+        // Always save fresh layout to persistent cache
+        _cacheManager.savePage(serverSduiPage);
+
+        // Transition to the new UI structure
+        emit(HomeLoaded(
+          sliders: sliders,
+          categories: categories,
+          fullProducts: products,
+          products: initialProducts,
+          settings: settings,
+          selectedCategory: defaultSlug,
+          sduiPage: serverSduiPage,
+          currentVersionUuid: newVersionUuid,
+          isUpdatingUI: false,
+        ));
       },
     );
   }
