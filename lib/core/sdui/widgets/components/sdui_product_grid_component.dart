@@ -19,16 +19,35 @@ class SDUIProductGridComponent extends StatelessWidget {
     required this.onAction,
   });
 
+  static String _cleanImageUrl(String? url) {
+    if (url == null || url.isEmpty) return '';
+    final lower = url.toLowerCase();
+    if (lower.contains('logo.png') ||
+        lower.contains('default.png') ||
+        lower.contains('no-image') ||
+        lower.contains('no_image') ||
+        lower.contains('placeholder') ||
+        lower.contains('images/logo')) {
+      return '';
+    }
+    return url;
+  }
+
   ProductEntity _parseProduct(SDUIComponentModel item) {
     final props = item.properties;
     final catMap = props['category'] as Map<String, dynamic>?;
+
+    final rawThumb = props['thumbnail']?.toString() ?? props['photo']?.toString() ?? '';
+    final rawPhoto = props['photo']?.toString() ?? props['thumbnail']?.toString() ?? '';
+    final cleanThumb = _cleanImageUrl(rawThumb);
+    final cleanPhoto = _cleanImageUrl(rawPhoto);
 
     return ProductEntity(
       slug: props['slug']?.toString() ?? item.id,
       title: props['title']?.toString() ?? '',
       description: props['description']?.toString(),
-      thumbnail: props['thumbnail']?.toString() ?? props['photo']?.toString() ?? '',
-      photo: props['photo']?.toString() ?? props['thumbnail']?.toString() ?? '',
+      thumbnail: cleanThumb,
+      photo: cleanPhoto.isNotEmpty ? cleanPhoto : cleanThumb,
       price: (props['price'] as num?)?.toDouble() ?? 0.0,
       category: catMap != null
           ? CategoryEntity(

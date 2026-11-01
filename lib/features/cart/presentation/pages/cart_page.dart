@@ -122,11 +122,9 @@ class CartPage extends StatelessWidget {
                                   ? AppColors.neutral800
                                   : const Color(0xFFF8F9FA),
                               padding: const EdgeInsets.all(4),
-                              child: (item.product.thumbnail.isNotEmpty || item.product.photo.isNotEmpty)
+                              child: item.product.hasValidImage
                                   ? CachedNetworkImage(
-                                      imageUrl: item.product.thumbnail.isNotEmpty
-                                          ? item.product.thumbnail
-                                          : item.product.photo,
+                                      imageUrl: item.product.validImageUrl,
                                       fit: BoxFit.contain,
                                       placeholder: (_, __) => Container(
                                           color: isDark
@@ -378,11 +376,9 @@ class CartPage extends StatelessWidget {
                               height: 44,
                               width: double.infinity,
                               color: isDark ? AppColors.neutral800 : const Color(0xFFF1F3F5),
-                              child: (product.thumbnail.isNotEmpty || product.photo.isNotEmpty)
+                              child: product.hasValidImage
                                   ? CachedNetworkImage(
-                                      imageUrl: product.thumbnail.isNotEmpty
-                                          ? product.thumbnail
-                                          : product.photo,
+                                      imageUrl: product.validImageUrl,
                                       fit: BoxFit.contain,
                                       errorWidget: (_, __, ___) => const PizzaImagePlaceholder(
                                         fit: BoxFit.contain,

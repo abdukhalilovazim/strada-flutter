@@ -25,10 +25,13 @@ class PizzaImagePlaceholder extends StatelessWidget {
       height: height,
       color: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
       alignment: Alignment.center,
-      child: Opacity(
-        opacity: isDark ? 0.75 : 1.0,
-        child: Image.asset(
-          'assets/icons/pizza_placeholder.jpg',
+      child: Image.asset(
+        'assets/icons/pizza_placeholder.jpg',
+        fit: fit,
+        width: width,
+        height: height,
+        errorBuilder: (_, __, ___) => Image.asset(
+          'assets/icons/pizza_placeholder.png',
           fit: fit,
           width: width,
           height: height,

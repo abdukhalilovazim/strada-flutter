@@ -55,15 +55,34 @@ class ProductModel extends ProductEntity {
     required List<KeyValueModel> super.values,
   });
 
+  static String _cleanImageUrl(String? url) {
+    if (url == null || url.isEmpty) return '';
+    final lower = url.toLowerCase();
+    if (lower.contains('logo.png') ||
+        lower.contains('default.png') ||
+        lower.contains('no-image') ||
+        lower.contains('no_image') ||
+        lower.contains('placeholder') ||
+        lower.contains('images/logo')) {
+      return '';
+    }
+    return url;
+  }
+
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     final parsedId = int.tryParse(json['id']?.toString() ?? '0') ?? 0;
+    final rawThumb = json['thumbnail'] as String? ?? json['photo'] as String? ?? '';
+    final rawPhoto = json['photo'] as String? ?? json['thumbnail'] as String? ?? '';
+    final cleanThumb = _cleanImageUrl(rawThumb);
+    final cleanPhoto = _cleanImageUrl(rawPhoto);
+
     return ProductModel(
       id: parsedId,
       slug: json['slug'] as String? ?? (parsedId != 0 ? parsedId.toString() : ''),
       title: json['title'] as String? ?? '',
       description: json['description'] as String?,
-      thumbnail: json['thumbnail'] as String? ?? json['photo'] as String? ?? '',
-      photo: json['photo'] as String? ?? json['thumbnail'] as String? ?? '',
+      thumbnail: cleanThumb,
+      photo: cleanPhoto.isNotEmpty ? cleanPhoto : cleanThumb,
       price: double.tryParse(json['price']?.toString() ?? '0') ?? 0,
       category: json['category'] != null ? CategoryModel.fromJson(json['category'] as Map<String, dynamic>) : null,
       variants: (json['variants'] as List? ?? []).map((e) => VariantModel.fromJson(e as Map<String, dynamic>)).toList(),

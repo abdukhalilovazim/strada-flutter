@@ -105,9 +105,8 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
         ? _getVariantSubtitle(_selectedVariant!)
         : null;
 
-    final imageUrl = widget.product.photo.isNotEmpty
-        ? widget.product.photo
-        : widget.product.thumbnail;
+    final hasValidImage = widget.product.hasValidImage;
+    final imageUrl = widget.product.validImageUrl;
 
     return Dialog(
       backgroundColor: isDark ? AppColors.darkCard : Colors.white,
@@ -128,7 +127,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                     borderRadius: BorderRadius.circular(22),
                     child: AspectRatio(
                       aspectRatio: 1,
-                      child: imageUrl.isNotEmpty
+                      child: hasValidImage
                           ? CachedNetworkImage(
                               imageUrl: imageUrl,
                               fit: BoxFit.cover,

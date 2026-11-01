@@ -63,6 +63,25 @@ class ProductEntity extends Equatable {
     required this.values,
   });
 
+  /// Check whether the product has a genuine photography rather than a logo/default fallback.
+  bool get hasValidImage {
+    final img = thumbnail.isNotEmpty ? thumbnail : photo;
+    if (img.isEmpty) return false;
+    final lower = img.toLowerCase();
+    if (lower.contains('logo.png') ||
+        lower.contains('default.png') ||
+        lower.contains('no-image') ||
+        lower.contains('no_image') ||
+        lower.contains('placeholder') ||
+        lower.contains('images/logo')) {
+      return false;
+    }
+    return true;
+  }
+
+  /// Clean valid image URL or empty string.
+  String get validImageUrl => hasValidImage ? (thumbnail.isNotEmpty ? thumbnail : photo) : '';
+
   @override
   List<Object?> get props => [id, slug, title, description, thumbnail, photo, price, oldPrice, category, variants, values];
 }

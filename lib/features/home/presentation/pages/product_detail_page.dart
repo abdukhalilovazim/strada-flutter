@@ -84,11 +84,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 color:
                     isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
                 padding: const EdgeInsets.all(24),
-                child: (product.photo.isNotEmpty || product.thumbnail.isNotEmpty)
+                child: product.hasValidImage
                     ? CachedNetworkImage(
-                        imageUrl: product.photo.isNotEmpty
-                            ? product.photo
-                            : product.thumbnail,
+                        imageUrl: product.validImageUrl,
                         fit: BoxFit.contain,
                         placeholder: (_, __) => const Opacity(
                           opacity: 0.35,

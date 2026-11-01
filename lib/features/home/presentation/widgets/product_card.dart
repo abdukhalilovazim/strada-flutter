@@ -67,11 +67,9 @@ class ProductCard extends StatelessWidget {
                         width: double.infinity,
                         height: double.infinity,
                         color: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
-                        child: (product.thumbnail.isNotEmpty || product.photo.isNotEmpty)
+                        child: product.hasValidImage
                             ? CachedNetworkImage(
-                                imageUrl: product.thumbnail.isNotEmpty
-                                    ? product.thumbnail
-                                    : product.photo,
+                                imageUrl: product.validImageUrl,
                                 fit: BoxFit.cover,
                                 placeholder: (_, __) => Stack(
                                   fit: StackFit.expand,
