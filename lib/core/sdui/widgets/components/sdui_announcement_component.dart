@@ -58,10 +58,17 @@ class SDUIAnnouncementComponent extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                isWarning ? Icons.warning_amber_rounded : Icons.campaign_rounded,
-                color: iconColor,
-                size: 22,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isWarning ? Icons.warning_amber_rounded : Icons.campaign_rounded,
+                  color: iconColor,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -73,6 +80,7 @@ class SDUIAnnouncementComponent extends StatelessWidget {
                       style: AppTextStyles.labelMedium.copyWith(
                         color: titleColor,
                         fontWeight: FontWeight.w700,
+                        fontSize: 13.5,
                       ),
                     ),
                     if (message.isNotEmpty) ...[
@@ -81,6 +89,7 @@ class SDUIAnnouncementComponent extends StatelessWidget {
                         message,
                         style: AppTextStyles.bodySmall.copyWith(
                           color: msgColor,
+                          fontSize: 12,
                         ),
                       ),
                     ],

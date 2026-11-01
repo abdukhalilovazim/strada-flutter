@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -42,7 +43,7 @@ class MainScaffold extends StatelessWidget {
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ── Global Floating Sticky Cart Bar (Dodo Pizza & Uzum Tezkor benchmark) ──
+          // ── Luxury Floating Sticky Cart Bar ──
           if (!isCartPage)
             BlocBuilder<CartCubit, CartState>(
               builder: (context, cartState) {
@@ -50,62 +51,72 @@ class MainScaffold extends StatelessWidget {
 
                 return Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Material(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(20),
-                    elevation: 6,
-                    shadowColor: AppColors.primary.withValues(alpha: 0.45),
-                    child: InkWell(
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        GoRouter.of(context).go('/cart');
-                      },
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        height: 52,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.22),
-                                shape: BoxShape.circle,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.38),
+                          blurRadius: 14,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          GoRouter.of(context).go('/cart');
+                        },
+                        borderRadius: BorderRadius.circular(18),
+                        child: Container(
+                          height: 52,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.22),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.shopping_bag_outlined,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                               ),
-                              child: const Icon(
-                                Icons.shopping_bag_outlined,
-                                color: Colors.white,
-                                size: 18,
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  '${'cart.items_suffix'.tr(namedArgs: {'count': cartState.totalQuantity.toString()})} • ${NumberFormatter.formatSum(cartState.subtotal)} ${'common.currency'.tr()}',
+                                  style: AppTextStyles.labelMedium.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                '${'cart.items_suffix'.tr(namedArgs: {'count': cartState.totalQuantity.toString()})} • ${NumberFormatter.formatSum(cartState.subtotal)} ${'common.currency'.tr()}',
+                              Text(
+                                'cart.floating_cart'.tr(),
                                 style: AppTextStyles.labelMedium.copyWith(
                                   color: Colors.white,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w700,
                                   fontSize: 14,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            Text(
-                              'cart.floating_cart'.tr(),
-                              style: AppTextStyles.labelMedium.copyWith(
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.arrow_forward_ios_rounded,
                                 color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
+                                size: 13,
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.arrow_forward_ios_rounded,
-                              color: Colors.white,
-                              size: 13,
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -114,29 +125,25 @@ class MainScaffold extends StatelessWidget {
               },
             ),
 
-          // ── Modern Bottom Nav Bar ──
-          Container(
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurface : Colors.white,
-              border: Border(
-                top: BorderSide(
-                  color: isDark ? AppColors.neutral800 : AppColors.neutral200,
-                  width: 1,
+          // ── Frosted Glassmorphism Bottom Nav Bar ──
+          ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: (isDark ? AppColors.darkSurface : Colors.white).withValues(alpha: 0.88),
+                  border: Border(
+                    top: BorderSide(
+                      color: isDark ? AppColors.neutral800 : const Color(0xFFE9ECEF),
+                      width: 1,
+                    ),
+                  ),
                 ),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
-                  blurRadius: 20,
-                  offset: const Offset(0, -5),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              top: false,
-              child: SizedBox(
-                height: 62,
-                child: Row(
+                child: SafeArea(
+                  top: false,
+                  child: SizedBox(
+                    height: 62,
+                    child: Row(
                   children: [
                     _NavItem(
                       index: 0,
@@ -187,9 +194,11 @@ class MainScaffold extends StatelessWidget {
               ),
             ),
           ),
-        ],
+        ),
       ),
-    );
+    ],
+  ),
+);
   }
 
   static int _calculateSelectedIndex(BuildContext context) {

@@ -79,11 +79,11 @@ class _SDUISliderComponentState extends State<SDUISliderComponent> {
                   return Container(
                     margin: const EdgeInsets.symmetric(horizontal: 6),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(22),
+                      borderRadius: BorderRadius.circular(20),
                       boxShadow: AppColors.softShadow(isDark),
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(22),
+                      borderRadius: BorderRadius.circular(20),
                       child: Stack(
                         fit: StackFit.expand,
                         children: [

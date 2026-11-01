@@ -5,7 +5,7 @@ import '../../models/sdui_section_model.dart';
 import '../../registry/sdui_action_dispatcher.dart';
 
 /// 📍 Delivery & Branch Location Status Bar
-/// Displays active branch, ETA, and resolved delivery zone.
+/// Clean Bento-style card displaying active branch, ETA, and resolved delivery zone.
 class SDUIDeliveryBarComponent extends StatelessWidget {
   final SDUISectionModel section;
   final SDUIActionHandler onAction;
@@ -30,7 +30,7 @@ class SDUIDeliveryBarComponent extends StatelessWidget {
         color: isDark ? AppColors.darkCard : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
+          color: isDark ? AppColors.darkBorder : const Color(0xFFF1F3F5),
           width: 1,
         ),
         boxShadow: AppColors.softShadow(isDark),
