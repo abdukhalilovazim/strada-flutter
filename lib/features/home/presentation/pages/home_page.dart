@@ -152,7 +152,7 @@ class HomePage extends StatelessWidget {
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
-                            child: const Text('Qayta urinish'),
+                            child: Text('common.retry'.tr()),
                           ),
                         ],
                       ),
@@ -210,7 +210,7 @@ class HomePage extends StatelessWidget {
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          '${cartState.totalQuantity} ta • ${NumberFormatter.formatSum(cartState.subtotal)} ${'common.currency'.tr()}',
+                          '${'cart.items_suffix'.tr(namedArgs: {'count': cartState.totalQuantity.toString()})} • ${NumberFormatter.formatSum(cartState.subtotal)} ${'common.currency'.tr()}',
                           style: AppTextStyles.labelMedium.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
@@ -219,7 +219,7 @@ class HomePage extends StatelessWidget {
                         ),
                         const Spacer(),
                         Text(
-                          'Savatcha',
+                          'cart.floating_cart'.tr(),
                           style: AppTextStyles.labelMedium.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,

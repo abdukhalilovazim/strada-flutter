@@ -26,7 +26,7 @@
   "home.categories": "Категории",
   "home.products": "Продукты",
   "product.open": "Выбрать",
-  "product.open_btn": "Открыть",
+  "product.open_btn": "Выбрать",
   "product.variants_count": "{count} размера",
   "product.add_to_cart": "В корзину",
   "product.add_to_cart_full": "Добавить в корзину",
@@ -194,5 +194,16 @@
   "checkout.delivery_method": "Способ доставки",
   "checkout.order_items_title": "Состав заказа",
   "checkout.recipient_title": "Получатель",
-  "checkout.payment_method_title": "Способ оплаты"
+  "checkout.payment_method_title": "Способ оплаты",
+  "cart.upsell_title": "Добавьте к заказу",
+  "cart.floating_cart": "Корзина",
+  "cart.items_suffix": "{count} шт",
+  "common.cart": "Корзина",
+  "common.menu": "Меню",
+  "common.estimated_delivery": "Доставка • 35 мин",
+  "tracker.title": "Статус заказа",
+  "tracker.baking": "Пицца выпекается в печи",
+  "tracker.delivering": "Курьер уже в пути",
+  "tracker.delivered": "Доставлено",
+  "tracker.courier": "Курьер"
 }

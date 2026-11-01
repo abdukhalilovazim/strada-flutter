@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import '../../../../features/home/domain/entities/home_entities.dart';
 import '../models/sdui_action_model.dart';
 import '../models/sdui_component_model.dart';
@@ -100,7 +101,7 @@ class SDUIScreenBuilder {
     }
 
     // 5. Section Header for active category
-    String activeTitle = 'Menyu';
+    String activeTitle = 'common.menu'.tr();
     if (categories.isNotEmpty) {
       CategoryEntity? matched;
       for (final cat in categories) {

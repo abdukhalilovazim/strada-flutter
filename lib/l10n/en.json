@@ -26,7 +26,9 @@
   "home.categories": "Categories",
   "home.products": "Products",
   "product.open": "Select",
-  "product.open_btn": "Open",
+  "product.open_btn": "Select",
+  "product.select_variant": "Select",
+  "product.select_variant_title": "Select size",
   "product.variants_count": "{count} sizes",
   "product.add_to_cart": "Add to cart",
   "product.add_to_cart_full": "Add to cart",
@@ -192,5 +194,16 @@
   "checkout.delivery_method": "Delivery method",
   "checkout.order_items_title": "Order items",
   "checkout.recipient_title": "Recipient",
-  "checkout.payment_method_title": "Payment method"
+  "checkout.payment_method_title": "Payment method",
+  "cart.upsell_title": "Add to order",
+  "cart.floating_cart": "Cart",
+  "cart.items_suffix": "{count} items",
+  "common.cart": "Cart",
+  "common.menu": "Menu",
+  "common.estimated_delivery": "Delivery • 35 min",
+  "tracker.title": "Order status",
+  "tracker.baking": "Your pizza is baking in the oven",
+  "tracker.delivering": "Courier is on the way",
+  "tracker.delivered": "Delivered",
+  "tracker.courier": "Courier"
 }

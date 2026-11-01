@@ -327,7 +327,7 @@ class CartPage extends StatelessWidget {
                 child: Row(
                   children: [
                     Text(
-                      'Buni ham qo\'shing',
+                      'cart.upsell_title'.tr(),
                       style: AppTextStyles.labelMedium.copyWith(
                         fontWeight: FontWeight.w800,
                         fontSize: 13,

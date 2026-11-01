@@ -26,7 +26,9 @@
   "home.categories": "Kategoriyalar",
   "home.products": "Mahsulotlar",
   "product.open": "Tanlash",
-  "product.open_btn": "Ochish",
+  "product.open_btn": "Tanlash",
+  "product.select_variant": "Tanlash",
+  "product.select_variant_title": "O'lchamni tanlang",
   "product.variants_count": "{count} xil o'lcham",
   "product.add_to_cart": "Savatga qo'shish",
   "product.add_to_cart_full": "Savatga qo'shish",
@@ -192,5 +194,16 @@
   "checkout.delivery_method": "Yetkazib berish usuli",
   "checkout.order_items_title": "Buyurtma tarkibi",
   "checkout.recipient_title": "Qabul qiluvchi",
-  "checkout.payment_method_title": "To'lov usuli"
+  "checkout.payment_method_title": "To'lov usuli",
+  "cart.upsell_title": "Buni ham qo'shing",
+  "cart.floating_cart": "Savatcha",
+  "cart.items_suffix": "{count} ta",
+  "common.cart": "Savatcha",
+  "common.menu": "Menyu",
+  "common.estimated_delivery": "Yetkazib berish • 35 daq",
+  "tracker.title": "Buyurtma holati",
+  "tracker.baking": "Pitsangiz pechda pishirilmoqda",
+  "tracker.delivering": "Kuryer yo'lga chiqdi",
+  "tracker.delivered": "Yetkazildi",
+  "tracker.courier": "Kuryer"
 }
