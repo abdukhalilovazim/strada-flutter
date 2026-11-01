@@ -9,6 +9,7 @@ abstract class HomeRemoteDataSource {
   Future<SettingsModel> getSettings();
   Future<List<SliderModel>> getSliders();
   Future<SDUIPageModel> getSDUIPage({String slug = 'home', String? categorySlug, int? branchId});
+  Future<Map<String, dynamic>> getSDUIManifest();
 }
 
 @LazySingleton(as: HomeRemoteDataSource)
@@ -84,6 +85,22 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
       queryParameters: params.isNotEmpty ? params : null,
     );
     return SDUIPageModel.fromJson(response as Map<String, dynamic>);
+  }
+
+  @override
+  Future<Map<String, dynamic>> getSDUIManifest() async {
+    try {
+      final response = await _client.get('sdui/manifest');
+      if (response is Map<String, dynamic>) {
+        if (response['data'] is Map<String, dynamic>) {
+          return response['data'] as Map<String, dynamic>;
+        }
+        return response;
+      }
+      return const {};
+    } catch (_) {
+      return const {};
+    }
   }
 }
 

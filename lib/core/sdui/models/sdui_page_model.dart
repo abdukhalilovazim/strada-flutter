@@ -32,6 +32,10 @@ class SDUIPageModel extends Equatable {
   /// Screen title
   String get title => (meta['title'] as String?) ?? 'Pizza Strada';
 
+  /// Embedded settings payload (support_phone, can_order, discount, payment_methods)
+  Map<String, dynamic>? get rawSettings =>
+      meta['settings'] is Map<String, dynamic> ? meta['settings'] as Map<String, dynamic> : null;
+
   SDUIPageModel copyWith({
     String? version,
     String? versionUuid,

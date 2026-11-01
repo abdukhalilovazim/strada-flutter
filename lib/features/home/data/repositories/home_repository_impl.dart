@@ -40,6 +40,11 @@ class HomeRepositoryImpl implements HomeRepository {
     return _safeCall(() => _remoteDataSource.getSDUIPage(slug: slug, categorySlug: categorySlug, branchId: branchId));
   }
 
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> getSDUIManifest() async {
+    return _safeCall(() => _remoteDataSource.getSDUIManifest());
+  }
+
   Future<Either<Failure, T>> _safeCall<T>(Future<T> Function() call) async {
     try {
       final result = await call();

@@ -10,6 +10,7 @@ import 'package:pizza_strada/core/utils/number_formatter.dart';
 import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
+import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final String slug;
@@ -22,31 +23,43 @@ class ProductDetailPage extends StatefulWidget {
 }
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
+  ProductEntity? _resolvedProduct;
   VariantEntity? _selectedVariant;
   int _quantity = 1;
 
   @override
   void initState() {
     super.initState();
-    if (widget.product != null) {
-      if (widget.product!.variants.length == 1) {
-        _selectedVariant = widget.product!.variants.first;
+    _resolvedProduct = widget.product;
+    if (_resolvedProduct == null) {
+      final homeState = context.read<HomeCubit>().state;
+      if (homeState is HomeLoaded) {
+        try {
+          _resolvedProduct = homeState.fullProducts.firstWhere(
+            (p) => p.slug == widget.slug,
+          );
+        } catch (_) {}
+      }
+    }
+
+    if (_resolvedProduct != null) {
+      if (_resolvedProduct!.variants.length == 1) {
+        _selectedVariant = _resolvedProduct!.variants.first;
       }
       AnalyticsService.instance.logProductView(
-        id: widget.product!.id.toString(),
-        title: widget.product!.title,
-        price: widget.product!.price,
+        id: _resolvedProduct!.id.toString(),
+        title: _resolvedProduct!.title,
+        price: _resolvedProduct!.price,
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.product == null) {
+    final product = _resolvedProduct;
+    if (product == null) {
       return Scaffold(body: Center(child: Text('error.not_found'.tr())));
     }
-
-    final product = widget.product!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasVariants = product.variants.length > 1;
     final displayPrice = _selectedVariant?.price ?? product.price;

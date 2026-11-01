@@ -18,7 +18,6 @@ import 'package:pizza_strada/features/auth/domain/usecases/get_me_usecase.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/branches_web_view_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/edit_profile_page.dart';
-import 'package:pizza_strada/features/profile/presentation/pages/inquiry_page.dart';
 
 extension _SafeTranslateX on String {
   String trWith(String fallback) {
@@ -211,8 +210,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
 
-            // ── 4. Section: Strada Pizza & Support ──
-            _buildSectionHeader('profile.section_strada'.trWith('Strada Pizza & Yordam')),
+            // ── 4. Section: Strada Pizza ──
+            _buildSectionHeader('profile.section_strada'.trWith('Strada Pizza')),
             _buildGroupCard(
               context: context,
               children: [
@@ -227,21 +226,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const BranchesWebViewPage()),
-                    );
-                  },
-                ),
-                _buildDivider(isDark),
-                _buildGroupRow(
-                  icon: Icons.chat_bubble_outline_rounded,
-                  iconColor: const Color(0xFF10B981),
-                  iconBgColor: const Color(0xFFD1FAE5),
-                  title: 'profile.support_inquiry'.tr(),
-                  subtitle: 'profile.inquiry_desc'.trWith('Taklif, shikoyat va savollar'),
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const InquiryPage()),
                     );
                   },
                 ),
@@ -466,7 +450,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // ── Bento Shortcuts Row (Orders, Addresses, Help) ──
+  // ── Bento Shortcuts Row (Orders, Addresses) ──
   Widget _buildBentoShortcuts(bool isDark) {
     return Row(
       children: [
@@ -492,22 +476,6 @@ class _ProfilePageState extends State<ProfilePage> {
             onTap: () {
               HapticFeedback.lightImpact();
               _showSavedAddressesSheet(context);
-            },
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _buildBentoShortcutItem(
-            isDark: isDark,
-            icon: Icons.support_agent_rounded,
-            iconColor: const Color(0xFF0284C7),
-            title: 'profile.support'.tr(),
-            onTap: () {
-              HapticFeedback.lightImpact();
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const InquiryPage()),
-              );
             },
           ),
         ),

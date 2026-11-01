@@ -41,3 +41,10 @@ class GetSDUIPageUseCase {
   Future<Either<Failure, SDUIPageModel>> call({String slug = 'home', String? categorySlug, int? branchId}) =>
       _repository.getSDUIPage(slug: slug, categorySlug: categorySlug, branchId: branchId);
 }
+
+@lazySingleton
+class GetSDUIManifestUseCase {
+  final HomeRepository _repository;
+  GetSDUIManifestUseCase(this._repository);
+  Future<Either<Failure, Map<String, dynamic>>> call() => _repository.getSDUIManifest();
+}

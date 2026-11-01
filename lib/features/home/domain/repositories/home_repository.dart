@@ -9,4 +9,5 @@ abstract class HomeRepository {
   Future<Either<Failure, SettingsEntity>> getSettings();
   Future<Either<Failure, List<SliderEntity>>> getSliders();
   Future<Either<Failure, SDUIPageModel>> getSDUIPage({String slug = 'home', String? categorySlug, int? branchId});
+  Future<Either<Failure, Map<String, dynamic>>> getSDUIManifest();
 }

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/services/analytics_service.dart';
+import 'package:pizza_strada/core/services/smart_recommendation_engine.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
@@ -325,24 +326,39 @@ class CartPage extends StatelessWidget {
     );
   }
 
-  /// 🍟 🥤 🥫 KFC & Dodo Pizza andozasidagi kross-sell karuseli
+  /// 🧠 Smart Context-Aware Recommendation Engine
+  /// Pitsa bo'lsa sous taklif qiladi (agar sous olinmagan bo'lsa),
+  /// Sous olingach avtomatik ravishda ichimlik/desertga o'tadi (0ms latency).
   Widget _buildUpsellSection(BuildContext context, bool isDark) {
     return BlocBuilder<HomeCubit, HomeState>(
       builder: (context, homeState) {
         if (homeState is! HomeLoaded) return const SizedBox.shrink();
 
         final cartItems = context.watch<CartCubit>().state.items;
-        final cartSlugs = cartItems.map((ci) => ci.product.slug).toSet();
 
-        // Candidates: souslar, drinks, side-dish
-        final candidates = homeState.fullProducts.where((p) {
-          final catSlug = p.category?.slug ?? '';
-          final isComplementary =
-              catSlug == 'souslar' || catSlug == 'drinks' || catSlug == 'side-dish';
-          return isComplementary && !cartSlugs.contains(p.slug);
-        }).take(8).toList();
+        // Parse dynamic rules from SDUI page meta if delivered by server
+        List<RecommendationRuleEntity>? serverRules;
+        final rawRules = homeState.sduiPage.meta['recommendation_rules'];
+        if (rawRules is List) {
+          try {
+            serverRules = rawRules
+                .whereType<Map<String, dynamic>>()
+                .map((r) => RecommendationRuleEntity.fromJson(r))
+                .toList();
+          } catch (_) {}
+        }
 
-        if (candidates.isEmpty) return const SizedBox.shrink();
+        final match = SmartRecommendationEngine.resolve(
+          cartItems: cartItems,
+          allProducts: homeState.fullProducts,
+          localeCode: context.locale.languageCode,
+          serverRules: serverRules,
+        );
+
+        if (match.isEmpty) return const SizedBox.shrink();
+
+        final candidates = match.products;
+        final sectionTitle = match.title.isNotEmpty ? match.title : 'cart.upsell_title'.tr();
 
         return Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -362,16 +378,18 @@ class CartPage extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                 child: Row(
                   children: [
-                    Text(
-                      'cart.upsell_title'.tr(),
-                      style: AppTextStyles.labelMedium.copyWith(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13,
-                        color: isDark ? Colors.white : AppColors.neutral900,
+                    Expanded(
+                      child: Text(
+                        sectionTitle,
+                        style: AppTextStyles.labelMedium.copyWith(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                          color: isDark ? Colors.white : AppColors.neutral900,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    const Text('🍟 🥤 🥫', style: TextStyle(fontSize: 11)),
                   ],
                 ),
               ),

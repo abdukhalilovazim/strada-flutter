@@ -14,6 +14,7 @@ import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/orders/data/models/order_model.dart';
 import 'package:pizza_strada/features/orders/domain/entities/order_entity.dart';
+import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class OrderDetailPage extends StatefulWidget {
@@ -715,11 +716,19 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: CachedNetworkImage(
-                              imageUrl: item.image,
+                            child: SizedBox(
                               width: 56,
                               height: 56,
-                              fit: BoxFit.cover,
+                              child: (item.image.isNotEmpty && item.image.startsWith('http'))
+                                  ? CachedNetworkImage(
+                                      imageUrl: item.image,
+                                      fit: BoxFit.cover,
+                                      placeholder: (_, __) =>
+                                          const PizzaImagePlaceholder(fit: BoxFit.cover),
+                                      errorWidget: (_, __, ___) =>
+                                          const PizzaImagePlaceholder(fit: BoxFit.cover),
+                                    )
+                                  : const PizzaImagePlaceholder(fit: BoxFit.cover),
                             ),
                           ),
                           const SizedBox(width: 16),

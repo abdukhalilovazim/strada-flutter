@@ -16,9 +16,12 @@ import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/pages/cart_page.dart';
 import 'package:pizza_strada/features/cart/presentation/pages/checkout_page.dart';
 import 'package:pizza_strada/features/cart/presentation/pages/map_picker_page.dart';
+import 'package:pizza_strada/features/home/data/models/home_models.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
+import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/pages/home_page.dart';
 import 'package:pizza_strada/features/home/presentation/pages/product_detail_page.dart';
+import 'package:pizza_strada/features/orders/data/models/order_model.dart';
 import 'package:pizza_strada/features/orders/domain/entities/order_entity.dart';
 import 'package:pizza_strada/features/orders/presentation/pages/order_detail_page.dart';
 import 'package:pizza_strada/features/orders/presentation/pages/orders_page.dart';
@@ -432,7 +435,7 @@ final appRouter = GoRouter(
             fullName: data['fullName'] as String? ?? '',
           );
         }
-        return OtpPage(phone: state.extra as String? ?? '');
+        return OtpPage(phone: state.extra is String ? state.extra as String : '');
       },
     ),
     ShellRoute(
@@ -446,10 +449,34 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/product/:slug',
-      builder: (_, s) => ProductDetailPage(
-        slug: s.pathParameters['slug']!,
-        product: s.extra as ProductEntity?,
-      ),
+      builder: (context, s) {
+        final slug = s.pathParameters['slug'] ?? '';
+        ProductEntity? product;
+
+        if (s.extra is ProductEntity) {
+          product = s.extra as ProductEntity;
+        } else if (s.extra is Map<String, dynamic>) {
+          try {
+            product = ProductModel.fromJson(s.extra as Map<String, dynamic>);
+          } catch (_) {
+            product = null;
+          }
+        }
+
+        if (product == null && slug.isNotEmpty) {
+          try {
+            final homeState = context.read<HomeCubit>().state;
+            if (homeState is HomeLoaded) {
+              product = homeState.fullProducts.firstWhere((p) => p.slug == slug);
+            }
+          } catch (_) {}
+        }
+
+        return ProductDetailPage(
+          slug: slug,
+          product: product,
+        );
+      },
     ),
     GoRoute(
       path: '/checkout',
@@ -458,10 +485,22 @@ final appRouter = GoRouter(
     GoRoute(path: '/map-picker', builder: (_, __) => const MapPickerPage()),
     GoRoute(
       path: '/order/:id',
-      builder: (_, s) => OrderDetailPage(
-        orderId: s.pathParameters['id']!,
-        order: s.extra as OrderEntity?,
-      ),
+      builder: (_, s) {
+        OrderEntity? order;
+        if (s.extra is OrderEntity) {
+          order = s.extra as OrderEntity;
+        } else if (s.extra is Map<String, dynamic>) {
+          try {
+            order = OrderModel.fromJson(s.extra as Map<String, dynamic>);
+          } catch (_) {
+            order = null;
+          }
+        }
+        return OrderDetailPage(
+          orderId: s.pathParameters['id']!,
+          order: order,
+        );
+      },
     ),
   ],
 );
