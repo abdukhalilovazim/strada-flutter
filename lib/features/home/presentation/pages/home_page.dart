@@ -127,7 +127,7 @@ class HomePage extends StatelessWidget {
 
           if (state is HomeFailure) {
             return RefreshIndicator(
-              onRefresh: () => context.read<HomeCubit>().init(),
+              onRefresh: () => context.read<HomeCubit>().init(forceRefresh: true),
               color: AppColors.primary,
               child: CustomScrollView(
                 slivers: [
@@ -164,12 +164,16 @@ class HomePage extends StatelessWidget {
           }
 
           if (state is HomeLoaded) {
-            return SDUIRenderer(
-              page: state.sduiPage,
-              selectedCategorySlug: state.selectedCategory,
-              leadingSlivers: [_buildAppBar(context)],
-              onRefresh: () => context.read<HomeCubit>().init(),
-              onFilterCategory: (slug) => context.read<HomeCubit>().selectCategory(slug),
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 350),
+              child: SDUIRenderer(
+                key: ValueKey('sdui_${state.sduiPage.versionUuid}'),
+                page: state.sduiPage,
+                selectedCategorySlug: state.selectedCategory,
+                leadingSlivers: [_buildAppBar(context)],
+                onRefresh: () => context.read<HomeCubit>().init(forceRefresh: true),
+                onFilterCategory: (slug) => context.read<HomeCubit>().selectCategory(slug),
+              ),
             );
           }
 

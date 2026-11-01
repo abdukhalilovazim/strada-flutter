@@ -4,12 +4,14 @@ import 'sdui_section_model.dart';
 /// 📄 Declarative SDUI Screen / Page Model
 class SDUIPageModel extends Equatable {
   final String version;
+  final String versionUuid;
   final String screenId;
   final Map<String, dynamic> meta;
   final List<SDUISectionModel> sections;
 
   const SDUIPageModel({
     required this.version,
+    required this.versionUuid,
     required this.screenId,
     this.meta = const {},
     this.sections = const [],
@@ -30,14 +32,36 @@ class SDUIPageModel extends Equatable {
   /// Screen title
   String get title => (meta['title'] as String?) ?? 'Pizza Strada';
 
+  SDUIPageModel copyWith({
+    String? version,
+    String? versionUuid,
+    String? screenId,
+    Map<String, dynamic>? meta,
+    List<SDUISectionModel>? sections,
+  }) {
+    return SDUIPageModel(
+      version: version ?? this.version,
+      versionUuid: versionUuid ?? this.versionUuid,
+      screenId: screenId ?? this.screenId,
+      meta: meta ?? this.meta,
+      sections: sections ?? this.sections,
+    );
+  }
+
   factory SDUIPageModel.fromJson(Map<String, dynamic> json) {
     final metaData = (json['meta'] as Map<String, dynamic>?) ?? {};
     if (json['title'] != null && !metaData.containsKey('title')) {
       metaData['title'] = json['title'];
     }
 
+    final String versionUuid = json['version_uuid']?.toString() ??
+        metaData['version_uuid']?.toString() ??
+        json['etag']?.toString() ??
+        'default_v1';
+
     return SDUIPageModel(
       version: json['version']?.toString() ?? '1.0.0',
+      versionUuid: versionUuid,
       screenId: json['screen_id']?.toString() ?? json['id']?.toString() ?? 'default',
       meta: metaData,
       sections: (json['sections'] as List<dynamic>?)
@@ -49,12 +73,12 @@ class SDUIPageModel extends Equatable {
 
   Map<String, dynamic> toJson() => {
     'version': version,
+    'version_uuid': versionUuid,
     'screen_id': screenId,
     'meta': meta,
     'sections': sections.map((s) => s.toJson()).toList(),
   };
 
   @override
-  List<Object?> get props => [version, screenId, meta, sections];
+  List<Object?> get props => [version, versionUuid, screenId, meta, sections];
 }
-
