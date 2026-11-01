@@ -232,5 +232,17 @@
   "checkout.select_branch_error": "Iltimos, filialni tanlang",
   "checkout.prev_step": "Orqaga",
   "checkout.have_promo_code": "Promokod bormi? (ixtiyoriy)",
-  "home.updating_ui": "Yangilanmoqda..."
+  "home.updating_ui": "Yangilanmoqda...",
+  "profile.my_orders": "Mening buyurtmalarim",
+  "profile.saved_addresses": "Saqlangan manzillar",
+  "profile.no_saved_addresses": "Saqlangan manzillar mavjud emas",
+  "profile.no_saved_addresses_desc": "Buyurtma berganingizda manzillaringiz avtomatik saqlanib boradi",
+  "profile.section_app": "Ilova sozlamalari",
+  "profile.section_strada": "Strada Pizza & Yordam",
+  "profile.section_account": "Hisob",
+  "profile.branches_desc": "Ish vaqti, manzillar va lokatsiya",
+  "profile.inquiry_desc": "Taklif, shikoyat va savollar",
+  "profile.call_center": "Aloqa markazi",
+  "profile.verified": "Tasdiqlangan",
+  "profile.version": "Versiya"
 }

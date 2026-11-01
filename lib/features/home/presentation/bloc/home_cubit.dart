@@ -124,32 +124,31 @@ class HomeCubit extends Cubit<HomeState> {
       await _cacheManager.clearPage('home');
     }
 
-    // ⚡ 2. Concurrent Background Fetch: SDUI Page + Domain Data
-    final sduiResultFuture = _getSDUIPageUseCase(slug: 'home');
-    final slidersColFuture = _getSlidersUseCase();
-    final categoriesColFuture = _getCategoriesUseCase();
-    final productsColFuture = _getProductsUseCase();
-    final settingsColFuture = _getSettingsUseCase();
+    // ⚡ 2. Staged API Sequence: Fetch primary SDUI layout first to prevent server 500 stampedes
+    final sduiResult = await _getSDUIPageUseCase(slug: 'home');
 
-    final sduiResult = await sduiResultFuture;
-    final slidersCol = await slidersColFuture;
-    final categoriesCol = await categoriesColFuture;
-    final productsCol = await productsColFuture;
-    final settingsCol = await settingsColFuture;
+    await sduiResult.fold(
+      (failure) async {
+        // Fallback: If SDUI endpoint fails, sequentially fetch domain data step-by-step
+        if (kDebugMode) {
+          debugPrint('⚠️ [HomeCubit] SDUI fetch failed (${failure.messageKey}). Falling back to sequential domain queries.');
+        }
 
-    final sliders = slidersCol.getOrElse(() => const []);
-    final categories = categoriesCol.getOrElse(() => const []);
-    final products = productsCol.getOrElse(() => const []);
-    final settings = settingsCol.fold((_) => null, (s) => s);
+        final categoriesCol = await _getCategoriesUseCase();
+        final productsCol = await _getProductsUseCase();
+        final slidersCol = await _getSlidersUseCase();
+        final settingsCol = await _getSettingsUseCase();
 
-    final defaultSlug = categories.isNotEmpty ? categories.first.slug : null;
-    final initialProducts = defaultSlug != null
-        ? products.where((p) => p.category?.slug == defaultSlug).toList()
-        : products;
+        final categories = categoriesCol.getOrElse(() => const []);
+        final products = productsCol.getOrElse(() => const []);
+        final sliders = slidersCol.getOrElse(() => const []);
+        final settings = settingsCol.fold((_) => null, (s) => s);
 
-    sduiResult.fold(
-      (failure) {
-        // Fallback: If server is unreachable and no cache exists, compile local layout
+        final defaultSlug = categories.isNotEmpty ? categories.first.slug : null;
+        final initialProducts = defaultSlug != null
+            ? products.where((p) => p.category?.slug == defaultSlug).toList()
+            : products;
+
         if (state is! HomeLoaded) {
           if (categories.isEmpty && products.isEmpty) {
             emit(HomeFailure(failure.messageKey));
@@ -178,7 +177,6 @@ class HomeCubit extends Cubit<HomeState> {
             isUpdatingUI: false,
           ));
         } else {
-          // If we already have a cached loaded state, just turn off isUpdatingUI
           final currentState = state as HomeLoaded;
           emit(currentState.copyWith(
             sliders: sliders.isNotEmpty ? sliders : currentState.sliders,
@@ -190,8 +188,24 @@ class HomeCubit extends Cubit<HomeState> {
           ));
         }
       },
-      (serverSduiPage) {
-        // ⚡ 3. UI Version UUID Comparison
+      (serverSduiPage) async {
+        // ⚡ 3. Extract items directly from SDUI layout (eliminates 4 redundant HTTP calls)
+        final categories = _extractCategoriesFromSDUI(serverSduiPage);
+        final fullProducts = _extractProductsFromSDUI(serverSduiPage);
+        final sliders = _extractSlidersFromSDUI(serverSduiPage);
+
+        final defaultSlug = categories.isNotEmpty ? categories.first.slug : null;
+        final initialProducts = defaultSlug != null
+            ? fullProducts.where((p) => p.category?.slug == defaultSlug).toList()
+            : fullProducts;
+
+        // Background non-blocking settings query
+        SettingsEntity? settings;
+        try {
+          final settingsCol = await _getSettingsUseCase();
+          settings = settingsCol.fold((_) => null, (s) => s);
+        } catch (_) {}
+
         final String? oldVersionUuid = cachedPage?.versionUuid ??
             ((state is HomeLoaded) ? (state as HomeLoaded).currentVersionUuid : null);
         final String newVersionUuid = serverSduiPage.versionUuid;
@@ -202,7 +216,7 @@ class HomeCubit extends Cubit<HomeState> {
             cachedPage == null;
 
         if (kDebugMode) {
-          debugPrint('🔄 [SDUI Sync] UI Version: "$oldVersionUuid" -> "$newVersionUuid" (isMismatch: $isVersionMismatch)');
+          debugPrint('📡 [SDUI Sync] oldVersionUuid: "$oldVersionUuid", newVersionUuid: "$newVersionUuid" (isMismatch: $isVersionMismatch)');
         }
 
         // Always save fresh layout to persistent cache
@@ -212,7 +226,7 @@ class HomeCubit extends Cubit<HomeState> {
         emit(HomeLoaded(
           sliders: sliders,
           categories: categories,
-          fullProducts: products,
+          fullProducts: fullProducts,
           products: initialProducts,
           settings: settings,
           selectedCategory: defaultSlug,
@@ -222,6 +236,84 @@ class HomeCubit extends Cubit<HomeState> {
         ));
       },
     );
+  }
+
+  List<CategoryEntity> _extractCategoriesFromSDUI(SDUIPageModel page) {
+    for (final section in page.sections) {
+      if (section.type == 'horizontal_category_bar') {
+        return section.items.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          final slug = item.properties['slug']?.toString() ?? item.id;
+          final title = item.properties['title']?.toString() ?? slug;
+          return CategoryEntity(
+            id: index + 1,
+            title: title,
+            slug: slug,
+          );
+        }).toList();
+      }
+    }
+    return const [];
+  }
+
+  List<ProductEntity> _extractProductsFromSDUI(SDUIPageModel page) {
+    for (final section in page.sections) {
+      if (section.type == 'product_grid') {
+        return section.items.map((item) {
+          final props = item.properties;
+          final catMap = props['category'] as Map<String, dynamic>?;
+          final variantsList = props['variants'] as List<dynamic>?;
+
+          final thumb = props['thumbnail']?.toString() ?? props['photo']?.toString() ?? '';
+          final photo = props['photo']?.toString() ?? props['thumbnail']?.toString() ?? '';
+
+          return ProductEntity(
+            slug: props['slug']?.toString() ?? item.id,
+            title: props['title']?.toString() ?? '',
+            description: props['description']?.toString(),
+            thumbnail: thumb,
+            photo: photo.isNotEmpty ? photo : thumb,
+            price: (props['price'] as num?)?.toDouble() ?? 0.0,
+            category: catMap != null
+                ? CategoryEntity(
+                    id: 0,
+                    slug: catMap['slug']?.toString() ?? '',
+                    title: catMap['title']?.toString() ?? '',
+                  )
+                : null,
+            variants: variantsList
+                    ?.map((v) => VariantEntity(
+                          id: (v['id'] as num?)?.toInt() ?? 0,
+                          title: v['title']?.toString() ?? '',
+                          price: (v['price'] as num?)?.toDouble() ?? 0.0,
+                        ))
+                    .toList() ??
+                const [],
+            values: const [],
+          );
+        }).toList();
+      }
+    }
+    return const [];
+  }
+
+  List<SliderEntity> _extractSlidersFromSDUI(SDUIPageModel page) {
+    for (final section in page.sections) {
+      if (section.type == 'carousel_slider') {
+        return section.items.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          return SliderEntity(
+            id: index + 1,
+            imageUrl: item.properties['image_url']?.toString() ?? item.properties['image']?.toString() ?? '',
+            link: item.action?.target,
+            title: item.properties['caption']?.toString(),
+          );
+        }).toList();
+      }
+    }
+    return const [];
   }
 
   Future<void> selectCategory(String slug) async {

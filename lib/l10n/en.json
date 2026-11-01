@@ -232,5 +232,17 @@
   "checkout.select_branch_error": "Please select a branch",
   "checkout.prev_step": "Back",
   "checkout.have_promo_code": "Have a promo code? (optional)",
-  "home.updating_ui": "Updating UI..."
+  "home.updating_ui": "Updating UI...",
+  "profile.my_orders": "My orders",
+  "profile.saved_addresses": "Saved addresses",
+  "profile.no_saved_addresses": "No saved addresses yet",
+  "profile.no_saved_addresses_desc": "Your delivery addresses will be saved here automatically when placing orders",
+  "profile.section_app": "App settings",
+  "profile.section_strada": "Strada Pizza & Support",
+  "profile.section_account": "Account",
+  "profile.branches_desc": "Working hours, addresses and locations",
+  "profile.inquiry_desc": "Suggestions, complaints and feedback",
+  "profile.call_center": "Call center",
+  "profile.verified": "Verified",
+  "profile.version": "Version"
 }

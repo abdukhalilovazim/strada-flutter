@@ -232,5 +232,17 @@
   "checkout.select_branch_error": "Пожалуйста, выберите филиал",
   "checkout.prev_step": "Назад",
   "checkout.have_promo_code": "Есть промокод? (необязательно)",
-  "home.updating_ui": "Обновление UI..."
+  "home.updating_ui": "Обновление UI...",
+  "profile.my_orders": "Мои заказы",
+  "profile.saved_addresses": "Сохраненные адреса",
+  "profile.no_saved_addresses": "Нет сохраненных адресов",
+  "profile.no_saved_addresses_desc": "При оформлении заказа ваши адреса будут сохраняться здесь",
+  "profile.section_app": "Настройки приложения",
+  "profile.section_strada": "Strada Pizza и помощь",
+  "profile.section_account": "Аккаунт",
+  "profile.branches_desc": "Время работы, адреса и локации",
+  "profile.inquiry_desc": "Предложения, жалобы и вопросы",
+  "profile.call_center": "Колл-центр",
+  "profile.verified": "Подтвержден",
+  "profile.version": "Версия"
 }

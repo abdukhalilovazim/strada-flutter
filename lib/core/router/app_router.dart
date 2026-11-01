@@ -131,13 +131,20 @@ class MainScaffold extends StatelessWidget {
               filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
               child: Container(
                 decoration: BoxDecoration(
-                  color: (isDark ? AppColors.darkSurface : Colors.white).withValues(alpha: 0.88),
+                  color: (isDark ? AppColors.darkSurface : Colors.white).withValues(alpha: 0.92),
                   border: Border(
                     top: BorderSide(
                       color: isDark ? AppColors.neutral800 : const Color(0xFFE9ECEF),
                       width: 1,
                     ),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
+                      blurRadius: 16,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
                 ),
                 child: SafeArea(
                   top: false,
@@ -211,7 +218,7 @@ class MainScaffold extends StatelessWidget {
   }
 }
 
-/// Single nav item — icon + label, active = primary red.
+/// Single nav item with smooth pill capsule indicator and bold typography
 class _NavItem extends StatelessWidget {
   final int index;
   final int currentIndex;
@@ -233,37 +240,50 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isActive = index == currentIndex;
-    final color = isActive
-        ? AppColors.primary
-        : (isDark ? AppColors.neutral500 : const Color(0xFF64748B));
+
+    final activeColor = AppColors.primary;
+    final inactiveColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return Expanded(
       child: GestureDetector(
-        onTap: onTap,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
         behavior: HitTestBehavior.opaque,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          height: 62,
+        child: SizedBox(
+          height: 60,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              AnimatedSlide(
-                offset: isActive ? const Offset(0, -0.08) : Offset.zero,
-                duration: const Duration(milliseconds: 200),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isActive ? 16 : 4,
+                  vertical: isActive ? 4 : 2,
+                ),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? activeColor.withValues(alpha: isDark ? 0.22 : 0.12)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 child: Icon(
                   isActive ? activeIcon : icon,
                   size: 22,
-                  color: color,
+                  color: isActive ? activeColor : inactiveColor,
                 ),
               ),
               const SizedBox(height: 3),
-              Text(
-                label,
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
                 style: AppTextStyles.labelSmall.copyWith(
                   fontSize: 10.5,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                  color: color,
+                  fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
+                  color: isActive ? activeColor : inactiveColor,
                 ),
+                child: Text(label),
               ),
             ],
           ),
@@ -273,7 +293,7 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-/// Nav item with cart badge overlay.
+/// Nav item with cart badge overlay and animated capsule indicator.
 class _NavItemWithBadge extends StatelessWidget {
   final int index;
   final int currentIndex;
@@ -295,16 +315,19 @@ class _NavItemWithBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isActive = index == currentIndex;
-    final color = isActive
-        ? AppColors.primary
-        : (isDark ? AppColors.neutral500 : const Color(0xFF64748B));
+
+    final activeColor = AppColors.primary;
+    final inactiveColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return Expanded(
       child: GestureDetector(
-        onTap: onTap,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
         behavior: HitTestBehavior.opaque,
         child: SizedBox(
-          height: 62,
+          height: 60,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -314,38 +337,52 @@ class _NavItemWithBadge extends StatelessWidget {
                   return Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      AnimatedSlide(
-                        offset: isActive ? const Offset(0, -0.08) : Offset.zero,
-                        duration: const Duration(milliseconds: 200),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOutCubic,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isActive ? 16 : 4,
+                          vertical: isActive ? 4 : 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? activeColor.withValues(alpha: isDark ? 0.22 : 0.12)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                         child: Icon(
                           isActive ? activeIcon : icon,
                           size: 22,
-                          color: color,
+                          color: isActive ? activeColor : inactiveColor,
                         ),
                       ),
                       if (count > 0)
                         Positioned(
-                          top: -4,
-                          right: -8,
+                          top: -2,
+                          right: isActive ? 8 : -4,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 5, vertical: 1),
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                             decoration: BoxDecoration(
                               color: AppColors.primary,
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: isDark
-                                    ? AppColors.darkSurface
-                                    : Colors.white,
-                                width: 2,
+                                color: isDark ? AppColors.darkSurface : Colors.white,
+                                width: 1.5,
                               ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withValues(alpha: 0.4),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
                             ),
                             child: Text(
                               '$count',
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
                           ),
@@ -355,13 +392,14 @@ class _NavItemWithBadge extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 3),
-              Text(
-                label,
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
                 style: AppTextStyles.labelSmall.copyWith(
                   fontSize: 10.5,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                  color: color,
+                  fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
+                  color: isActive ? activeColor : inactiveColor,
                 ),
+                child: Text(label),
               ),
             ],
           ),
