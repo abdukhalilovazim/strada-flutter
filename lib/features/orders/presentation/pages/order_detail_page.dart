@@ -321,7 +321,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         'title': isPickup ? 'orders.status_pickup_ready'.tr() : 'orders.status_delivering'.tr(),
         'icon': isPickup ? Icons.storefront_rounded : Icons.delivery_dining_rounded,
       },
-      {'title': 'orders.status_completed'.tr(), 'icon': Icons.check_circle_rounded},
+      {'title': isPickup ? 'Bajarildi' : 'orders.status_completed'.tr(), 'icon': Icons.check_circle_rounded},
     ];
 
     return Container(
@@ -341,16 +341,20 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                o.statusText.startsWith('orders.status_') ? o.statusText.tr() : o.statusText,
-                style: AppTextStyles.h3.copyWith(
-                  color: activeStep == 3 ? AppColors.success : AppColors.primary,
-                  fontWeight: FontWeight.w800,
+              Expanded(
+                child: Text(
+                  o.statusText.startsWith('orders.status_') ? o.statusText.tr() : o.statusText,
+                  style: AppTextStyles.h3.copyWith(
+                    color: activeStep == 3 ? AppColors.success : AppColors.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (o.estimatedTime != null && o.estimatedTime!.isNotEmpty)
+              if (o.estimatedTime != null && o.estimatedTime!.isNotEmpty) ...[
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
@@ -372,93 +376,125 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     ],
                   ),
                 ),
+              ],
             ],
           ),
           const SizedBox(height: 20),
 
-          // Stepper Visual Nodes & Connectors
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: List.generate(steps.length * 2 - 1, (index) {
-              if (index.isOdd) {
-                final stepIndex = index ~/ 2;
-                final isDone = activeStep > stepIndex;
-                return Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.only(top: 18),
-                    height: 3,
-                    color: isDone
-                        ? AppColors.success
-                        : (isDark ? AppColors.neutral700 : AppColors.neutral200),
+          // Stepper Visual Nodes & Connectors (Equal distributed columns with zero-width wrap support)
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stepCount = steps.length;
+              final colWidth = constraints.maxWidth / stepCount;
+              final halfCol = colWidth / 2;
+
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // 1. Chiziqlar (Orqa fonda)
+                  Positioned(
+                    top: 19, // 38px aylananing o'rtasi (38 / 2 = 19)
+                    left: halfCol,
+                    right: halfCol,
+                    child: Row(
+                      children: List.generate(stepCount - 1, (index) {
+                        final isDone = activeStep > index;
+                        return Expanded(
+                          child: Container(
+                            height: 3,
+                            color: isDone
+                                ? AppColors.success
+                                : (isDark ? AppColors.neutral700 : AppColors.neutral200),
+                          ),
+                        );
+                      }),
+                    ),
                   ),
-                );
-              }
 
-              final stepIndex = index ~/ 2;
-              final isDone = activeStep > stepIndex;
-              final isActive = activeStep == stepIndex;
-              final icon = steps[stepIndex]['icon'] as IconData;
-              final title = steps[stepIndex]['title'] as String;
+                  // 2. Bosqich tugunlari (Aylana va matnlar)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: List.generate(stepCount, (stepIndex) {
+                      final isDone = activeStep > stepIndex;
+                      final isActive = activeStep == stepIndex;
+                      final icon = steps[stepIndex]['icon'] as IconData;
+                      final rawTitle = steps[stepIndex]['title'] as String;
 
-              Color nodeBg;
-              Color iconColor;
-              if (isDone) {
-                nodeBg = AppColors.success;
-                iconColor = Colors.white;
-              } else if (isActive) {
-                nodeBg = AppColors.primary;
-                iconColor = Colors.white;
-              } else {
-                nodeBg = isDark ? AppColors.neutral800 : AppColors.neutral100;
-                iconColor = isDark ? AppColors.neutral500 : AppColors.neutral400;
-              }
+                      // Uzoq so'zlar ("Tayyorlanmoqda") sig'maganda chiroyli bo'linishi uchun zero-width space
+                      final displayTitle = rawTitle.replaceAll('Tayyorlanmoqda', 'Tayyor\u200Blanmoqda');
 
-              return SizedBox(
-                width: 64,
-                child: Column(
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: nodeBg,
-                        shape: BoxShape.circle,
-                        boxShadow: isActive
-                            ? [
-                                BoxShadow(
-                                  color: AppColors.primary.withValues(alpha: 0.35),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                      Color nodeBg;
+                      Color iconColor;
+                      if (isDone) {
+                        nodeBg = AppColors.success;
+                        iconColor = Colors.white;
+                      } else if (isActive) {
+                        nodeBg = AppColors.primary;
+                        iconColor = Colors.white;
+                      } else {
+                        nodeBg = isDark ? AppColors.neutral800 : AppColors.neutral100;
+                        iconColor = isDark ? AppColors.neutral500 : AppColors.neutral400;
+                      }
+
+                      return Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 2),
+                          child: Column(
+                            children: [
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                width: 38,
+                                height: 38,
+                                decoration: BoxDecoration(
+                                  color: nodeBg,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Theme.of(context).cardColor,
+                                    width: 2.5,
+                                  ),
+                                  boxShadow: isActive
+                                      ? [
+                                          BoxShadow(
+                                            color: AppColors.primary.withValues(alpha: 0.35),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ]
+                                      : null,
                                 ),
-                              ]
-                            : null,
-                      ),
-                      child: Icon(
-                        isDone ? Icons.check_rounded : icon,
-                        color: iconColor,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.bodyExtraSmall.copyWith(
-                        fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                        color: isActive
-                            ? AppColors.primary
-                            : (isDone
-                                ? (isDark ? Colors.white : AppColors.neutral900)
-                                : AppColors.neutral500),
-                      ),
-                    ),
-                  ],
-                ),
+                                child: Icon(
+                                  isDone ? Icons.check_rounded : icon,
+                                  color: iconColor,
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                displayTitle,
+                                textAlign: TextAlign.center,
+                                maxLines: 3,
+                                softWrap: true,
+                                style: AppTextStyles.bodyExtraSmall.copyWith(
+                                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                                  color: isActive
+                                      ? AppColors.primary
+                                      : (isDone
+                                          ? (isDark ? Colors.white : AppColors.neutral900)
+                                          : AppColors.neutral500),
+                                  fontSize: 10,
+                                  height: 1.2,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ],
               );
-            }),
+            },
           ),
         ],
       ),

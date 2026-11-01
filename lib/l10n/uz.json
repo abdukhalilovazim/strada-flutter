@@ -71,7 +71,7 @@
   "checkout.order_placed": "Buyurtma qabul qilindi",
   "checkout.delivery_type": "Buyurtma turi",
   "checkout.change_from": "Qaytim qaysi summadan",
-  "checkout.comment_hint": "Izohingizni kiriting...",
+  "checkout.comment_hint": "Xonadon, podyezd, mo'ljal yoki kurer uchun izoh...",
   "checkout.free": "Tekin",
   "checkout.on_address_select": "Manzil tanlanganda",
   "checkout.enter_amount": "Summani kiriting",

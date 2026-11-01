@@ -71,7 +71,7 @@
   "cart.enter_promo": "Enter promo code",
   "checkout.delivery_type": "Order type",
   "checkout.change_from": "Change from amount",
-  "checkout.comment_hint": "Enter your comment...",
+  "checkout.comment_hint": "Apartment, entrance, landmark or note for courier...",
   "checkout.free": "Free",
   "checkout.on_address_select": "When address selected",
   "checkout.enter_amount": "Enter amount",

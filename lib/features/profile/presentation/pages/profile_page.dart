@@ -839,14 +839,16 @@ class _ProfilePageState extends State<ProfilePage> {
                             separatorBuilder: (_, __) => const SizedBox(height: 8),
                             itemBuilder: (context, index) {
                               final item = addresses[index];
-                              final details = [
-                                if (item.apartment != null && item.apartment!.isNotEmpty)
-                                  'Kvartira: ${item.apartment}',
-                                if (item.entrance != null && item.entrance!.isNotEmpty)
-                                  'Podyezd: ${item.entrance}',
-                                if (item.floor != null && item.floor!.isNotEmpty)
-                                  'Qavat: ${item.floor}',
-                              ].join(' • ');
+                              final details = (item.comment != null && item.comment!.isNotEmpty)
+                                  ? item.comment!
+                                  : [
+                                      if (item.apartment != null && item.apartment!.isNotEmpty)
+                                        'Kvartira: ${item.apartment}',
+                                      if (item.entrance != null && item.entrance!.isNotEmpty)
+                                        'Podyezd: ${item.entrance}',
+                                      if (item.floor != null && item.floor!.isNotEmpty)
+                                        'Qavat: ${item.floor}',
+                                    ].join(' • ');
 
                               return Container(
                                 padding: const EdgeInsets.all(14),

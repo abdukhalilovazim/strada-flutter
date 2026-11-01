@@ -46,20 +46,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   final _commentController = TextEditingController();
   final _promoController = TextEditingController();
-  final _changeController = TextEditingController();
   final _guestNameController = TextEditingController();
   final _guestPhoneController = TextEditingController();
-
-  final _apartmentController = TextEditingController();
-  final _floorController = TextEditingController();
-  final _entranceController = TextEditingController();
-  final _doorphoneController = TextEditingController();
+  final _additionalPhoneController = TextEditingController();
 
   bool _isLoggedIn = false;
   String? _userName;
   String? _userPhone;
   bool _isSubmittingOrder = false;
-  bool _showAdditionalAddressFields = false;
   bool _showCommentField = false;
   bool _showPromoField = false;
   bool _showStep1ValidationErrors = false;
@@ -71,33 +65,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
     if (!hasLocation) return false;
 
     final hasName = _guestNameController.text.trim().isNotEmpty;
+    if (_isLoggedIn) {
+      return hasName;
+    }
+
     final digits = _guestPhoneController.text.replaceAll(RegExp(r'\D'), '');
     final hasPhone = digits.length >= 9;
 
     return hasName && hasPhone;
-  }
-
-  bool get _hasAnyAddressDetails =>
-      _apartmentController.text.trim().isNotEmpty ||
-      _entranceController.text.trim().isNotEmpty ||
-      _floorController.text.trim().isNotEmpty ||
-      _doorphoneController.text.trim().isNotEmpty;
-
-  String _buildAddressDetailsSummary() {
-    final parts = <String>[];
-    if (_apartmentController.text.trim().isNotEmpty) {
-      parts.add('${_apartmentController.text.trim()}-xonadon');
-    }
-    if (_entranceController.text.trim().isNotEmpty) {
-      parts.add('${_entranceController.text.trim()}-podyezd');
-    }
-    if (_floorController.text.trim().isNotEmpty) {
-      parts.add('${_floorController.text.trim()}-qavat');
-    }
-    if (_doorphoneController.text.trim().isNotEmpty) {
-      parts.add('Domofon: ${_doorphoneController.text.trim()}');
-    }
-    return parts.isEmpty ? 'checkout.additional_info_subtitle'.tr() : parts.join(' • ');
   }
 
   @override
@@ -129,9 +104,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
       if (state.appliedPromoCode != null) {
         _promoController.text = state.appliedPromoCode!;
       }
-      if (state.changeAmount != null && state.changeAmount! > 0) {
-        _changeController.text = state.changeAmount!.toInt().toString();
-      }
     });
   }
 
@@ -140,13 +112,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
     _pageController.dispose();
     _commentController.dispose();
     _promoController.dispose();
-    _changeController.dispose();
+    _additionalPhoneController.dispose();
     _guestNameController.dispose();
     _guestPhoneController.dispose();
-    _apartmentController.dispose();
-    _floorController.dispose();
-    _entranceController.dispose();
-    _doorphoneController.dispose();
     super.dispose();
   }
 
@@ -334,28 +302,32 @@ class _CheckoutPageState extends State<CheckoutPage> {
               child: _buildStepperHeader(isDark),
             ),
           ),
-          body: PageView(
-            controller: _pageController,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              // ── 1-QADAM: Manzil & Filial ──
-              _buildStep1Fulfillment(checkoutState, isDark),
+          body: GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            behavior: HitTestBehavior.translucent,
+            child: PageView(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                // ── 1-QADAM: Manzil & Filial ──
+                _buildStep1Fulfillment(checkoutState, isDark),
 
-              // ── 2-QADAM: To'lov & Promokod ──
-              _buildStep2PaymentAndPromo(checkoutState, paymentMethods, subtotal, discount, isDark),
+                // ── 2-QADAM: To'lov & Promokod ──
+                _buildStep2PaymentAndPromo(checkoutState, paymentMethods, subtotal, discount, isDark),
 
-              // ── 3-QADAM: Tasdiqlash & Izoh & To'lov ──
-              _buildStep3ReviewAndSubmit(
-                checkoutState,
-                cartState,
-                paymentMethods,
-                subtotal,
-                deliveryFee,
-                discount,
-                finalTotal,
-                isDark,
-              ),
-            ],
+                // ── 3-QADAM: Tasdiqlash & Izoh & To'lov ──
+                _buildStep3ReviewAndSubmit(
+                  checkoutState,
+                  cartState,
+                  paymentMethods,
+                  subtotal,
+                  deliveryFee,
+                  discount,
+                  finalTotal,
+                  isDark,
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -558,35 +530,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                               addr.lng,
                               addr.address,
                             );
-                        if (addr.apartment != null && addr.apartment!.isNotEmpty) {
-                          _apartmentController.text = addr.apartment!;
+                        if (addr.comment != null && addr.comment!.isNotEmpty) {
+                          _commentController.text = addr.comment!;
+                          context.read<CheckoutCubit>().setComment(addr.comment!);
                         } else {
-                          _apartmentController.clear();
+                          _commentController.clear();
+                          context.read<CheckoutCubit>().setComment('');
                         }
-                        if (addr.floor != null && addr.floor!.isNotEmpty) {
-                          _floorController.text = addr.floor!;
-                        } else {
-                          _floorController.clear();
-                        }
-                        if (addr.entrance != null && addr.entrance!.isNotEmpty) {
-                          _entranceController.text = addr.entrance!;
-                        } else {
-                          _entranceController.clear();
-                        }
-                        if (addr.doorphone != null && addr.doorphone!.isNotEmpty) {
-                          _doorphoneController.text = addr.doorphone!;
-                        } else {
-                          _doorphoneController.clear();
-                        }
-                        final hasSavedDetails = (addr.apartment?.isNotEmpty ?? false) ||
-                            (addr.floor?.isNotEmpty ?? false) ||
-                            (addr.entrance?.isNotEmpty ?? false) ||
-                            (addr.doorphone?.isNotEmpty ?? false);
-                        setState(() {
-                          if (hasSavedDetails) {
-                            _showAdditionalAddressFields = true;
-                          }
-                        });
+                        setState(() {});
                       },
                       child: Container(
                         width: 220,
@@ -773,191 +724,26 @@ class _CheckoutPageState extends State<CheckoutPage> {
             ],
             const SizedBox(height: 16),
 
-            // 🚪 Ixtiyoriy manzil ma'lumotlari (Xonadon, podyezd, qavat, domofon)
-            // Har biri alohida row, default holatda yashirin (hidden), foydalanuvchi xohlaganda ko'rsatiladi
-            if (!_showAdditionalAddressFields) ...[
-              Material(
-                color: isDark ? AppColors.darkCard : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                elevation: 1,
-                shadowColor: Colors.black.withValues(alpha: 0.04),
-                child: InkWell(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    setState(() => _showAdditionalAddressFields = true);
-                  },
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: _hasAnyAddressDetails
-                            ? AppColors.primary.withValues(alpha: 0.5)
-                            : (isDark ? AppColors.darkBorder : AppColors.neutral200),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            _hasAnyAddressDetails
-                                ? Icons.check_circle_outline_rounded
-                                : Icons.tune_rounded,
-                            color: AppColors.primary,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _hasAnyAddressDetails
-                                    ? 'checkout.additional'.tr()
-                                    : 'checkout.add_additional_info'.tr(),
-                                style: AppTextStyles.labelMedium.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: isDark ? Colors.white : AppColors.neutral900,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _buildAddressDetailsSummary(),
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: _hasAnyAddressDetails
-                                      ? AppColors.primary
-                                      : (isDark ? AppColors.neutral400 : AppColors.neutral600),
-                                  fontWeight: _hasAnyAddressDetails ? FontWeight.w600 : FontWeight.w400,
-                                  fontSize: 12,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                        _hasAnyAddressDetails
-                            ? Text(
-                                'common.change'.tr(),
-                                style: const TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 12,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.add_circle_outline_rounded,
-                                color: AppColors.primary,
-                                size: 22,
-                              ),
-                      ],
-                    ),
-                  ),
-                ),
+            // 📝 Manzil va kurer uchun izoh (xonadon, podyezd, mo'ljal)
+            Text(
+              'checkout.comment'.tr(),
+              style: AppTextStyles.h4.copyWith(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : AppColors.neutral900,
               ),
-            ] else ...[
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkCard : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.neutral200),
-                  boxShadow: AppColors.softShadow(isDark),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(Icons.tune_rounded, color: AppColors.primary, size: 18),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'checkout.additional'.tr(),
-                              style: AppTextStyles.labelLarge.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: isDark ? Colors.white : AppColors.neutral900,
-                              ),
-                            ),
-                          ],
-                        ),
-                        TextButton.icon(
-                          onPressed: () {
-                            HapticFeedback.lightImpact();
-                            setState(() => _showAdditionalAddressFields = false);
-                          },
-                          icon: const Icon(Icons.keyboard_arrow_up_rounded, size: 18, color: AppColors.neutral500),
-                          label: Text(
-                            'common.hide'.tr(),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.neutral500,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    // ── 1-qator: Xonadon / Kvartira / Ofis ──
-                    _buildOptionalRow(
-                      label: 'checkout.apartment'.tr(),
-                      controller: _apartmentController,
-                      hint: 'checkout.apartment_hint'.tr(),
-                      icon: Icons.door_front_door_outlined,
-                      isDark: isDark,
-                    ),
-                    const SizedBox(height: 12),
-
-                    // ── 2-qator: Podyezd / Kirish yo'lagi ──
-                    _buildOptionalRow(
-                      label: 'checkout.entrance'.tr(),
-                      controller: _entranceController,
-                      hint: 'checkout.entrance_hint'.tr(),
-                      icon: Icons.meeting_room_outlined,
-                      isDark: isDark,
-                    ),
-                    const SizedBox(height: 12),
-
-                    // ── 3-qator: Qavat ──
-                    _buildOptionalRow(
-                      label: 'checkout.floor'.tr(),
-                      controller: _floorController,
-                      hint: 'checkout.floor_hint'.tr(),
-                      icon: Icons.stairs_outlined,
-                      isDark: isDark,
-                    ),
-                    const SizedBox(height: 12),
-
-                    // ── 4-qator: Domofon kodi ──
-                    _buildOptionalRow(
-                      label: 'checkout.doorphone'.tr(),
-                      controller: _doorphoneController,
-                      hint: 'checkout.doorphone_hint'.tr(),
-                      icon: Icons.dialpad_outlined,
-                      isDark: isDark,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
+            const SizedBox(height: 8),
+            AppTextField(
+              controller: _commentController,
+              hintText: 'checkout.comment_hint'.tr(),
+              prefixIcon: Icons.notes_rounded,
+              maxLines: 2,
+              onChanged: (val) {
+                context.read<CheckoutCubit>().setComment(val);
+                setState(() {});
+              },
+            ),
           ] else ...[
             // 🏃 Agar Olib ketish bo'lsa: Filiallar ro'yxati
             Text(
@@ -1081,21 +867,48 @@ class _CheckoutPageState extends State<CheckoutPage> {
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 10),
-          AppTextField(
-            controller: _guestPhoneController,
-            hintText: '+998 90 123 45 67',
-            keyboardType: TextInputType.phone,
-            prefixIcon: Icons.phone_outlined,
-            errorText: _showStep1ValidationErrors &&
-                    _guestPhoneController.text.replaceAll(RegExp(r'\D'), '').length < 9
-                ? 'checkout.enter_phone_error'.tr()
-                : null,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              PhoneNumberFormatter(),
-            ],
-            onChanged: (_) => setState(() {}),
-          ),
+          if (_isLoggedIn) ...[
+            // 🔒 Asosiy tizimga ulangan telefon raqami (o'zgartirilmaydi)
+            AppTextField(
+              controller: _guestPhoneController,
+              enabled: false,
+              hintText: '+998 90 123 45 67',
+              prefixIcon: Icons.phone_android_rounded,
+              suffixIcon: const Padding(
+                padding: EdgeInsets.only(right: 12),
+                child: Icon(Icons.lock_outline_rounded, size: 18, color: AppColors.neutral400),
+              ),
+            ),
+            const SizedBox(height: 10),
+            // 📞 Qo'shimcha telefon raqami (ixtiyoriy)
+            AppTextField(
+              controller: _additionalPhoneController,
+              hintText: "Qo'shimcha telefon raqami (ixtiyoriy)",
+              keyboardType: TextInputType.phone,
+              prefixIcon: Icons.phone_outlined,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                PhoneNumberFormatter(),
+              ],
+              onChanged: (_) => setState(() {}),
+            ),
+          ] else ...[
+            AppTextField(
+              controller: _guestPhoneController,
+              hintText: '+998 90 123 45 67',
+              keyboardType: TextInputType.phone,
+              prefixIcon: Icons.phone_outlined,
+              errorText: _showStep1ValidationErrors &&
+                      _guestPhoneController.text.replaceAll(RegExp(r'\D'), '').length < 9
+                  ? 'checkout.enter_phone_error'.tr()
+                  : null,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                PhoneNumberFormatter(),
+              ],
+              onChanged: (_) => setState(() {}),
+            ),
+          ],
           const SizedBox(height: 32),
 
           // ➡️ 1-Qadam Pastki Tugmasi
@@ -1339,7 +1152,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           ],
           const SizedBox(height: 24),
 
-          // 2. To'lov usullari
+          // 2. To'lov usullari (1 qatorda 2 ta ustun - Naqd & Payme)
           Text(
             'checkout.payment'.tr(),
             style: AppTextStyles.h4.copyWith(
@@ -1350,61 +1163,36 @@ class _CheckoutPageState extends State<CheckoutPage> {
           ),
           const SizedBox(height: 10),
 
-          // Naqd pul
-          _buildPaymentCard(
-            title: 'checkout.cash_payment'.tr(),
-            icon: Icons.payments_outlined,
-            isSelected: state.selectedPaymentMethodKey == '0' || state.selectedPaymentMethodKey == 'cash',
-            onTap: () {
-              HapticFeedback.selectionClick();
-              context.read<CheckoutCubit>().setPaymentMethod('0');
-            },
-            isDark: isDark,
-          ),
-          const SizedBox(height: 10),
-
-          // Qaytim kalkulyatori (Naqd pul tanlanganda)
-          if (state.selectedPaymentMethodKey == '0' || state.selectedPaymentMethodKey == 'cash') ...[
-            Container(
-              margin: const EdgeInsets.only(left: 12, right: 12, bottom: 10),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.darkCard : AppColors.neutral100,
-                borderRadius: BorderRadius.circular(16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildPaymentOptionColumn(
+                  title: 'checkout.cash_payment'.tr(),
+                  subtitle: 'Kurerga to\'lash',
+                  icon: Icons.payments_outlined,
+                  isSelected: state.selectedPaymentMethodKey == '0' || state.selectedPaymentMethodKey == 'cash',
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    context.read<CheckoutCubit>().setPaymentMethod('0');
+                  },
+                  isDark: isDark,
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'checkout.change_from'.tr(),
-                    style: AppTextStyles.labelMedium.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      _buildChangeChip('Aniq summa', 0, state.changeAmount == null || state.changeAmount == 0),
-                      const SizedBox(width: 8),
-                      _buildChangeChip('100 000', 100000, state.changeAmount == 100000),
-                      const SizedBox(width: 8),
-                      _buildChangeChip('200 000', 200000, state.changeAmount == 200000),
-                    ],
-                  ),
-                ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildPaymentOptionColumn(
+                  title: 'Payme',
+                  subtitle: 'Online to\'lov',
+                  icon: Icons.account_balance_wallet_rounded,
+                  isSelected: state.selectedPaymentMethodKey == '1' || state.selectedPaymentMethodKey == 'payme',
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    context.read<CheckoutCubit>().setPaymentMethod('1');
+                  },
+                  isDark: isDark,
+                ),
               ),
-            ),
-          ],
-
-          // Payme Online
-          _buildPaymentCard(
-            title: 'Payme (Online to\'lov)',
-            subtitle: 'checkout.online_notice'.tr(),
-            icon: Icons.account_balance_wallet_rounded,
-            isSelected: state.selectedPaymentMethodKey == '1' || state.selectedPaymentMethodKey == 'payme',
-            onTap: () {
-              HapticFeedback.selectionClick();
-              context.read<CheckoutCubit>().setPaymentMethod('1');
-            },
-            isDark: isDark,
+            ],
           ),
           const SizedBox(height: 32),
 
@@ -1533,6 +1321,55 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 ),
                 Divider(color: isDark ? AppColors.darkBorder : AppColors.neutral200, height: 16),
 
+                // Qabul qiluvchi & Telefon qatori
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.info.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.person_rounded, color: AppColors.info, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'checkout.recipient'.tr(),
+                            style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400),
+                          ),
+                          Text(
+                            _guestNameController.text.trim().isNotEmpty
+                                ? '${_guestNameController.text.trim()} • ${_guestPhoneController.text.trim()}'
+                                : _guestPhoneController.text.trim(),
+                            style: AppTextStyles.labelMedium.copyWith(fontWeight: FontWeight.w700),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (_additionalPhoneController.text.trim().isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              'Qo\'shimcha tel: ${_additionalPhoneController.text.trim()}',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => _goToStep(0),
+                      child: Text('common.change'.tr(), style: const TextStyle(fontSize: 12)),
+                    ),
+                  ],
+                ),
+                Divider(color: isDark ? AppColors.darkBorder : AppColors.neutral200, height: 16),
+
                 // To'lov qatori
                 Row(
                   children: [
@@ -1644,7 +1481,53 @@ class _CheckoutPageState extends State<CheckoutPage> {
           const SizedBox(height: 20),
 
           // 3. Buyurtmaga izoh (Ixtiyoriy)
-          if (!_showCommentField && _commentController.text.trim().isEmpty) ...[
+          if (_commentController.text.trim().isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkCard : const Color(0xFFF8F9FA),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.neutral200),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.notes_rounded, color: AppColors.primary, size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'checkout.comment'.tr(),
+                          style: AppTextStyles.labelSmall.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _commentController.text.trim(),
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: isDark ? Colors.white : AppColors.neutral900,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (!_showCommentField) ...[
             Material(
               color: isDark ? AppColors.darkCard : Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -1860,8 +1743,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
               title,
               style: TextStyle(
                 color: isSelected ? Colors.white : (isDark ? AppColors.neutral400 : AppColors.neutral700),
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 fontSize: 14,
+                letterSpacing: -0.2,
               ),
             ),
           ],
@@ -1870,38 +1754,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
-  Widget _buildOptionalRow({
-    required String label,
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    required bool isDark,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.bodySmall.copyWith(
-            fontWeight: FontWeight.w600,
-            color: isDark ? AppColors.neutral300 : AppColors.neutral700,
-            fontSize: 12,
-          ),
-        ),
-        const SizedBox(height: 6),
-        AppTextField(
-          controller: controller,
-          hintText: hint,
-          prefixIcon: icon,
-          onChanged: (_) => setState(() {}),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPaymentCard({
+  Widget _buildPaymentOptionColumn({
     required String title,
-    String? subtitle,
+    required String subtitle,
     required IconData icon,
     required bool isSelected,
     required VoidCallback onTap,
@@ -1909,84 +1764,70 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.08)
               : (isDark ? AppColors.darkCard : Colors.white),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isSelected ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.neutral200),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: AppColors.softShadow(isDark),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : (isDark ? AppColors.neutral800 : AppColors.neutral100),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: isSelected ? Colors.white : AppColors.neutral600, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.labelLarge.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : AppColors.neutral900,
-                    ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primary
+                        : (isDark ? AppColors.neutral800 : AppColors.neutral100),
+                    shape: BoxShape.circle,
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: isDark ? AppColors.neutral400 : AppColors.neutral600,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+                  child: Icon(
+                    icon,
+                    color: isSelected ? Colors.white : AppColors.neutral600,
+                    size: 20,
+                  ),
+                ),
+                Icon(
+                  isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
+                  color: isSelected ? AppColors.primary : AppColors.neutral400,
+                  size: 20,
+                ),
+              ],
             ),
-            Icon(
-              isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
-              color: isSelected ? AppColors.primary : AppColors.neutral400,
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: AppTextStyles.labelLarge.copyWith(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: isDark ? Colors.white : AppColors.neutral900,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                fontSize: 11,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChangeChip(String label, double amount, bool isSelected) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        context.read<CheckoutCubit>().setChangeAmount(amount > 0 ? amount : null);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: isSelected ? AppColors.primary : AppColors.neutral300),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-            color: isSelected ? Colors.white : AppColors.neutral700,
-          ),
         ),
       ),
     );
@@ -2074,10 +1915,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           address: checkoutState.address!,
           lat: checkoutState.lat!,
           lng: checkoutState.lng!,
-          apartment: _apartmentController.text.trim(),
-          floor: _floorController.text.trim(),
-          entrance: _entranceController.text.trim(),
-          doorphone: _doorphoneController.text.trim(),
+          comment: _commentController.text.trim(),
         ),
       );
     }
@@ -2093,8 +1931,21 @@ class _CheckoutPageState extends State<CheckoutPage> {
       };
     }).toList();
 
+    final extraPhone = _additionalPhoneController.text.trim();
+    String effectiveComment = _commentController.text.trim();
+    if (extraPhone.isNotEmpty) {
+      if (effectiveComment.isNotEmpty) {
+        effectiveComment = '$effectiveComment (Qo\'shimcha tel: $extraPhone)';
+      } else {
+        effectiveComment = 'Qo\'shimcha tel: $extraPhone';
+      }
+    }
+
     if (!mounted) return;
-    context.read<CheckoutCubit>().submitOrder(products: products);
+    context.read<CheckoutCubit>().submitOrder(
+          products: products,
+          commentOverride: effectiveComment.isNotEmpty ? effectiveComment : null,
+        );
   }
 
   void _handleSuccess(Map<String, dynamic> data) async {

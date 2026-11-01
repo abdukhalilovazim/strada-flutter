@@ -113,6 +113,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
 
   Future<void> submitOrder({
     required List<Map<String, dynamic>> products,
+    String? commentOverride,
   }) async {
     emit(state.copyWith(isSubmitting: true, submitError: null));
     final vars = {
@@ -122,8 +123,8 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         'longitude': state.isDelivery ? state.lng : null,
         'address': state.isDelivery ? state.address : null,
         'payment_method': (state.selectedPaymentMethodKey == '1' || state.selectedPaymentMethodKey == 'payme') ? 1 : 0,
-        'change': state.changeAmount?.toInt(),
-        'comment': state.comment,
+        'change': null,
+        'comment': commentOverride ?? state.comment,
         'promo_code': state.appliedPromoCode,
         'products': products,
       };

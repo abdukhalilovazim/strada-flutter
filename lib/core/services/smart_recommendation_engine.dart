@@ -279,3 +279,4 @@ class SmartRecommendationEngine {
     return const RecommendationMatch(title: '', products: []);
   }
 }
+

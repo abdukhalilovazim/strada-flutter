@@ -71,7 +71,7 @@
   "cart.enter_promo": "Введите промокод",
   "checkout.delivery_type": "Тип заказа",
   "checkout.change_from": "Сдача с суммы",
-  "checkout.comment_hint": "Оставьте комментарий...",
+  "checkout.comment_hint": "Квартира, подъезд, ориентир или комментарий курьеру...",
   "checkout.free": "Бесплатно",
   "checkout.on_address_select": "При выборе адреса",
   "checkout.enter_amount": "Введите сумму",

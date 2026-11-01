@@ -4,6 +4,7 @@ class SavedAddressModel {
   final String address;
   final double lat;
   final double lng;
+  final String? comment;
   final String? apartment;
   final String? floor;
   final String? entrance;
@@ -15,6 +16,7 @@ class SavedAddressModel {
     required this.address,
     required this.lat,
     required this.lng,
+    this.comment,
     this.apartment,
     this.floor,
     this.entrance,
@@ -27,23 +29,40 @@ class SavedAddressModel {
         'address': address,
         'lat': lat,
         'lng': lng,
-        'apartment': apartment,
-        'floor': floor,
-        'entrance': entrance,
-        'doorphone': doorphone,
+        'comment': comment,
       };
 
-  factory SavedAddressModel.fromJson(Map<String, dynamic> json) =>
-      SavedAddressModel(
-        id: json['id']?.toString() ?? '',
-        label: json['label']?.toString() ?? 'Manzil',
-        address: json['address']?.toString() ?? '',
-        lat: (json['lat'] as num?)?.toDouble() ?? 0.0,
-        lng: (json['lng'] as num?)?.toDouble() ?? 0.0,
-        apartment: json['apartment']?.toString(),
-        floor: json['floor']?.toString(),
-        entrance: json['entrance']?.toString(),
-        doorphone: json['doorphone']?.toString(),
-      );
+  factory SavedAddressModel.fromJson(Map<String, dynamic> json) {
+    // If old saved address has separate fields, seamlessly migrate to comment
+    String? resolvedComment = json['comment']?.toString();
+    if (resolvedComment == null || resolvedComment.isEmpty) {
+      final oldParts = [
+        if (json['apartment'] != null && json['apartment'].toString().isNotEmpty)
+          '${json['apartment']}-xonadon',
+        if (json['entrance'] != null && json['entrance'].toString().isNotEmpty)
+          '${json['entrance']}-podyezd',
+        if (json['floor'] != null && json['floor'].toString().isNotEmpty)
+          '${json['floor']}-qavat',
+        if (json['doorphone'] != null && json['doorphone'].toString().isNotEmpty)
+          'Domofon: ${json['doorphone']}',
+      ];
+      if (oldParts.isNotEmpty) {
+        resolvedComment = oldParts.join(', ');
+      }
+    }
+
+    return SavedAddressModel(
+      id: json['id']?.toString() ?? '',
+      label: json['label']?.toString() ?? 'Manzil',
+      address: json['address']?.toString() ?? '',
+      lat: (json['lat'] as num?)?.toDouble() ?? 0.0,
+      lng: (json['lng'] as num?)?.toDouble() ?? 0.0,
+      comment: resolvedComment,
+      apartment: json['apartment']?.toString(),
+      floor: json['floor']?.toString(),
+      entrance: json['entrance']?.toString(),
+      doorphone: json['doorphone']?.toString(),
+    );
+  }
 }
 
