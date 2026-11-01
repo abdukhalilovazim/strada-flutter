@@ -7,6 +7,7 @@ import 'package:pizza_strada/core/services/analytics_service.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
+import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 
 class CartPage extends StatelessWidget {
@@ -120,18 +121,20 @@ class CartPage extends StatelessWidget {
                                   ? AppColors.neutral800
                                   : const Color(0xFFF8F9FA),
                               padding: const EdgeInsets.all(4),
-                              child: CachedNetworkImage(
-                                imageUrl: item.product.thumbnail,
-                                fit: BoxFit.contain,
-                                placeholder: (_, __) => Container(
-                                    color: isDark
-                                        ? AppColors.neutral800
-                                        : AppColors.neutral100),
-                                errorWidget: (_, __, ___) => const Icon(
-                                    Icons.image_not_supported_outlined,
-                                    size: 28,
-                                    color: AppColors.neutral400),
-                              ),
+                              child: (item.product.thumbnail.isNotEmpty || item.product.photo.isNotEmpty)
+                                  ? CachedNetworkImage(
+                                      imageUrl: item.product.thumbnail.isNotEmpty
+                                          ? item.product.thumbnail
+                                          : item.product.photo,
+                                      fit: BoxFit.contain,
+                                      placeholder: (_, __) => Container(
+                                          color: isDark
+                                              ? AppColors.neutral800
+                                              : AppColors.neutral100),
+                                      errorWidget: (_, __, ___) => const PizzaImagePlaceholder(
+                                          fit: BoxFit.contain),
+                                    )
+                                  : const PizzaImagePlaceholder(fit: BoxFit.contain),
                             ),
                           ),
                           const SizedBox(width: 14),

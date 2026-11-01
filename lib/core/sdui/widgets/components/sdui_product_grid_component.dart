@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../features/cart/presentation/bloc/cart_cubit.dart';
 import '../../../../features/home/domain/entities/home_entities.dart';
 import '../../../../features/home/presentation/widgets/product_card.dart';
+import '../../../../features/home/presentation/widgets/product_detail_modal.dart';
 import '../../models/sdui_component_model.dart';
 import '../../models/sdui_section_model.dart';
 import '../../registry/sdui_action_dispatcher.dart';
@@ -81,7 +82,9 @@ class SDUIProductGridComponent extends StatelessWidget {
                     product: product,
                     quantityInCart: quantity,
                     onTap: () {
-                      if (item.action != null) {
+                      if (product.variants.length > 1) {
+                        ProductDetailModal.show(context, product);
+                      } else if (item.action != null) {
                         onAction(item.action!);
                       } else {
                         context.push('/product/${product.slug}', extra: product);
@@ -89,7 +92,7 @@ class SDUIProductGridComponent extends StatelessWidget {
                     },
                     onAdd: () {
                       if (product.variants.length > 1) {
-                        context.push('/product/${product.slug}', extra: product);
+                        ProductDetailModal.show(context, product);
                       } else {
                         context.read<CartCubit>().addToCart(
                               product,

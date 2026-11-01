@@ -215,23 +215,24 @@ class ProductCard extends StatelessWidget {
                           SizedBox(
                             height: 34,
                             child: hasVariants
-                                ? ElevatedButton(
-                                    onPressed: onTap,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primaryLight,
-                                      foregroundColor: AppColors.primary,
-                                      elevation: 0,
-                                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'product.open_btn'.tr(),
-                                      style: AppTextStyles.labelSmall.copyWith(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.primary,
+                                ? Material(
+                                    color: AppColors.primaryLight,
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: InkWell(
+                                      onTap: onTap,
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Container(
+                                        height: 34,
+                                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          'product.open_btn'.tr(),
+                                          style: AppTextStyles.labelSmall.copyWith(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   )

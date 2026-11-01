@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -5,28 +6,57 @@ import 'package:pizza_strada/core/sdui/sdui.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_icons.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
+import 'package:pizza_strada/core/utils/number_formatter.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
+import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
+import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
+import 'package:pizza_strada/features/cart/presentation/widgets/order_type_bottom_sheet.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
+import 'package:pizza_strada/features/home/presentation/widgets/header_location_pill.dart';
 
 /// 📱 HomePage powered 100% by Server-Driven UI (SDUI)
+/// Benchmarked against Dodo Pizza, Bellissimo, Uzum Tezkor, and Yandex Eats.
 /// Compliant with Apple Guideline 2.5.2 & Google Play policies.
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   Widget _buildAppBar(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SliverAppBar(
       pinned: true,
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
+      titleSpacing: 16,
       title: Row(
         children: [
           Image.asset(
             'assets/icons/logo.png',
-            height: 32,
+            height: 28,
             errorBuilder: (_, __, ___) => Text(
-              'Pizza strada',
-              style: AppTextStyles.h2.copyWith(color: AppColors.primary),
+              'Strada',
+              style: AppTextStyles.h3.copyWith(color: AppColors.primary),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: BlocBuilder<CheckoutCubit, CheckoutState>(
+              builder: (context, checkoutState) {
+                return HeaderLocationPill(
+                  orderType: checkoutState.isDelivery ? 0 : 1,
+                  addressName: checkoutState.address,
+                  branchTitle: checkoutState.branchTitle,
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => const OrderTypeBottomSheet(),
+                    );
+                  },
+                );
+              },
             ),
           ),
         ],
@@ -34,11 +64,14 @@ class HomePage extends StatelessWidget {
       actions: [
         BlocBuilder<CartCubit, CartState>(
           builder: (ctx, cartState) {
-            final count = cartState.items.length;
+            final count = cartState.totalQuantity;
             return Stack(
               children: [
                 IconButton(
-                  icon: const Icon(AppIcons.cart, color: AppColors.neutral900),
+                  icon: Icon(
+                    AppIcons.cart,
+                    color: isDark ? Colors.white : AppColors.neutral900,
+                  ),
                   onPressed: () => context.push('/cart'),
                 ),
                 if (count > 0)
@@ -141,6 +174,71 @@ class HomePage extends StatelessWidget {
           }
 
           return const SizedBox.shrink();
+        },
+      ),
+      bottomNavigationBar: BlocBuilder<CartCubit, CartState>(
+        builder: (context, cartState) {
+          if (cartState.items.isEmpty) return const SizedBox.shrink();
+
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Material(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(20),
+                elevation: 4,
+                shadowColor: AppColors.primary.withValues(alpha: 0.4),
+                child: InkWell(
+                  onTap: () => context.push('/cart'),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    height: 52,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.shopping_bag_outlined,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          '${cartState.totalQuantity} ta • ${NumberFormatter.formatSum(cartState.subtotal)} ${'common.currency'.tr()}',
+                          style: AppTextStyles.labelMedium.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Savatcha',
+                          style: AppTextStyles.labelMedium.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          color: Colors.white,
+                          size: 13,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
         },
       ),
     );
