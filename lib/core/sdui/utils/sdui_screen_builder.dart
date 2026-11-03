@@ -270,4 +270,176 @@ class SDUIScreenBuilder {
       sections: sections,
     );
   }
+
+  /// 🛒 Default fallback Cart SDUI Screen
+  static SDUIPageModel buildCartScreen() {
+    return const SDUIPageModel(
+      version: '1.2.0',
+      versionUuid: 'cart_default_v1',
+      screenId: 'cart',
+      meta: {
+        'title': 'Savat',
+        'cache_ttl_seconds': 300,
+      },
+      sections: [
+        SDUISectionModel(
+          id: 'cart_delivery_info_section',
+          type: 'cart_delivery_info_card',
+          properties: {'title': 'Yetkazib berish', 'show_eta': true, 'eta_minutes': 35},
+        ),
+        SDUISectionModel(
+          id: 'cart_items_list_section',
+          type: 'cart_item_list',
+          properties: {'show_photos': true, 'allow_stepper': true, 'allow_delete': true},
+        ),
+        SDUISectionModel(
+          id: 'empty_cart_section',
+          type: 'empty_cart_card',
+          properties: {
+            'title': 'Savatingiz bo\'sh',
+            'subtitle': 'Menyudan o\'zingizga yoqqan pitsa va ichimliklarni tanlang',
+            'button_text': 'Menyuga o\'tish',
+          },
+        ),
+        SDUISectionModel(
+          id: 'upsell_recommendation_section',
+          type: 'upsell_recommendation_slider',
+          properties: {'title': 'Buyurtmaga qo\'shasizmi?'},
+        ),
+        SDUISectionModel(
+          id: 'promo_code_section',
+          type: 'promo_code_card',
+          properties: {
+            'title': 'Promokod',
+            'placeholder': 'Promokodni kiriting',
+            'button_text': 'Qo\'llash',
+          },
+        ),
+        SDUISectionModel(
+          id: 'cart_summary_section',
+          type: 'cart_summary_card',
+          properties: {'title': 'Buyurtma summasi'},
+        ),
+        SDUISectionModel(
+          id: 'cart_checkout_button_section',
+          type: 'cart_checkout_button',
+          properties: {'button_text': 'Rasmiylashtirishga o\'tish', 'sticky': true},
+        ),
+      ],
+    );
+  }
+
+  /// 💳 Default fallback Checkout SDUI Screen
+  static SDUIPageModel buildCheckoutScreen() {
+    return const SDUIPageModel(
+      version: '1.2.0',
+      versionUuid: 'checkout_default_v1',
+      screenId: 'checkout',
+      meta: {
+        'title': 'Buyurtma rasmiylashtirish',
+        'cache_ttl_seconds': 300,
+      },
+      sections: [
+        SDUISectionModel(
+          id: 'order_type_selector_section',
+          type: 'order_type_selector_card',
+          properties: {'delivery_title': 'Yetkazib berish', 'pickup_title': 'Olib ketish'},
+        ),
+        SDUISectionModel(
+          id: 'address_selector_section',
+          type: 'address_selector_card',
+          properties: {'title': 'Yetkazib berish manzili', 'map_button_text': 'Xaritadan tanlash'},
+        ),
+        SDUISectionModel(
+          id: 'pickup_branch_section',
+          type: 'pickup_branch_card',
+          properties: {'title': 'Filialni tanlang'},
+        ),
+        SDUISectionModel(
+          id: 'delivery_time_slot_section',
+          type: 'delivery_time_slot_card',
+          properties: {'title': 'Yetkazish vaqti', 'asap_text': 'Iloji boricha tezroq (~35 daqiqa)'},
+        ),
+        SDUISectionModel(
+          id: 'customer_info_section',
+          type: 'customer_info_card',
+          properties: {'title': 'Qabul qiluvchi ma\'lumotlari'},
+        ),
+        SDUISectionModel(
+          id: 'payment_method_selector_section',
+          type: 'payment_method_selector_card',
+          properties: {'title': 'To\'lov usuli'},
+        ),
+        SDUISectionModel(
+          id: 'courier_notes_section',
+          type: 'courier_notes_card',
+          properties: {'title': 'Kuryer uchun izoh', 'utensils_label': 'Qoshiq va salfetka kerak emas'},
+        ),
+        SDUISectionModel(
+          id: 'checkout_summary_section',
+          type: 'checkout_summary_card',
+          properties: {'title': 'Yakuniy to\'lov'},
+        ),
+        SDUISectionModel(
+          id: 'submit_order_cta_section',
+          type: 'submit_order_cta_card',
+          properties: {'button_text': 'Buyurtmani tasdiqlash'},
+        ),
+      ],
+    );
+  }
+
+  /// 👤 Default fallback Profile SDUI Screen
+  static SDUIPageModel buildProfileScreen() {
+    return const SDUIPageModel(
+      version: '1.2.0',
+      versionUuid: 'profile_default_v1',
+      screenId: 'profile',
+      meta: {
+        'title': 'Profil',
+        'cache_ttl_seconds': 300,
+      },
+      sections: [
+        SDUISectionModel(
+          id: 'profile_header_section',
+          type: 'profile_header_card',
+          properties: {'show_avatar': true, 'show_phone': true},
+        ),
+        SDUISectionModel(
+          id: 'loyalty_card_section',
+          type: 'loyalty_card',
+          properties: {
+            'title': 'Strada Keshbek',
+            'subtitle': 'Ballar to\'plang va 100% gacha to\'lang',
+            'badge': '5% Keshbek',
+          },
+        ),
+        SDUISectionModel(
+          id: 'profile_menu_group_section',
+          type: 'profile_menu_group',
+          properties: {'title': 'Asosiy'},
+        ),
+        SDUISectionModel(
+          id: 'app_settings_section',
+          type: 'app_settings_card',
+          properties: {'title': 'Ilova sozlamalari'},
+        ),
+        SDUISectionModel(
+          id: 'support_contacts_section',
+          type: 'support_contacts_card',
+          properties: {'title': 'Qo\'llab-quvvatlash va aloqa'},
+        ),
+        SDUISectionModel(
+          id: 'logout_delete_section',
+          type: 'logout_delete_card',
+          properties: {'logout_text': 'Hisobdan chiqish'},
+        ),
+        SDUISectionModel(
+          id: 'app_version_section',
+          type: 'app_version_card',
+          properties: {},
+        ),
+      ],
+    );
+  }
 }

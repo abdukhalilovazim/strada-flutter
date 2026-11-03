@@ -3,9 +3,12 @@ import '../models/sdui_section_model.dart';
 import '../registry/sdui_action_dispatcher.dart';
 import '../registry/sdui_error_boundary.dart';
 import '../widgets/components/sdui_announcement_component.dart';
+import '../widgets/components/sdui_cart_components.dart';
 import '../widgets/components/sdui_category_bar_component.dart';
+import '../widgets/components/sdui_checkout_components.dart';
 import '../widgets/components/sdui_delivery_bar_component.dart';
 import '../widgets/components/sdui_product_grid_component.dart';
+import '../widgets/components/sdui_profile_components.dart';
 import '../widgets/components/sdui_section_header_component.dart';
 import '../widgets/components/sdui_slider_component.dart';
 
@@ -33,6 +36,10 @@ class SDUIComponentRegistry {
   }
 
   void _registerDefaultComponents() {
+    // =========================================================================
+    // 🏠 HOME COMPONENTS
+    // =========================================================================
+
     // 1. Hero Carousel Slider
     registerSliver('carousel_slider', (context, section, onAction, _) {
       return SliverToBoxAdapter(
@@ -101,6 +108,225 @@ class SDUIComponentRegistry {
     registerSliver('spacer_block', (context, section, _, __) {
       final height = (section.properties['height'] as num?)?.toDouble() ?? 16.0;
       return SliverToBoxAdapter(child: SizedBox(height: height));
+    });
+
+    // =========================================================================
+    // 🛒 CART COMPONENTS
+    // =========================================================================
+
+    registerSliver('cart_delivery_info_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'cart_delivery_info_card',
+          child: SDUICartDeliveryInfoComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('cart_item_list', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'cart_item_list',
+          child: SDUICartItemListComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('empty_cart_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'empty_cart_card',
+          child: SDUIEmptyCartComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('upsell_recommendation_slider', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'upsell_recommendation_slider',
+          child: SDUIUpsellSliderComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('promo_code_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'promo_code_card',
+          child: SDUIPromoCodeComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('cart_summary_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'cart_summary_card',
+          child: SDUICartSummaryComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('cart_checkout_button', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'cart_checkout_button',
+          child: SDUICartCheckoutButtonComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    // =========================================================================
+    // 💳 CHECKOUT COMPONENTS
+    // =========================================================================
+
+    registerSliver('order_type_selector_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'order_type_selector_card',
+          child: SDUIOrderTypeComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('address_selector_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'address_selector_card',
+          child: SDUIAddressSelectorComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('pickup_branch_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'pickup_branch_card',
+          child: SDUIPickupBranchComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('delivery_time_slot_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'delivery_time_slot_card',
+          child: SDUIDeliveryTimeSlotComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('customer_info_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'customer_info_card',
+          child: SDUICustomerInfoComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('payment_method_selector_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'payment_method_selector_card',
+          child: SDUIPaymentMethodComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('courier_notes_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'courier_notes_card',
+          child: SDUICourierNotesComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('checkout_summary_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'checkout_summary_card',
+          child: SDUICheckoutSummaryComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('submit_order_cta_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'submit_order_cta_card',
+          child: SDUISubmitOrderCtaComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    // =========================================================================
+    // 👤 PROFILE COMPONENTS
+    // =========================================================================
+
+    registerSliver('profile_header_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'profile_header_card',
+          child: SDUIProfileHeaderComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('loyalty_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'loyalty_card',
+          child: SDUILoyaltyComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('profile_menu_group', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'profile_menu_group',
+          child: SDUIProfileMenuGroupComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('app_settings_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'app_settings_card',
+          child: SDUIAppSettingsComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('support_contacts_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'support_contacts_card',
+          child: SDUISupportContactsComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('logout_delete_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'logout_delete_card',
+          child: SDUILogoutDeleteComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    registerSliver('app_version_card', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'app_version_card',
+          child: SDUIAppVersionComponent(section: section, onAction: onAction),
+        ),
+      );
     });
   }
 
