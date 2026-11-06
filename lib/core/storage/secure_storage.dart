@@ -23,6 +23,11 @@ class SecureStorage {
     await _storage.write(key: _userPhoneKey, value: phone);
   }
 
+  static Future<void> deleteUserInfo() async {
+    await _storage.delete(key: _userNameKey);
+    await _storage.delete(key: _userPhoneKey);
+  }
+
   static Future<String?> getUserName() => _storage.read(key: _userNameKey);
   static Future<String?> getUserPhone() => _storage.read(key: _userPhoneKey);
 

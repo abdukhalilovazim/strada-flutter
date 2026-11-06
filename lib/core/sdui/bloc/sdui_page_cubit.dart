@@ -1,8 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../di/injection.dart';
-import '../../../network/api_client.dart';
+import 'package:pizza_strada/core/di/injection.dart';
+import 'package:pizza_strada/core/network/api_client.dart';
 import '../models/sdui_page_model.dart';
 import '../storage/sdui_cache_manager.dart';
 import '../utils/sdui_screen_builder.dart';

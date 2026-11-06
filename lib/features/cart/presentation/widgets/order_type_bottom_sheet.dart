@@ -8,7 +8,7 @@ import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/widgets/app_button.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
-import 'package:pizza_strada/features/cart/presentation/pages/checkout_page.dart';
+import 'package:pizza_strada/features/cart/data/models/checkout_branch_model.dart';
 
 /// Modal bottom sheet matching pizzastrada.uz order type modal.
 class OrderTypeBottomSheet extends StatefulWidget {

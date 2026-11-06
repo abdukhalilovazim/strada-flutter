@@ -27,6 +27,9 @@ class ThemeCubit extends Cubit<ThemeMode> {
     emit(next);
   }
 
+  /// Alias for toggle
+  Future<void> toggleTheme() => toggle();
+
   /// Sets a specific [ThemeMode] and persists it.
   Future<void> setMode(ThemeMode mode) async {
     await SharedPrefs.saveThemeMode(mode);

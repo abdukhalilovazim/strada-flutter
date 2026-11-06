@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -522,7 +521,7 @@ class _SDUICourierNotesComponentState extends State<SDUICourierNotesComponent> {
               Text(utensilsLabel, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
               Switch(
                 value: _noUtensils,
-                activeColor: AppColors.primary,
+                activeThumbColor: AppColors.primary,
                 onChanged: (v) => setState(() => _noUtensils = v),
               ),
             ],

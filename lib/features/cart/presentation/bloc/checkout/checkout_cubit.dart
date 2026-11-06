@@ -40,6 +40,8 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     }
   }
 
+  void setOrderType(bool isDelivery) => setDeliveryType(isDelivery);
+
   void setBranch(String branchId, {String? branchTitle}) {
     emit(state.copyWith(branchId: branchId, branchTitle: branchTitle));
   }

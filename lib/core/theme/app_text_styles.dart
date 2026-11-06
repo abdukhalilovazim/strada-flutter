@@ -115,4 +115,11 @@ class AppTextStyles {
         letterSpacing: -0.1,
         color: AppColors.primary,
       );
+
+  static TextStyle get priceSmall => GoogleFonts.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.1,
+        color: AppColors.primary,
+      );
 }

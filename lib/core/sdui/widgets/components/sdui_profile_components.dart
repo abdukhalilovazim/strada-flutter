@@ -355,7 +355,7 @@ class SDUIAppSettingsComponent extends StatelessWidget {
             title: const Text('Tungi rejim', style: TextStyle(fontWeight: FontWeight.w700)),
             trailing: Switch(
               value: isDark,
-              activeColor: AppColors.primary,
+              activeThumbColor: AppColors.primary,
               onChanged: (_) {
                 context.read<ThemeCubit>().toggleTheme();
               },
