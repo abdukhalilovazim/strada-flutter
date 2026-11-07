@@ -18,6 +18,7 @@ import 'package:pizza_strada/features/home/presentation/pages/story_viewer_page.
 import 'package:pizza_strada/features/home/presentation/widgets/header_location_pill.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_card.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_detail_modal.dart';
+import 'package:pizza_strada/features/notifications/presentation/bloc/notifications_cubit.dart';
 
 /// 📱 HomePage powered 100% by Native Flutter UI & BLoC
 class HomePage extends StatefulWidget {
@@ -82,31 +83,43 @@ class _HomePageState extends State<HomePage> {
       ),
       actions: [
         IconButton(
-          icon: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Icon(
-                Icons.notifications_none_rounded,
-                color: isDark ? Colors.white : AppColors.neutral900,
-                size: 24,
-              ),
-              Positioned(
-                right: 0,
-                top: 0,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
+          icon: BlocBuilder<NotificationsCubit, NotificationsState>(
+            builder: (context, notifState) {
+              final unreadCount = (notifState is NotificationsLoaded)
+                  ? notifState.unreadCount
+                  : 0;
+
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    Icons.notifications_none_rounded,
+                    color: isDark ? Colors.white : AppColors.neutral900,
+                    size: 24,
                   ),
-                ),
-              ),
-            ],
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
-          onPressed: () {
+          onPressed: () async {
             HapticFeedback.lightImpact();
-            context.push('/notifications');
+            await context.push('/notifications');
+            if (context.mounted) {
+              context.read<NotificationsCubit>().refresh();
+            }
           },
         ),
         const SizedBox(width: 8),
@@ -206,9 +219,10 @@ class _HomePageState extends State<HomePage> {
 
   void _openStoryViewer(BuildContext context, List<StoryEntity> stories, int index) {
     HapticFeedback.lightImpact();
-    Navigator.of(context).push(
+    Navigator.of(context, rootNavigator: true).push(
       PageRouteBuilder(
         opaque: false,
+        fullscreenDialog: true,
         barrierColor: Colors.black,
         pageBuilder: (context, _, __) => StoryViewerPage(
           stories: stories,
@@ -369,7 +383,12 @@ class _HomePageState extends State<HomePage> {
               ),
               slivers: [
                 StradaSliverRefreshControl(
-                  onRefresh: () => context.read<HomeCubit>().init(forceRefresh: true),
+                  onRefresh: () async {
+                    try {
+                      context.read<NotificationsCubit>().refresh();
+                    } catch (_) {}
+                    await context.read<HomeCubit>().init(forceRefresh: true);
+                  },
                 ),
                 _buildAppBar(context),
                 SliverFillRemaining(
@@ -409,7 +428,12 @@ class _HomePageState extends State<HomePage> {
               ),
               slivers: [
                 StradaSliverRefreshControl(
-                  onRefresh: () => context.read<HomeCubit>().init(forceRefresh: true),
+                  onRefresh: () async {
+                    try {
+                      context.read<NotificationsCubit>().refresh();
+                    } catch (_) {}
+                    await context.read<HomeCubit>().init(forceRefresh: true);
+                  },
                 ),
                 _buildAppBar(context),
                 _buildSearchBar(context),

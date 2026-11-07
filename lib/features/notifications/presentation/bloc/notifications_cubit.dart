@@ -69,7 +69,7 @@ class NotificationsError extends NotificationsState {
   List<Object?> get props => [message];
 }
 
-@injectable
+@lazySingleton
 class NotificationsCubit extends Cubit<NotificationsState> {
   final GetNotificationsUseCase _getNotifications;
   final MarkAllNotificationsReadUseCase _markAllNotificationsRead;

@@ -52,8 +52,12 @@ class _BottomNavItemDef {
 /// Style: Clean Native Flutter mobile appbar — flat white/dark bg, icon+label, active=primary red.
 class MainScaffold extends StatelessWidget {
   final Widget child;
-  final String location;
-  const MainScaffold({super.key, required this.child, required this.location});
+  final String? location;
+  const MainScaffold({
+    super.key,
+    required this.child,
+    this.location,
+  });
 
   static const _navItems = [
     _BottomNavItemDef(
@@ -86,8 +90,16 @@ class MainScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bool isHomePage = location == '/home' || location == '/';
-    final currentIndex = _calculateSelectedIndex(location);
+    String effectiveLocation = location ?? '';
+    if (effectiveLocation.isEmpty) {
+      try {
+        effectiveLocation = GoRouterState.of(context).matchedLocation;
+      } catch (_) {
+        effectiveLocation = '/home';
+      }
+    }
+    final bool isHomePage = effectiveLocation == '/home' || effectiveLocation == '/';
+    final currentIndex = _calculateSelectedIndex(effectiveLocation);
 
     return Scaffold(
       body: SafeArea(bottom: false, child: child),

@@ -14,6 +14,7 @@ import 'package:pizza_strada/core/storage/shared_prefs.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
+import 'package:pizza_strada/features/notifications/presentation/bloc/notifications_cubit.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() async {
@@ -56,6 +57,7 @@ void main() async {
           BlocProvider(create: (context) => getIt<HomeCubit>()..init()),
           BlocProvider(create: (context) => getIt<ThemeCubit>()),
           BlocProvider(create: (context) => CheckoutCubit()),
+          BlocProvider(create: (context) => getIt<NotificationsCubit>()..loadNotifications()),
         ],
         child: BlocBuilder<ThemeCubit, ThemeMode>(
           builder: (context, themeMode) => MyApp(themeMode: themeMode),

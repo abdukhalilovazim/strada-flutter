@@ -49,6 +49,8 @@ import 'package:pizza_strada/features/notifications/data/datasources/notificatio
     as _i324;
 import 'package:pizza_strada/features/notifications/data/repositories/notification_repository_impl.dart'
     as _i160;
+import 'package:pizza_strada/features/notifications/domain/entities/notification_entity.dart'
+    as _i713;
 import 'package:pizza_strada/features/notifications/domain/repositories/notification_repository.dart'
     as _i406;
 import 'package:pizza_strada/features/notifications/domain/usecases/notification_usecases.dart'
@@ -84,10 +86,10 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i745.ApiClient>(() => networkModule.client);
     gh.lazySingleton<_i357.ThemeCubit>(() => _i357.ThemeCubit());
     gh.lazySingleton<_i1058.CartCubit>(() => _i1058.CartCubit());
-    gh.lazySingleton<_i324.NotificationRemoteDataSource>(
-        () => _i324.NotificationRemoteDataSourceImpl(gh<_i745.ApiClient>()));
     gh.lazySingleton<_i724.AuthRemoteDataSource>(
         () => _i724.AuthRemoteDataSourceImpl(gh<_i745.ApiClient>()));
+    gh.lazySingleton<_i324.NotificationRemoteDataSource>(
+        () => _i324.NotificationRemoteDataSourceImpl(gh<_i745.ApiClient>()));
     gh.lazySingleton<_i168.OrderRemoteDataSource>(
         () => _i168.OrderRemoteDataSourceImpl(gh<_i745.ApiClient>()));
     gh.lazySingleton<_i421.LoyaltyCubit>(
@@ -112,10 +114,11 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i788.AuthRepositoryImpl(gh<_i724.AuthRemoteDataSource>()));
     gh.lazySingleton<_i576.GetOrdersUseCase>(
         () => _i576.GetOrdersUseCase(gh<_i414.OrderRepository>()));
-    gh.factory<_i503.NotificationsCubit>(() => _i503.NotificationsCubit(
+    gh.lazySingleton<_i503.NotificationsCubit>(() => _i503.NotificationsCubit(
           gh<_i912.GetNotificationsUseCase>(),
           gh<_i912.MarkAllNotificationsReadUseCase>(),
           gh<_i912.MarkNotificationReadUseCase>(),
+          gh<List<_i713.NotificationEntity>>(),
         ));
     gh.factory<_i539.OrderCubit>(
         () => _i539.OrderCubit(gh<_i576.GetOrdersUseCase>()));
