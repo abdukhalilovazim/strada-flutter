@@ -964,7 +964,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     if (o.latitude != null && o.latitude != 0 && o.longitude != null && o.longitude != 0) ...[
                       const SizedBox(height: 10),
                       _MapLinkRow(
-                        onTap: () => _openMap(lat: o.latitude, lng: o.longitude),
+                        onTap: () => _openMap(lat: o.latitude, lng: o.longitude, address: o.address),
                       ),
                     ],
                     const Divider(height: 24),
