@@ -54,9 +54,13 @@ class SavedAddressModel {
     return SavedAddressModel(
       id: json['id']?.toString() ?? '',
       label: json['label']?.toString() ?? 'Manzil',
-      address: json['address']?.toString() ?? '',
-      lat: (json['lat'] as num?)?.toDouble() ?? 0.0,
-      lng: (json['lng'] as num?)?.toDouble() ?? 0.0,
+      address: json['address']?.toString() ?? json['address_text']?.toString() ?? '',
+      lat: (json['lat'] as num?)?.toDouble() ??
+          double.tryParse(json['latitude']?.toString() ?? '') ??
+          0.0,
+      lng: (json['lng'] as num?)?.toDouble() ??
+          double.tryParse(json['longitude']?.toString() ?? '') ??
+          0.0,
       comment: resolvedComment,
       apartment: json['apartment']?.toString(),
       floor: json['floor']?.toString(),

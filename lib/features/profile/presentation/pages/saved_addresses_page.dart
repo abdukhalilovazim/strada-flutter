@@ -39,38 +39,23 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
       if (key.isNotEmpty) addressMap[key] = a;
     }
 
-    // 2. Foydalanuvchining eski buyurtmalaridan manzillarni olish
+    // 2. Foydalanuvchining backenddagi saqlangan manzillarini olish (/api/v1/addresses)
     try {
       final token = await SecureStorage.getToken();
       if (token != null && token.isNotEmpty) {
-        final response = await ApiClient().get('orders');
-        final dynamic rawOrders = (response is Map && response['data'] != null)
+        final response = await ApiClient().get('addresses');
+        final dynamic rawAddresses = (response is Map && response['data'] != null)
             ? response['data']
             : response;
 
-        if (rawOrders is List) {
-          for (final order in rawOrders) {
-            if (order is Map<String, dynamic>) {
-              final addressStr = (order['address'] as String?)?.trim();
-              if (addressStr != null && addressStr.isNotEmpty) {
-                final key = addressStr.toLowerCase();
-                if (!addressMap.containsKey(key)) {
-                  final lat = double.tryParse(order['latitude']?.toString() ?? '') ?? 39.6542;
-                  final lng = double.tryParse(order['longitude']?.toString() ?? '') ?? 66.9597;
-                  final comment = (order['comment'] as String?)?.trim();
-                  final orderId = order['order_id'] ?? order['id'] ?? DateTime.now().millisecondsSinceEpoch;
-
-                  final fromOrder = SavedAddressModel(
-                    id: 'order_$orderId',
-                    label: 'Buyurtmadan manzil',
-                    address: addressStr,
-                    lat: lat,
-                    lng: lng,
-                    comment: (comment != null && comment.isNotEmpty) ? comment : null,
-                  );
-                  addressMap[key] = fromOrder;
-                  await SecureStorage.saveAddress(fromOrder);
-                }
+        if (rawAddresses is List) {
+          for (final item in rawAddresses) {
+            if (item is Map<String, dynamic>) {
+              final serverAddr = SavedAddressModel.fromJson(item);
+              if (serverAddr.address.trim().isNotEmpty) {
+                final key = serverAddr.address.trim().toLowerCase();
+                addressMap[key] = serverAddr;
+                await SecureStorage.saveAddress(serverAddr);
               }
             }
           }
@@ -94,6 +79,14 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
       _addresses.removeWhere((a) => a.id == id);
     });
     await SecureStorage.deleteAddress(id);
+
+    // Agar server ID bo'lsa (raqamli ID), backenddan ham o'chirish
+    if (int.tryParse(id) != null) {
+      try {
+        await ApiClient().delete('addresses/$id');
+      } catch (_) {}
+    }
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -352,6 +345,26 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                         );
 
                         await SecureStorage.saveAddress(newAddress);
+
+                        try {
+                          final token = await SecureStorage.getToken();
+                          if (token != null && token.isNotEmpty) {
+                            final res = await ApiClient().post('addresses', {
+                              'label': label,
+                              'address': street,
+                              'address_text': street,
+                              'lat': selectedLat,
+                              'latitude': selectedLat,
+                              'lng': selectedLng,
+                              'longitude': selectedLng,
+                            });
+                            if (res is Map && res['data'] != null && res['data']['id'] != null) {
+                              final serverModel = SavedAddressModel.fromJson(res['data'] as Map<String, dynamic>);
+                              await SecureStorage.saveAddress(serverModel);
+                            }
+                          }
+                        } catch (_) {}
+
                         if (ctx.mounted) {
                           Navigator.pop(ctx);
                         }
