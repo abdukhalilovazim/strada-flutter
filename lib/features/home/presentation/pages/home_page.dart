@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +14,7 @@ import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_s
 import 'package:pizza_strada/features/cart/presentation/widgets/order_type_bottom_sheet.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
+import 'package:pizza_strada/features/home/presentation/pages/story_viewer_page.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/header_location_pill.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_card.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_detail_modal.dart';
@@ -193,11 +193,31 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildBanners(List<SliderEntity> sliders) {
-    if (sliders.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+  Widget _buildStories(List<StoryEntity> stories) {
+    if (stories.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     return SliverToBoxAdapter(
-      child: _HomeBannerCarousel(sliders: sliders),
+      child: _HomeStoriesBar(
+        stories: stories,
+        onStoryTap: (story, index) => _openStoryViewer(context, stories, index),
+      ),
+    );
+  }
+
+  void _openStoryViewer(BuildContext context, List<StoryEntity> stories, int index) {
+    HapticFeedback.lightImpact();
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (context, _, __) => StoryViewerPage(
+          stories: stories,
+          initialStoryIndex: index,
+        ),
+        transitionsBuilder: (context, animation, _, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
     );
   }
 
@@ -394,7 +414,7 @@ class _HomePageState extends State<HomePage> {
                 _buildAppBar(context),
                 _buildSearchBar(context),
                 if (state.searchQuery.isEmpty) ...[
-                  _buildBanners(state.sliders),
+                  _buildStories(state.stories),
                   _buildCategoryBar(state.categories, state.selectedCategory),
                 ],
                 _buildProductGrid(state.products),
@@ -409,103 +429,134 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-/// 🎠 Native Hero Banner Carousel
-class _HomeBannerCarousel extends StatefulWidget {
-  final List<SliderEntity> sliders;
-  const _HomeBannerCarousel({required this.sliders});
+/// 📱 Native Stories Bar (Instagram / Dodo Pizza uslubidagi Storislar)
+class _HomeStoriesBar extends StatelessWidget {
+  final List<StoryEntity> stories;
+  final void Function(StoryEntity story, int index) onStoryTap;
 
-  @override
-  State<_HomeBannerCarousel> createState() => _HomeBannerCarouselState();
-}
-
-class _HomeBannerCarouselState extends State<_HomeBannerCarousel> {
-  late final PageController _pageController;
-  int _currentPage = 0;
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController(viewportFraction: 0.92);
-
-    if (widget.sliders.length > 1) {
-      _timer = Timer.periodic(const Duration(seconds: 4), (_) {
-        if (!mounted || !_pageController.hasClients) return;
-        final next = (_currentPage + 1) % widget.sliders.length;
-        _pageController.animateToPage(
-          next,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOutCubic,
-        );
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _pageController.dispose();
-    super.dispose();
-  }
+  const _HomeStoriesBar({
+    required this.stories,
+    required this.onStoryTap,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (stories.isEmpty) return const SizedBox.shrink();
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 12),
-      child: Column(
-        children: [
-          SizedBox(
-            height: 180,
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: widget.sliders.length,
-              onPageChanged: (i) => setState(() => _currentPage = i),
-              itemBuilder: (ctx, i) {
-                final slider = widget.sliders[i];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: CachedNetworkImage(
-                      imageUrl: slider.imageUrl,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(
-                        color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
-                      ),
-                      errorWidget: (_, __, ___) => Container(
-                        color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
-                        child: const Icon(Icons.image_outlined, color: AppColors.neutral400, size: 40),
-                      ),
+      padding: const EdgeInsets.only(top: 4, bottom: 10),
+      child: SizedBox(
+        height: 106,
+        child: ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          itemCount: stories.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 14),
+          itemBuilder: (context, index) {
+            final story = stories[index];
+            return _StoryItem(
+              story: story,
+              isDark: isDark,
+              onTap: () => onStoryTap(story, index),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _StoryItem extends StatelessWidget {
+  final StoryEntity story;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _StoryItem({
+    required this.story,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasUnread = !story.isViewed;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: SizedBox(
+        width: 74,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Avatar with Gradient Ring
+            Container(
+              width: 68,
+              height: 68,
+              padding: const EdgeInsets.all(2.5),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: hasUnread
+                    ? const LinearGradient(
+                        colors: [
+                          AppColors.primary,
+                          Color(0xFFFF7A00),
+                          Color(0xFFFFB800),
+                        ],
+                        begin: Alignment.bottomLeft,
+                        end: Alignment.topRight,
+                      )
+                    : null,
+                border: !hasUnread
+                    ? Border.all(
+                        color: isDark ? AppColors.darkBorder : AppColors.neutral300,
+                        width: 1.5,
+                      )
+                    : null,
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(2.0),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark ? AppColors.darkSurface : Colors.white,
+                ),
+                child: ClipOval(
+                  child: CachedNetworkImage(
+                    imageUrl: story.previewImage,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => Container(
+                      color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
-          if (widget.sliders.length > 1) ...[
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                widget.sliders.length,
-                (i) => AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: _currentPage == i ? 18 : 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: _currentPage == i
-                        ? AppColors.primary
-                        : (isDark ? AppColors.neutral700 : AppColors.neutral300),
-                    borderRadius: BorderRadius.circular(3),
+                    errorWidget: (_, __, ___) => Container(
+                      color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
+                      child: const Icon(Icons.local_pizza_rounded, color: AppColors.primary, size: 28),
+                    ),
                   ),
                 ),
               ),
             ),
+            const SizedBox(height: 5),
+
+            // Title below circle
+            Text(
+              story.title,
+              maxLines: 2,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w600,
+                color: isDark
+                    ? (hasUnread ? Colors.white : AppColors.neutral400)
+                    : (hasUnread ? AppColors.neutral900 : AppColors.neutral600),
+                height: 1.15,
+              ),
+            ),
           ],
-        ],
+        ),
       ),
     );
   }

@@ -13,6 +13,11 @@ class FakeSlidersUseCase implements GetSlidersUseCase {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class FakeStoriesUseCase implements GetStoriesUseCase {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 class FakeProductsUseCase implements GetProductsUseCase {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -58,6 +63,7 @@ void main() {
     cubit = HomeCubit(
       FakeCategoriesUseCase(),
       FakeSlidersUseCase(),
+      FakeStoriesUseCase(),
       FakeProductsUseCase(),
     );
   });

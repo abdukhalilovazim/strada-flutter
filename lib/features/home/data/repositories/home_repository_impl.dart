@@ -34,6 +34,11 @@ class HomeRepositoryImpl implements HomeRepository {
     return _safeCall(() => _remoteDataSource.getSliders());
   }
 
+  @override
+  Future<Either<Failure, List<StoryEntity>>> getStories() async {
+    return _safeCall(() => _remoteDataSource.getStories());
+  }
+
   Future<Either<Failure, T>> _safeCall<T>(Future<T> Function() call) async {
     try {
       final result = await call();

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/domain/usecases/home_usecases.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class HomeState extends Equatable {
   const HomeState();
@@ -15,6 +16,7 @@ class HomeLoading extends HomeState {}
 
 class HomeLoaded extends HomeState {
   final List<SliderEntity> sliders;
+  final List<StoryEntity> stories;
   final List<CategoryEntity> categories;
   final List<ProductEntity> fullProducts;
   final List<ProductEntity> products;
@@ -23,7 +25,8 @@ class HomeLoaded extends HomeState {
   final String searchQuery;
 
   const HomeLoaded({
-    required this.sliders,
+    this.sliders = const [],
+    this.stories = const [],
     required this.categories,
     required this.fullProducts,
     required this.products,
@@ -34,6 +37,7 @@ class HomeLoaded extends HomeState {
 
   HomeLoaded copyWith({
     List<SliderEntity>? sliders,
+    List<StoryEntity>? stories,
     List<CategoryEntity>? categories,
     List<ProductEntity>? fullProducts,
     List<ProductEntity>? products,
@@ -43,6 +47,7 @@ class HomeLoaded extends HomeState {
   }) {
     return HomeLoaded(
       sliders: sliders ?? this.sliders,
+      stories: stories ?? this.stories,
       categories: categories ?? this.categories,
       fullProducts: fullProducts ?? this.fullProducts,
       products: products ?? this.products,
@@ -55,6 +60,7 @@ class HomeLoaded extends HomeState {
   @override
   List<Object?> get props => [
         sliders,
+        stories,
         categories,
         fullProducts,
         products,
@@ -75,11 +81,13 @@ class HomeFailure extends HomeState {
 class HomeCubit extends Cubit<HomeState> {
   final GetCategoriesUseCase _getCategoriesUseCase;
   final GetSlidersUseCase _getSlidersUseCase;
+  final GetStoriesUseCase _getStoriesUseCase;
   final GetProductsUseCase _getProductsUseCase;
 
   HomeCubit(
     this._getCategoriesUseCase,
     this._getSlidersUseCase,
+    this._getStoriesUseCase,
     this._getProductsUseCase,
   ) : super(HomeInitial());
 
@@ -92,10 +100,22 @@ class HomeCubit extends Cubit<HomeState> {
       final categoriesResult = await _getCategoriesUseCase();
       final productsResult = await _getProductsUseCase();
       final slidersResult = await _getSlidersUseCase();
+      final storiesResult = await _getStoriesUseCase();
 
       final categories = categoriesResult.getOrElse(() => const []);
       final products = productsResult.getOrElse(() => const []);
       final sliders = slidersResult.getOrElse(() => const []);
+      final rawStories = storiesResult.getOrElse(() => const []);
+
+      List<StoryEntity> stories = rawStories;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final viewedIds = prefs.getStringList('viewed_story_ids') ?? [];
+        stories = rawStories.map((story) {
+          final isViewed = viewedIds.contains(story.id.toString());
+          return story.copyWith(isViewed: isViewed);
+        }).toList();
+      } catch (_) {}
 
       if (categories.isEmpty && products.isEmpty) {
         emit(const HomeFailure('Katalog ma\'lumotlarini yuklab bo\'lmadi'));
@@ -109,6 +129,7 @@ class HomeCubit extends Cubit<HomeState> {
 
       emit(HomeLoaded(
         sliders: sliders,
+        stories: stories,
         categories: categories,
         fullProducts: products,
         products: initialProducts,
@@ -117,6 +138,30 @@ class HomeCubit extends Cubit<HomeState> {
     } catch (e) {
       emit(HomeFailure(e.toString()));
     }
+  }
+
+  Future<void> markStoryViewed(int storyId) async {
+    final currentState = state;
+    if (currentState is! HomeLoaded) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final viewedIds = prefs.getStringList('viewed_story_ids') ?? [];
+      final idStr = storyId.toString();
+      if (!viewedIds.contains(idStr)) {
+        viewedIds.add(idStr);
+        await prefs.setStringList('viewed_story_ids', viewedIds);
+      }
+    } catch (_) {}
+
+    final updatedStories = currentState.stories.map((story) {
+      if (story.id == storyId) {
+        return story.copyWith(isViewed: true);
+      }
+      return story;
+    }).toList();
+
+    emit(currentState.copyWith(stories: updatedStories));
   }
 
   void search(String query) {

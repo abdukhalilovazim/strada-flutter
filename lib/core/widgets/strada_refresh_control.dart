@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pizza_strada/core/extensions/string_extensions.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 
@@ -144,13 +145,13 @@ class _StradaRefreshIndicatorViewState extends State<StradaRefreshIndicatorView>
     // Label and icon state
     String label;
     if (isDone) {
-      label = 'Tayyor! ✨';
+      label = 'refresh.done'.trOr('Tayyor! ✨');
     } else if (isRefreshing) {
-      label = 'Pitsa tayyorlanmoqda...';
+      label = 'refresh.refreshing'.trOr('Sahifa yangilanmoqda');
     } else if (isArmed) {
-      label = 'Qo\'yib yuboring! 🍕';
+      label = 'refresh.armed'.trOr('Qo\'yib yuboring! 🍕');
     } else {
-      label = 'Yangilash uchun torting';
+      label = 'refresh.pull'.trOr('Yangilash uchun torting');
     }
 
     return Container(

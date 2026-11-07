@@ -52,7 +52,7 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Manzil o\'chirildi'.tr()),
+          content: Text('profile.address_deleted'.tr()),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -67,7 +67,7 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
     );
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Yetkazib berish manzili tanlandi: ${address.address}'),
+        content: Text('profile.address_selected'.tr(namedArgs: {'address': address.address})),
         backgroundColor: AppColors.success,
         duration: const Duration(seconds: 2),
       ),
@@ -270,7 +270,7 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                         final street = streetCtrl.text.trim();
                         if (street.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Iltimos, ko\'cha va uy raqamini kiriting')),
+                            SnackBar(content: Text('profile.enter_street_house_error'.tr())),
                           );
                           return;
                         }
@@ -305,7 +305,7 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                         elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
-                      child: const Text('Saqlash', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                      child: Text('profile.save'.tr(), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                     ),
                   ),
                 ],
@@ -357,7 +357,7 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Yangi manzil', style: TextStyle(fontWeight: FontWeight.bold)),
+        label: Text('profile.new_address'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -396,7 +396,7 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
             ElevatedButton.icon(
               onPressed: _showAddAddressSheet,
               icon: const Icon(Icons.add_location_alt_rounded),
-              label: const Text('Manzil qo\'shish'),
+              label: Text('profile.add_address'.tr()),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,

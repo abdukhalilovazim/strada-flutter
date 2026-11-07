@@ -262,7 +262,7 @@ class PromotionsPage extends StatelessWidget {
                                     Clipboard.setData(ClipboardData(text: deal.code));
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text('Kupon nusxalandi: ${deal.code}'),
+                                        content: Text('promotions.coupon_copied'.tr(namedArgs: {'code': deal.code})),
                                         backgroundColor: AppColors.success,
                                         duration: const Duration(seconds: 2),
                                       ),
@@ -344,7 +344,7 @@ class PromotionsPage extends StatelessWidget {
                                     context.read<CheckoutCubit>().applyPromo(deal.code, cartSubtotal);
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text('Kupon qo\'llanildi: ${deal.code}'),
+                                        content: Text('promotions.coupon_applied'.tr(namedArgs: {'code': deal.code})),
                                         backgroundColor: AppColors.success,
                                         duration: const Duration(seconds: 2),
                                       ),
@@ -358,7 +358,7 @@ class PromotionsPage extends StatelessWidget {
                                     minimumSize: Size.zero,
                                     elevation: 0,
                                   ),
-                                  child: const Text('Qo\'llash', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
+                                  child: Text('cart.apply'.tr(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
                                 ),
                               ],
                             ),

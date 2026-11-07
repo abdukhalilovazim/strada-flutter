@@ -30,14 +30,14 @@ class CartPage extends StatelessWidget {
         backgroundColor: isDark ? AppColors.darkCard : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'Savatni tozalash',
+          'cart.clear_title'.tr(),
           style: AppTextStyles.h4.copyWith(
             fontWeight: FontWeight.w800,
             color: isDark ? Colors.white : AppColors.neutral900,
           ),
         ),
         content: Text(
-          'Haqiqatan ham barcha mahsulotlarni savatdan o\'chirmoqchimisiz?',
+          'cart.clear_confirm'.tr(),
           style: AppTextStyles.bodyMedium.copyWith(
             color: isDark ? AppColors.neutral300 : AppColors.neutral600,
           ),
@@ -62,9 +62,10 @@ class CartPage extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
+              minimumSize: const Size(64, 40),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Tozalash', style: TextStyle(fontWeight: FontWeight.w700)),
+            child: Text('common.clear'.tr(), style: const TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -93,7 +94,7 @@ class CartPage extends StatelessWidget {
               if (cartState.items.isNotEmpty)
                 IconButton(
                   icon: const Icon(Icons.delete_outline_rounded, color: AppColors.neutral500),
-                  tooltip: 'Tozalash',
+                  tooltip: 'common.clear'.tr(),
                   onPressed: () => _showClearConfirm(context),
                 ),
             ],
@@ -663,6 +664,7 @@ class CartPage extends StatelessWidget {
           child: SafeArea(
             top: false,
             child: SizedBox(
+              width: double.infinity,
               height: 54,
               child: ElevatedButton(
                 onPressed: () {
@@ -912,6 +914,7 @@ class _CartPromoCodeWidgetState extends State<_CartPromoCodeWidget> {
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
                           elevation: 0,
+                          minimumSize: Size.zero,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),

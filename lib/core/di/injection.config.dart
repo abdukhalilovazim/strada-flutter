@@ -45,6 +45,16 @@ import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart'
     as _i528;
 import 'package:pizza_strada/features/loyalty/presentation/bloc/loyalty_cubit.dart'
     as _i421;
+import 'package:pizza_strada/features/notifications/data/datasources/notification_remote_datasource.dart'
+    as _i324;
+import 'package:pizza_strada/features/notifications/data/repositories/notification_repository_impl.dart'
+    as _i160;
+import 'package:pizza_strada/features/notifications/domain/repositories/notification_repository.dart'
+    as _i406;
+import 'package:pizza_strada/features/notifications/domain/usecases/notification_usecases.dart'
+    as _i912;
+import 'package:pizza_strada/features/notifications/presentation/bloc/notifications_cubit.dart'
+    as _i503;
 import 'package:pizza_strada/features/orders/data/datasources/order_remote_datasource.dart'
     as _i168;
 import 'package:pizza_strada/features/orders/data/repositories/order_repository_impl.dart'
@@ -74,6 +84,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i745.ApiClient>(() => networkModule.client);
     gh.lazySingleton<_i357.ThemeCubit>(() => _i357.ThemeCubit());
     gh.lazySingleton<_i1058.CartCubit>(() => _i1058.CartCubit());
+    gh.lazySingleton<_i324.NotificationRemoteDataSource>(
+        () => _i324.NotificationRemoteDataSourceImpl(gh<_i745.ApiClient>()));
     gh.lazySingleton<_i724.AuthRemoteDataSource>(
         () => _i724.AuthRemoteDataSourceImpl(gh<_i745.ApiClient>()));
     gh.lazySingleton<_i168.OrderRemoteDataSource>(
@@ -82,14 +94,29 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i421.LoyaltyCubit(apiClient: gh<_i745.ApiClient>()));
     gh.lazySingleton<_i414.OrderRepository>(
         () => _i124.OrderRepositoryImpl(gh<_i168.OrderRemoteDataSource>()));
+    gh.lazySingleton<_i406.NotificationRepository>(() =>
+        _i160.NotificationRepositoryImpl(
+            gh<_i324.NotificationRemoteDataSource>()));
     gh.lazySingleton<_i972.HomeRemoteDataSource>(
         () => _i972.HomeRemoteDataSourceImpl(gh<_i745.ApiClient>()));
+    gh.lazySingleton<_i912.GetNotificationsUseCase>(() =>
+        _i912.GetNotificationsUseCase(gh<_i406.NotificationRepository>()));
+    gh.lazySingleton<_i912.MarkAllNotificationsReadUseCase>(() =>
+        _i912.MarkAllNotificationsReadUseCase(
+            gh<_i406.NotificationRepository>()));
+    gh.lazySingleton<_i912.MarkNotificationReadUseCase>(() =>
+        _i912.MarkNotificationReadUseCase(gh<_i406.NotificationRepository>()));
     gh.lazySingleton<_i929.HomeRepository>(
         () => _i964.HomeRepositoryImpl(gh<_i972.HomeRemoteDataSource>()));
     gh.lazySingleton<_i307.AuthRepository>(
         () => _i788.AuthRepositoryImpl(gh<_i724.AuthRemoteDataSource>()));
     gh.lazySingleton<_i576.GetOrdersUseCase>(
         () => _i576.GetOrdersUseCase(gh<_i414.OrderRepository>()));
+    gh.factory<_i503.NotificationsCubit>(() => _i503.NotificationsCubit(
+          gh<_i912.GetNotificationsUseCase>(),
+          gh<_i912.MarkAllNotificationsReadUseCase>(),
+          gh<_i912.MarkNotificationReadUseCase>(),
+        ));
     gh.factory<_i539.OrderCubit>(
         () => _i539.OrderCubit(gh<_i576.GetOrdersUseCase>()));
     gh.lazySingleton<_i746.ConfirmOtpUseCase>(
@@ -108,6 +135,8 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i918.GetSettingsUseCase(gh<_i929.HomeRepository>()));
     gh.lazySingleton<_i918.GetSlidersUseCase>(
         () => _i918.GetSlidersUseCase(gh<_i929.HomeRepository>()));
+    gh.lazySingleton<_i918.GetStoriesUseCase>(
+        () => _i918.GetStoriesUseCase(gh<_i929.HomeRepository>()));
     gh.factory<_i100.AuthCubit>(() => _i100.AuthCubit(
           gh<_i223.LoginUseCase>(),
           gh<_i746.ConfirmOtpUseCase>(),
@@ -115,6 +144,7 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i528.HomeCubit>(() => _i528.HomeCubit(
           gh<_i918.GetCategoriesUseCase>(),
           gh<_i918.GetSlidersUseCase>(),
+          gh<_i918.GetStoriesUseCase>(),
           gh<_i918.GetProductsUseCase>(),
         ));
     return this;

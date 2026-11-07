@@ -67,7 +67,7 @@ class AppTheme {
             fontWeight: FontWeight.w700,
             color: Colors.white,
           ),
-          minimumSize: const Size.fromHeight(52),
+          minimumSize: const Size(64, 52),
         ),
       ),
       // OutlinedButton — qizil chegarali
@@ -81,7 +81,7 @@ class AppTheme {
           textStyle: AppTextStyles.labelMedium.copyWith(
             fontWeight: FontWeight.w700,
           ),
-          minimumSize: const Size.fromHeight(52),
+          minimumSize: const Size(64, 52),
         ),
       ),
       // TextButton
@@ -229,7 +229,7 @@ class AppTheme {
             fontWeight: FontWeight.w700,
             color: Colors.white,
           ),
-          minimumSize: const Size.fromHeight(52),
+          minimumSize: const Size(64, 52),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -242,7 +242,7 @@ class AppTheme {
           textStyle: AppTextStyles.labelMedium.copyWith(
             fontWeight: FontWeight.w700,
           ),
-          minimumSize: const Size.fromHeight(52),
+          minimumSize: const Size(64, 52),
         ),
       ),
       textButtonTheme: TextButtonThemeData(

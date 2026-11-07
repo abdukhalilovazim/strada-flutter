@@ -113,7 +113,67 @@ class ProductEntity extends Equatable {
   List<Object?> get props => [id, slug, title, description, thumbnail, photo, price, oldPrice, category, variants, values, badges];
 }
 
-/// Banner slider entity (Swiper Slider uchun)
+/// Story slide entity
+class StorySlideEntity extends Equatable {
+  final int id;
+  final String imageUrl;
+  final String? title;
+  final String? description;
+  final String? buttonText;
+  final String? buttonUrl;
+  final int durationSeconds;
+
+  const StorySlideEntity({
+    required this.id,
+    required this.imageUrl,
+    this.title,
+    this.description,
+    this.buttonText,
+    this.buttonUrl,
+    this.durationSeconds = 5,
+  });
+
+  @override
+  List<Object?> get props => [id, imageUrl, title, description, buttonText, buttonUrl, durationSeconds];
+}
+
+/// Stories entity (Instagram / Dodo Pizza uslubidagi storislar)
+class StoryEntity extends Equatable {
+  final int id;
+  final String title;
+  final String previewImage;
+  final List<StorySlideEntity> slides;
+  final bool isViewed;
+
+  const StoryEntity({
+    required this.id,
+    required this.title,
+    required this.previewImage,
+    required this.slides,
+    this.isViewed = false,
+  });
+
+  StoryEntity copyWith({
+    int? id,
+    String? title,
+    String? previewImage,
+    List<StorySlideEntity>? slides,
+    bool? isViewed,
+  }) {
+    return StoryEntity(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      previewImage: previewImage ?? this.previewImage,
+      slides: slides ?? this.slides,
+      isViewed: isViewed ?? this.isViewed,
+    );
+  }
+
+  @override
+  List<Object?> get props => [id, title, previewImage, slides, isViewed];
+}
+
+/// Banner slider entity (Eski slider modeli bilan orqaga moslik uchun)
 class SliderEntity extends Equatable {
   final int id;
   final String imageUrl;
