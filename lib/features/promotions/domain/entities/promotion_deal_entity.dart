@@ -61,9 +61,12 @@ class PromotionDealEntity extends Equatable {
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       oldPrice: (json['old_price'] as num?)?.toDouble() ?? 0.0,
       badgeText: json['badge_text']?.toString() ?? '',
-      imageUrl: json['image_url']?.toString() ?? '',
+      imageUrl: json['image_url']?.toString() ?? json['image']?.toString() ?? '',
       perUserLimit: (json['per_user_limit'] as num?)?.toInt(),
-      items: rawItems.map((i) => PromotionDealItemEntity.fromJson(i as Map<String, dynamic>)).toList(),
+      items: rawItems
+          .whereType<Map<String, dynamic>>()
+          .map((i) => PromotionDealItemEntity.fromJson(i))
+          .toList(),
     );
   }
 

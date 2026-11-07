@@ -25,7 +25,9 @@ class PromotionsRemoteDataSourceImpl implements PromotionsRemoteDataSource {
   @override
   Future<PromotionsPayload> getPromotions() async {
     final response = await _client.get('promotions');
-    final data = response['data'];
+    final dynamic data = (response is Map<String, dynamic> && response.containsKey('data'))
+        ? response['data']
+        : response;
 
     List<PromotionDealEntity> deals = [];
     List<ProductEntity> discountProducts = [];

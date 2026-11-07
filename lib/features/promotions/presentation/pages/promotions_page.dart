@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -209,6 +210,26 @@ class _PromotionsView extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              if (deal.imageUrl.isNotEmpty) ...[
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: CachedNetworkImage(
+                                    imageUrl: deal.imageUrl,
+                                    height: 160,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => Container(
+                                      height: 160,
+                                      color: isDark ? AppColors.darkSurface : AppColors.neutral100,
+                                      child: const Center(
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) => const SizedBox.shrink(),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                              ],
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
