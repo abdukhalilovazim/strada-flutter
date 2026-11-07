@@ -349,7 +349,7 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                         try {
                           final token = await SecureStorage.getToken();
                           if (token != null && token.isNotEmpty) {
-                            final res = await ApiClient().post('addresses', {
+                            final res = await ApiClient().post('addresses', body: {
                               'label': label,
                               'address': street,
                               'address_text': street,

@@ -231,6 +231,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
         );
 
         await SecureStorage.saveAddress(newModel);
+
+        try {
+          final token = await SecureStorage.getToken();
+          if (token != null && token.isNotEmpty) {
+            final res = await ApiClient().post('addresses', body: {
+              'label': address,
+              'address': address,
+              'address_text': address,
+              'lat': lat,
+              'latitude': lat,
+              'lng': lng,
+              'longitude': lng,
+            });
+            if (res is Map && res['data'] != null && res['data']['id'] != null) {
+              final serverModel = SavedAddressModel.fromJson(res['data'] as Map<String, dynamic>);
+              await SecureStorage.saveAddress(serverModel);
+            }
+          }
+        } catch (_) {}
+
         await _loadAddresses();
 
         if (mounted) {
@@ -297,6 +317,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     if (confirmed == true && mounted) {
       await SecureStorage.deleteAddress(model.id);
+
+      if (int.tryParse(model.id) != null) {
+        try {
+          await ApiClient().delete('addresses/${model.id}');
+        } catch (_) {}
+      }
+
       await _loadAddresses();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

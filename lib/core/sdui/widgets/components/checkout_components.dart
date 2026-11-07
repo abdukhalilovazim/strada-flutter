@@ -162,42 +162,29 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
       if (key.isNotEmpty) addressMap[key] = a;
     }
 
-    // 3. Agar bo'sh bo'lsa, foydalanuvchining avvalgi buyurtmalaridan manzillarni yuklash
-    if (addressMap.isEmpty) {
-      try {
-        final token = await SecureStorage.getToken();
-        if (token != null && token.isNotEmpty) {
-          final response = await ApiClient().get('orders');
-          final dynamic rawOrders = (response is Map && response['data'] != null)
-              ? response['data']
-              : response;
+    // 3. Foydalanuvchining backenddagi saqlangan manzillarini yuklash (/api/v1/addresses)
+    try {
+      final token = await SecureStorage.getToken();
+      if (token != null && token.isNotEmpty) {
+        final response = await ApiClient().get('addresses');
+        final dynamic rawAddresses = (response is Map && response['data'] != null)
+            ? response['data']
+            : response;
 
-          if (rawOrders is List) {
-            for (final order in rawOrders) {
-              if (order is Map<String, dynamic>) {
-                final addressStr = (order['address'] as String?)?.trim();
-                if (addressStr != null && addressStr.isNotEmpty) {
-                  final key = addressStr.toLowerCase();
-                  if (!addressMap.containsKey(key)) {
-                    final lat = double.tryParse(order['latitude']?.toString() ?? '') ?? 39.6542;
-                    final lng = double.tryParse(order['longitude']?.toString() ?? '') ?? 66.9597;
-                    final fromOrder = SavedAddressModel(
-                      id: 'order_${order['id'] ?? DateTime.now().millisecondsSinceEpoch}',
-                      label: addressStr,
-                      address: addressStr,
-                      lat: lat,
-                      lng: lng,
-                    );
-                    addressMap[key] = fromOrder;
-                    await SecureStorage.saveAddress(fromOrder);
-                  }
-                }
+        if (rawAddresses is List) {
+          for (final item in rawAddresses) {
+            if (item is Map<String, dynamic>) {
+              final serverAddr = SavedAddressModel.fromJson(item);
+              if (serverAddr.address.trim().isNotEmpty) {
+                final key = serverAddr.address.trim().toLowerCase();
+                addressMap[key] = serverAddr;
+                await SecureStorage.saveAddress(serverAddr);
               }
             }
           }
         }
-      } catch (_) {}
-    }
+      }
+    } catch (_) {}
 
     if (mounted) {
       setState(() {
