@@ -139,21 +139,6 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
     }
   }
 
-  void _onActionTap(String? url) {
-    if (url == null || url.isEmpty) return;
-    HapticFeedback.mediumImpact();
-    Navigator.of(context).pop();
-
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      // External link or standard path
-      context.push(url);
-    } else if (url == '/home' || url == '/promotions' || url == '/cart' || url == '/profile') {
-      context.go(url);
-    } else {
-      context.push(url);
-    }
-  }
-
   @override
   void dispose() {
     _animController.dispose();
@@ -209,20 +194,21 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
                 ),
               ),
 
-              // 2. Top & Bottom subtle dark gradients for readable controls
-              Positioned.fill(
+              // 2. Top subtle dark gradient for readable controls
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 120,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.black.withValues(alpha: 0.7),
+                        Colors.black.withValues(alpha: 0.65),
                         Colors.transparent,
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.85),
                       ],
-                      stops: const [0.0, 0.18, 0.65, 1.0],
                     ),
                   ),
                 ),
@@ -320,33 +306,19 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
                             ),
                           ),
                           const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  story.title,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 14.5,
-                                    shadows: [
-                                      Shadow(color: Colors.black54, blurRadius: 4),
-                                    ],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const Text(
-                                  'Strada Pizza',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
+                          const Expanded(
+                            child: Text(
+                              'Strada Pizza',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 15,
+                                shadows: [
+                                  Shadow(color: Colors.black54, blurRadius: 4),
+                                ],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           IconButton(
@@ -359,82 +331,6 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
                         ],
                       ),
                     ],
-                  ),
-                ),
-              ),
-
-              // 5. Bottom Captions & Action Button
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (slide.title != null && slide.title!.isNotEmpty) ...[
-                          Text(
-                            slide.title!,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              height: 1.25,
-                              shadows: [
-                                Shadow(color: Colors.black87, blurRadius: 8),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                        ],
-                        if (slide.description != null && slide.description!.isNotEmpty) ...[
-                          Text(
-                            slide.description!,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14.5,
-                              height: 1.4,
-                              fontWeight: FontWeight.w500,
-                              shadows: [
-                                Shadow(color: Colors.black87, blurRadius: 6),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                        if (slide.buttonText != null && slide.buttonText!.isNotEmpty)
-                          SizedBox(
-                            width: double.infinity,
-                            height: 52,
-                            child: ElevatedButton(
-                              onPressed: () => _onActionTap(slide.buttonUrl),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                                elevation: 4,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    slide.buttonText!,
-                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Icon(Icons.arrow_forward_rounded, size: 20),
-                                ],
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
                   ),
                 ),
               ),

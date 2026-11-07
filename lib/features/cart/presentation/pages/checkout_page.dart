@@ -5,8 +5,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/sdui/models/section_model.dart';
 import 'package:pizza_strada/core/sdui/widgets/components/checkout_components.dart';
+import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
+import 'package:pizza_strada/core/utils/number_formatter.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
@@ -14,7 +16,7 @@ import 'package:pizza_strada/features/cart/presentation/widgets/checkout_promo_c
 import 'package:pizza_strada/features/cart/presentation/widgets/order_type_bottom_sheet.dart';
 
 /// 💳 CheckoutPage: Bosqichli (Stepped) Native Checkout
-/// Step 1: Yetkazib berish (Manzil / Filial tanlash)
+/// Step 1: Yetkazib berish (Manzil / Filial tanlash & Qabul qiluvchi)
 /// Step 2: To'lov va tasdiqlash (Mijoz, To'lov turi, Kuryer izohi, Hisob-kitob)
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -25,6 +27,30 @@ class CheckoutPage extends StatefulWidget {
 
 class _CheckoutPageState extends State<CheckoutPage> {
   int _currentStep = 0; // 0 = Yetkazib berish, 1 = To'lov va tasdiqlash
+  bool _editRecipientInStep1 = false;
+  String _cachedProfileName = 'checkout.guest_customer'.tr();
+  String _cachedProfilePhone = '+998 -- --- -- --';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileInfo();
+  }
+
+  Future<void> _loadProfileInfo() async {
+    final name = await SecureStorage.getUserName();
+    final phone = await SecureStorage.getUserPhone();
+    if (mounted) {
+      setState(() {
+        if (name != null && name.trim().isNotEmpty) {
+          _cachedProfileName = name.trim();
+        }
+        if (phone != null && phone.trim().isNotEmpty) {
+          _cachedProfilePhone = NumberFormatter.formatPhone(phone.trim());
+        }
+      });
+    }
+  }
 
   Future<void> _proceedToStep2(CheckoutState checkoutState, CartState cartState) async {
     HapticFeedback.mediumImpact();
@@ -113,88 +139,204 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
-  Widget _buildStep2LocationSummary(BuildContext context, CheckoutState state, bool isDark) {
+  Widget _buildStep2OrderInfoCard(BuildContext context, CheckoutState state, bool isDark) {
     final isDelivery = state.isDelivery;
     final locationText = isDelivery
         ? (state.address ?? 'checkout.delivery_location'.tr())
         : (state.branchTitle ?? 'checkout.selected_branch'.tr());
 
+    final customName = state.recipientName;
+    final customPhone = state.recipientPhone;
+    final hasCustom = (customName != null && customName.trim().isNotEmpty) ||
+        (customPhone != null && customPhone.trim().isNotEmpty);
+
+    final name = (customName != null && customName.trim().isNotEmpty)
+        ? customName.trim()
+        : _cachedProfileName;
+    final phone = (customPhone != null && customPhone.trim().isNotEmpty)
+        ? customPhone.trim()
+        : _cachedProfilePhone;
+
+    // Manzil qo'shimcha ma'lumotlari (podyezd, qavat, xonadon, domofon)
+    final addressDetails = <String>[];
+    if (isDelivery) {
+      if (state.entrance != null && state.entrance!.trim().isNotEmpty) {
+        addressDetails.add('Podyezd: ${state.entrance!.trim()}');
+      }
+      if (state.floor != null && state.floor!.trim().isNotEmpty) {
+        addressDetails.add('Qavat: ${state.floor!.trim()}');
+      }
+      if (state.apartment != null && state.apartment!.trim().isNotEmpty) {
+        addressDetails.add('Xonadon: ${state.apartment!.trim()}');
+      }
+      if (state.doorPhone != null && state.doorPhone!.trim().isNotEmpty) {
+        addressDetails.add('Domofon: ${state.doorPhone!.trim()}');
+      }
+    }
+    final addressExtra = addressDetails.isNotEmpty ? addressDetails.join(', ') : null;
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCard : Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isDark ? AppColors.darkBorder : AppColors.neutral200,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              isDelivery ? Icons.location_on_rounded : Icons.storefront_rounded,
-              color: AppColors.primary,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isDelivery ? 'checkout.delivery_location'.tr() : 'checkout.pickup_location'.tr(),
+          // Sarlavha va "O'zgartirish" tugmasi
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'orders.order_info'.tr(),
+                style: AppTextStyles.labelLarge.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  color: isDark ? Colors.white : AppColors.neutral900,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _currentStep = 0);
+                },
+                icon: const Icon(Icons.edit_outlined, size: 14, color: AppColors.primary),
+                label: Text(
+                  'common.change'.tr(),
                   style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.neutral500,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 11,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 2),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // 1. Manzil / Filial qatori
+          _buildInfoRow(
+            label: isDelivery ? 'checkout.address'.tr() : 'orders.branch'.tr(),
+            valueWidget: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
                 Text(
                   locationText,
-                  style: AppTextStyles.labelMedium.copyWith(fontWeight: FontWeight.w700),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: AppTextStyles.labelSmall.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : AppColors.neutral900,
+                  ),
+                ),
+                if (addressExtra != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    addressExtra,
+                    textAlign: TextAlign.end,
+                    style: AppTextStyles.bodyExtraSmall.copyWith(
+                      color: AppColors.neutral500,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const Divider(height: 22),
+
+          // 2. Qabul qiluvchi qatori
+          _buildInfoRow(
+            label: 'checkout.recipient'.tr(),
+            valueWidget: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (hasCustom) ...[
+                  Container(
+                    margin: const EdgeInsets.only(right: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Boshqa shaxs',
+                      style: AppTextStyles.bodyExtraSmall.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 9.5,
+                      ),
+                    ),
+                  ),
+                ],
+                Text(
+                  name,
+                  textAlign: TextAlign.end,
+                  style: AppTextStyles.labelSmall.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : AppColors.neutral900,
+                  ),
                 ),
               ],
             ),
           ),
-          TextButton.icon(
-            onPressed: () {
-              HapticFeedback.selectionClick();
-              setState(() => _currentStep = 0);
-            },
-            icon: const Icon(Icons.edit_outlined, size: 14, color: AppColors.primary),
-            label: Text(
-              'common.change'.tr(),
+          const Divider(height: 22),
+
+          // 3. Telefon raqami qatori
+          _buildInfoRow(
+            label: 'checkout.recipient_phone'.tr(),
+            valueWidget: Text(
+              phone,
+              textAlign: TextAlign.end,
               style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.primary,
                 fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : AppColors.neutral900,
               ),
-            ),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildInfoRow({
+    required String label,
+    required Widget valueWidget,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.neutral500,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: valueWidget,
+          ),
+        ),
+      ],
     );
   }
 
@@ -305,7 +447,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
           SDUIAddressSelectorComponent(section: dummySection, onAction: (_) {})
         else
           SDUIPickupBranchComponent(section: dummySection, onAction: (_) {}),
-        SDUICustomerInfoComponent(section: dummySection, onAction: (_) {}),
+        SDUICustomerInfoComponent(
+          section: dummySection,
+          onAction: (_) {},
+          initiallyEditing: _editRecipientInStep1,
+          onEditingComplete: () {
+            if (_editRecipientInStep1) {
+              setState(() => _editRecipientInStep1 = false);
+            }
+          },
+        ),
       ],
     );
   }
@@ -318,8 +469,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 30),
       children: [
-        _buildStep2LocationSummary(context, checkoutState, isDark),
-        SDUICustomerInfoComponent(section: dummySection, onAction: (_) {}),
+        _buildStep2OrderInfoCard(context, checkoutState, isDark),
         SDUIPaymentMethodComponent(section: dummySection, onAction: (_) {}),
         SDUICourierNotesComponent(section: dummySection, onAction: (_) {}),
         const CheckoutPromoCodeWidget(),

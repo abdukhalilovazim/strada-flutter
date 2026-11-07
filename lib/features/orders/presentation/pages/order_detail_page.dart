@@ -841,6 +841,13 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     ),
                     const Divider(height: 24),
                   ],
+                  if (o.phone != null && o.phone!.isNotEmpty) ...[
+                    _DetailRow(
+                      label: 'checkout.recipient_phone'.tr(),
+                      value: NumberFormatter.formatPhone(o.phone!),
+                    ),
+                    const Divider(height: 24),
+                  ],
                   if (o.paymentMethodText != null && o.paymentMethodText!.isNotEmpty) ...[
                     _DetailRow(label: 'checkout.payment'.tr(), value: o.paymentMethodText!),
                     if (o.comment != null && o.comment!.isNotEmpty) const Divider(height: 24),

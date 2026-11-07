@@ -177,19 +177,14 @@ class StorySlideModel extends StorySlideEntity {
   const StorySlideModel({
     required super.id,
     required super.imageUrl,
-    super.title,
-    super.description,
-    super.buttonText,
-    super.buttonUrl,
     super.durationSeconds = 5,
   });
 
   factory StorySlideModel.fromJson(Map<String, dynamic> json) {
-    final rawImage = json['image_url'] ??
-        json['image'] ??
+    final rawImage = json['image'] ??
+        json['image_url'] ??
         json['photo'] ??
         json['file'] ??
-        json['path'] ??
         '';
     final imageStr = rawImage.toString().trim();
 
@@ -200,16 +195,12 @@ class StorySlideModel extends StorySlideEntity {
       fullImageUrl = imageStr;
     } else {
       final cleanPath = imageStr.startsWith('/') ? imageStr.substring(1) : imageStr;
-      fullImageUrl = '${ApiConstants.baseUrl}/$cleanPath';
+      fullImageUrl = 'https://s3.twcstorage.ru/strada/$cleanPath';
     }
 
     return StorySlideModel(
       id: int.tryParse(json['id']?.toString() ?? '1') ?? 1,
       imageUrl: fullImageUrl,
-      title: json['title'] as String?,
-      description: json['description'] as String?,
-      buttonText: json['button_text'] as String? ?? json['button'] as String?,
-      buttonUrl: json['button_url'] as String?,
       durationSeconds: int.tryParse(json['duration_seconds']?.toString() ?? '5') ?? 5,
     );
   }
@@ -218,7 +209,6 @@ class StorySlideModel extends StorySlideEntity {
 class StoryModel extends StoryEntity {
   const StoryModel({
     required super.id,
-    required super.title,
     required super.previewImage,
     required super.slides,
     super.isViewed = false,
@@ -227,7 +217,6 @@ class StoryModel extends StoryEntity {
   factory StoryModel.fromJson(Map<String, dynamic> json) {
     final rawThumb = json['thumbnail'] ??
         json['preview_image'] ??
-        json['image_url'] ??
         json['image'] ??
         '';
     final thumbStr = rawThumb.toString().trim();
@@ -239,7 +228,7 @@ class StoryModel extends StoryEntity {
       fullThumbUrl = thumbStr;
     } else {
       final cleanPath = thumbStr.startsWith('/') ? thumbStr.substring(1) : thumbStr;
-      fullThumbUrl = '${ApiConstants.baseUrl}/$cleanPath';
+      fullThumbUrl = 'https://s3.twcstorage.ru/strada/$cleanPath';
     }
 
     final rawSlides = json['slides'] as List<dynamic>? ?? [];
@@ -253,17 +242,12 @@ class StoryModel extends StoryEntity {
         StorySlideModel(
           id: int.tryParse(json['id']?.toString() ?? '1') ?? 1,
           imageUrl: fullThumbUrl,
-          title: json['title'] as String?,
-          description: json['description'] as String?,
-          buttonText: json['button_text'] as String? ?? json['button'] as String?,
-          buttonUrl: json['button_url'] as String?,
         ),
       );
     }
 
     return StoryModel(
       id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
-      title: json['title'] as String? ?? json['name'] as String? ?? 'Strada',
       previewImage: fullThumbUrl,
       slides: slides,
       isViewed: json['is_viewed'] == true,

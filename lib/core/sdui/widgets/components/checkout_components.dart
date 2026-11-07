@@ -788,15 +788,19 @@ class SDUIDeliveryTimeSlotComponent extends StatelessWidget {
   }
 }
 
-/// 👤 Checkout: Qabul qiluvchi ma'lumotlari (Haqiqiy foydalanuvchi ma'lumotlari va tahrirlash)
+/// 👤 Checkout: Qabul qiluvchi ma'lumotlari (Haqiqiy foydalanuvchi ma'lumotlari va pageni o'zida tahrirlash)
 class SDUICustomerInfoComponent extends StatefulWidget {
   final SDUISectionModel section;
   final SDUIActionHandler onAction;
+  final bool initiallyEditing;
+  final VoidCallback? onEditingComplete;
 
   const SDUICustomerInfoComponent({
     super.key,
     required this.section,
     required this.onAction,
+    this.initiallyEditing = false,
+    this.onEditingComplete,
   });
 
   @override
@@ -806,11 +810,30 @@ class SDUICustomerInfoComponent extends StatefulWidget {
 class _SDUICustomerInfoComponentState extends State<SDUICustomerInfoComponent> {
   String _profileName = 'checkout.guest_customer'.tr();
   String _profilePhone = '+998 -- --- -- --';
+  bool _isEditing = false;
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    _isEditing = widget.initiallyEditing;
     _loadUser();
+  }
+
+  @override
+  void didUpdateWidget(covariant SDUICustomerInfoComponent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initiallyEditing && !oldWidget.initiallyEditing) {
+      _startEditing();
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUser() async {
@@ -828,171 +851,46 @@ class _SDUICustomerInfoComponentState extends State<SDUICustomerInfoComponent> {
     }
   }
 
-  void _openEditModal(BuildContext context, String currentName, String currentPhone, bool isCustomized) {
-    HapticFeedback.mediumImpact();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final nameController = TextEditingController(
-      text: currentName == 'checkout.guest_customer'.tr() ? '' : currentName,
-    );
-    final phoneController = TextEditingController(
-      text: currentPhone.contains('--') ? '+998 ' : currentPhone,
-    );
+  void _startEditing() {
+    final checkoutState = context.read<CheckoutCubit>().state;
+    final currentCustomName = checkoutState.recipientName;
+    final currentCustomPhone = checkoutState.recipientPhone;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (modalCtx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(modalCtx).viewInsets.bottom,
-          ),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkCard : Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: SafeArea(
-              top: false,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.neutral700 : AppColors.neutral300,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'checkout.edit_recipient'.tr(),
-                        style: AppTextStyles.h4.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(modalCtx),
-                        icon: const Icon(Icons.close_rounded, size: 20),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Buyurtmani qabul qilib oluvchi shaxs ma\'lumotlarini kiriting',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.neutral500,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: nameController,
-                    autocorrect: false,
-                    enableSuggestions: false,
-                    textCapitalization: TextCapitalization.words,
-                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
-                    decoration: InputDecoration(
-                      labelText: 'checkout.recipient_name'.tr(),
-                      prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.primary, size: 20),
-                      filled: true,
-                      fillColor: isDark ? AppColors.darkSurface : AppColors.neutral100,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.neutral200, width: 1.2),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: phoneController,
-                    autocorrect: false,
-                    enableSuggestions: false,
-                    keyboardType: TextInputType.phone,
-                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
-                    decoration: InputDecoration(
-                      labelText: 'checkout.recipient_phone'.tr(),
-                      prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primary, size: 20),
-                      filled: true,
-                      fillColor: isDark ? AppColors.darkSurface : AppColors.neutral100,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.neutral200, width: 1.2),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        HapticFeedback.mediumImpact();
-                        final newName = nameController.text.trim();
-                        final newPhone = phoneController.text.trim();
-                        context.read<CheckoutCubit>().setRecipient(
-                          name: newName.isNotEmpty ? newName : null,
-                          phone: newPhone.isNotEmpty ? newPhone : null,
-                        );
-                        Navigator.pop(modalCtx);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      child: Text(
-                        'common.save'.tr(),
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
-                      ),
-                    ),
-                  ),
-                  if (isCustomized) ...[
-                    const SizedBox(height: 8),
-                    Center(
-                      child: TextButton(
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          context.read<CheckoutCubit>().setRecipient(name: null, phone: null);
-                          Navigator.pop(modalCtx);
-                        },
-                        child: Text(
-                          'checkout.reset_to_my_info'.tr(),
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+    _nameController.text = (currentCustomName != null && currentCustomName.trim().isNotEmpty)
+        ? currentCustomName.trim()
+        : (_profileName == 'checkout.guest_customer'.tr() ? '' : _profileName);
+
+    _phoneController.text = (currentCustomPhone != null && currentCustomPhone.trim().isNotEmpty)
+        ? currentCustomPhone.trim()
+        : (_profilePhone.contains('--') ? '+998 ' : _profilePhone);
+
+    setState(() => _isEditing = true);
+  }
+
+  void _saveRecipient() {
+    HapticFeedback.mediumImpact();
+    final newName = _nameController.text.trim();
+    final newPhone = _phoneController.text.trim();
+
+    context.read<CheckoutCubit>().setRecipient(
+      name: newName.isNotEmpty ? newName : null,
+      phone: newPhone.isNotEmpty ? newPhone : null,
     );
+    setState(() => _isEditing = false);
+    widget.onEditingComplete?.call();
+  }
+
+  void _resetToProfile() {
+    HapticFeedback.lightImpact();
+    context.read<CheckoutCubit>().setRecipient(name: null, phone: null);
+    setState(() => _isEditing = false);
+    widget.onEditingComplete?.call();
+  }
+
+  void _cancelEditing() {
+    HapticFeedback.lightImpact();
+    setState(() => _isEditing = false);
+    widget.onEditingComplete?.call();
   }
 
   @override
@@ -1015,43 +913,46 @@ class _SDUICustomerInfoComponentState extends State<SDUICustomerInfoComponent> {
             ? customPhone.trim()
             : _profilePhone;
 
-        return Container(
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
           margin: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkCard : Colors.white,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isCustomized
                   ? AppColors.primary.withValues(alpha: 0.35)
                   : (isDark ? AppColors.darkBorder : AppColors.neutral200),
             ),
-            boxShadow: isCustomized
-                ? [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
+            boxShadow: [
+              BoxShadow(
+                color: isCustomized
+                    ? AppColors.primary.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
                       Text(
-                        title,
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.neutral500,
-                          fontWeight: FontWeight.w600,
+                        _isEditing ? 'checkout.edit_recipient'.tr() : title,
+                        style: AppTextStyles.h4.copyWith(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                          color: isDark ? Colors.white : AppColors.neutral900,
                         ),
                       ),
-                      if (isCustomized) ...[
+                      if (isCustomized && !_isEditing) ...[
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
@@ -1071,64 +972,216 @@ class _SDUICustomerInfoComponentState extends State<SDUICustomerInfoComponent> {
                       ],
                     ],
                   ),
-                  TextButton.icon(
-                    onPressed: () => _openEditModal(context, displayName, displayPhone, isCustomized),
-                    icon: const Icon(Icons.edit_outlined, size: 14, color: AppColors.primary),
-                    label: Text(
-                      'common.change'.tr(),
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w700,
+                  if (!_isEditing)
+                    TextButton.icon(
+                      onPressed: () {
+                        HapticFeedback.selectionClick();
+                        _startEditing();
+                      },
+                      icon: const Icon(Icons.edit_outlined, size: 14, color: AppColors.primary),
+                      label: Text(
+                        'common.change'.tr(),
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    )
+                  else
+                    IconButton(
+                      onPressed: _cancelEditing,
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      tooltip: 'common.cancel'.tr(),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              if (!_isEditing) ...[
+                // Oddiy ko'rinish (Ko'rish rejimi)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isDark ? AppColors.darkBorder : const Color(0xFFEDF2F7),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.person_outline_rounded, size: 20, color: AppColors.primary),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              displayName,
+                              style: AppTextStyles.labelMedium.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: isDark ? Colors.white : AppColors.neutral900,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              displayPhone,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                // Inline tahrirlash rejimi (Pagening o'zida!)
+                Text(
+                  'Buyurtmani qabul qilib oluvchi shaxs ma\'lumotlarini kiriting',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Ism inputi
+                TextField(
+                  controller: _nameController,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  textCapitalization: TextCapitalization.words,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : AppColors.neutral900,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'checkout.recipient_name'.tr(),
+                    labelStyle: AppTextStyles.bodySmall.copyWith(
+                      color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                    ),
+                    prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.primary, size: 20),
+                    filled: true,
+                    fillColor: isDark ? AppColors.darkSurface : AppColors.neutral100,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.neutral200, width: 1.2),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // Telefon inputi
+                TextField(
+                  controller: _phoneController,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  keyboardType: TextInputType.phone,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : AppColors.neutral900,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'checkout.recipient_phone'.tr(),
+                    labelStyle: AppTextStyles.bodySmall.copyWith(
+                      color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                    ),
+                    prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primary, size: 20),
+                    filled: true,
+                    fillColor: isDark ? AppColors.darkSurface : AppColors.neutral100,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.neutral200, width: 1.2),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Tugmalar
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 46,
+                        child: ElevatedButton(
+                          onPressed: _saveRecipient,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
+                          child: Text(
+                            'common.save'.tr(),
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                          ),
+                        ),
                       ),
                     ),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      height: 46,
+                      child: OutlinedButton(
+                        onPressed: _cancelEditing,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: isDark ? AppColors.neutral300 : AppColors.neutral700,
+                          side: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.neutral300),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: Text(
+                          'common.cancel'.tr(),
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (isCustomized) ...[
+                  const SizedBox(height: 8),
+                  Center(
+                    child: TextButton(
+                      onPressed: _resetToProfile,
+                      child: Text(
+                        'checkout.reset_to_my_info'.tr(),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.person_outline_rounded, size: 18, color: AppColors.neutral500),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        displayName,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.phone_outlined, size: 18, color: AppColors.neutral500),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        displayPhone,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              ],
             ],
           ),
         );
