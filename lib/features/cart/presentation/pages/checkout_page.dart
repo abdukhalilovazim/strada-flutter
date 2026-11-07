@@ -49,7 +49,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
             backgroundColor: AppColors.error,
           ),
         );
-        final result = await context.push<Map<String, dynamic>>('/map-picker');
+        final result = await context.push<Map<String, dynamic>>(
+          '/map-picker',
+          extra: {
+            'lat': checkoutState.lat,
+            'lng': checkoutState.lng,
+            'useMyLocation': true,
+          },
+        );
         if (result != null && mounted) {
           final lat = (result['lat'] as num?)?.toDouble();
           final lng = (result['lng'] as num?)?.toDouble();

@@ -548,7 +548,17 @@ final appRouter = GoRouter(
     GoRoute(path: '/branches', builder: (_, __) => const BranchesPage()),
     GoRoute(path: '/saved-addresses', builder: (_, __) => const SavedAddressesPage()),
     GoRoute(path: '/locations', builder: (_, __) => const SavedAddressesPage()),
-    GoRoute(path: '/map-picker', builder: (_, __) => const MapPickerPage()),
+    GoRoute(
+      path: '/map-picker',
+      builder: (_, s) {
+        final extra = s.extra as Map<String, dynamic>?;
+        return MapPickerPage(
+          initialLat: (extra?['lat'] as num?)?.toDouble(),
+          initialLng: (extra?['lng'] as num?)?.toDouble(),
+          useMyLocation: (extra?['useMyLocation'] as bool?) ?? false,
+        );
+      },
+    ),
     GoRoute(path: '/notifications', builder: (_, __) => const NotificationsPage()),
     GoRoute(
       path: '/order/:id',

@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../features/cart/presentation/bloc/cart_cubit.dart';
 import '../../../../features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import '../../../../features/cart/presentation/bloc/checkout/checkout_state.dart';
-import '../../../../features/cart/presentation/widgets/order_type_bottom_sheet.dart';
 import '../../../../features/home/presentation/bloc/home_cubit.dart';
 import '../../../services/analytics_service.dart';
 import '../../../services/smart_recommendation_engine.dart';

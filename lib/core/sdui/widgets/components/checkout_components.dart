@@ -215,9 +215,17 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
     );
   }
 
-  Future<void> _pickOnMap(BuildContext context) async {
+  Future<void> _pickOnMap(BuildContext context, {bool useMyLocation = false}) async {
     HapticFeedback.lightImpact();
-    final result = await context.push<Map<String, dynamic>>('/map-picker');
+    final checkoutState = context.read<CheckoutCubit>().state;
+    final result = await context.push<Map<String, dynamic>>(
+      '/map-picker',
+      extra: {
+        'lat': checkoutState.lat,
+        'lng': checkoutState.lng,
+        'useMyLocation': useMyLocation,
+      },
+    );
     if (result != null && context.mounted) {
       final lat = (result['lat'] as num?)?.toDouble();
       final lng = (result['lng'] as num?)?.toDouble();
@@ -281,15 +289,38 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                       color: isDark ? Colors.white : AppColors.neutral900,
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () => _pickOnMap(context),
-                    child: Text(
-                      mapBtn,
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w700,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      GestureDetector(
+                        onTap: () => _pickOnMap(context, useMyLocation: true),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.my_location_rounded, size: 14, color: AppColors.primary),
+                            const SizedBox(width: 4),
+                            Text(
+                              'map.my_location'.tr(),
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        onTap: () => _pickOnMap(context, useMyLocation: false),
+                        child: Text(
+                          mapBtn,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1157,7 +1188,14 @@ class SDUISubmitOrderCtaComponent extends StatelessWidget {
             backgroundColor: AppColors.error,
           ),
         );
-        final result = await context.push<Map<String, dynamic>>('/map-picker');
+        final result = await context.push<Map<String, dynamic>>(
+          '/map-picker',
+          extra: {
+            'lat': checkoutState.lat,
+            'lng': checkoutState.lng,
+            'useMyLocation': true,
+          },
+        );
         if (result != null && context.mounted) {
           final lat = (result['lat'] as num?)?.toDouble();
           final lng = (result['lng'] as num?)?.toDouble();

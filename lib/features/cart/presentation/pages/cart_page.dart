@@ -13,7 +13,6 @@ import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
-import 'package:pizza_strada/features/cart/presentation/widgets/order_type_bottom_sheet.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 
 /// 🛒 CartPage powered 100% by Native Flutter UI & BLoC
@@ -190,97 +189,11 @@ class CartPage extends StatelessWidget {
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 120),
       children: [
-        _buildDeliveryInfoCard(context, isDark),
         _buildCartItemsList(context, cartState, isDark),
         _buildUpsellSlider(context, cartState, isDark),
         const _CartPromoCodeWidget(),
         _buildSummaryCard(context, cartState, isDark),
       ],
-    );
-  }
-
-  Widget _buildDeliveryInfoCard(BuildContext context, bool isDark) {
-    return BlocBuilder<CheckoutCubit, CheckoutState>(
-      builder: (context, checkoutState) {
-        final isDelivery = checkoutState.isDelivery;
-        final locationText = isDelivery
-            ? (checkoutState.address ?? 'Toshkent sh., Yunusobod')
-            : (checkoutState.branchTitle ?? 'Pizza Strada');
-
-        return Container(
-          margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard : Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
-            ),
-            boxShadow: AppColors.softShadow(isDark),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(9),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  isDelivery ? Icons.delivery_dining_rounded : Icons.storefront_rounded,
-                  color: AppColors.primary,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      locationText,
-                      style: AppTextStyles.labelMedium.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13.5,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      isDelivery ? 'checkout.delivery'.tr() : 'checkout.pickup'.tr(),
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.neutral500,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (_) => const OrderTypeBottomSheet(),
-                  );
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(
-                  'common.change'.tr(),
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 

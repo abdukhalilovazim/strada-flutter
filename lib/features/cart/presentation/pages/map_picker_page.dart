@@ -20,7 +20,16 @@ import 'package:webview_flutter/webview_flutter.dart';
 /// - Yagona boshqaruv paneli (Zoom +, Zoom -, GPS joylashuv)
 /// - Filiallarga nisbatan 10 km yetkazib berish radiusini tekshirish
 class MapPickerPage extends StatefulWidget {
-  const MapPickerPage({super.key});
+  final double? initialLat;
+  final double? initialLng;
+  final bool useMyLocation;
+
+  const MapPickerPage({
+    super.key,
+    this.initialLat,
+    this.initialLng,
+    this.useMyLocation = false,
+  });
 
   @override
   State<MapPickerPage> createState() => _MapPickerPageState();
@@ -45,8 +54,14 @@ class _MapPickerPageState extends State<MapPickerPage> {
   @override
   void initState() {
     super.initState();
-    _checkInitialLocation();
+    if (widget.initialLat != null && widget.initialLng != null && widget.initialLat != 0 && widget.initialLng != 0) {
+      _currentLat = widget.initialLat!;
+      _currentLng = widget.initialLng!;
+    }
     _loadBranches();
+    if (widget.useMyLocation || (widget.initialLat == null && widget.initialLng == null)) {
+      _checkInitialLocation();
+    }
   }
 
   @override
@@ -187,7 +202,11 @@ class _MapPickerPageState extends State<MapPickerPage> {
             } else if (type == 'map_ready') {
               if (mounted) {
                 setState(() => _isMapLoading = false);
-                _safeRunJavaScript('if (typeof window.moveToCoords === "function") { window.moveToCoords($_currentLat, $_currentLng); }');
+                if (widget.useMyLocation) {
+                  _goToMyLocation();
+                } else {
+                  _safeRunJavaScript('if (typeof window.moveToCoords === "function") { window.moveToCoords($_currentLat, $_currentLng); }');
+                }
               }
             } else if (type == 'search_not_found') {
               if (mounted) {
