@@ -117,9 +117,6 @@ class ProductEntity extends Equatable {
 class StorySlideEntity extends Equatable {
   final int id;
   final String imageUrl;
-class StorySlideEntity extends Equatable {
-  final int id;
-  final String imageUrl;
   final int durationSeconds;
 
   const StorySlideEntity({
@@ -185,18 +182,20 @@ class SliderEntity extends Equatable {
 class SettingsEntity extends Equatable {
   final int discount;
   final bool canOrder;
+  final String? canOrderMessage;
   final String supportPhone;
   final List<PaymentMethodEntity> paymentMethods;
 
   const SettingsEntity({
     required this.discount,
     required this.canOrder,
+    this.canOrderMessage,
     required this.supportPhone,
     required this.paymentMethods,
   });
 
   @override
-  List<Object?> get props => [discount, canOrder, supportPhone, paymentMethods];
+  List<Object?> get props => [discount, canOrder, canOrderMessage, supportPhone, paymentMethods];
 }
 
 class PaymentMethodEntity extends Equatable {

@@ -473,6 +473,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       const SizedBox(height: 6),
                       TextField(
                         controller: _fullNameController,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
                         textCapitalization: TextCapitalization.words,
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.w700,

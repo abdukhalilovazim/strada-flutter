@@ -317,6 +317,7 @@ class _CheckoutOtpSheetState extends State<CheckoutOtpSheet> {
                     autofocus: index == 0,
                     autocorrect: false,
                     enableSuggestions: false,
+                    spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
                     textAlign: TextAlign.center,
                     keyboardType: TextInputType.number,
                     autofillHints: const [AutofillHints.oneTimeCode],

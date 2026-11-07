@@ -212,6 +212,8 @@
   "checkout.resend_via_sms": "Отправить по SMS",
   "checkout.confirm_order_title": "Подтверждение заказа",
   "checkout.confirm_order_btn": "Подтвердить заказ",
+  "checkout.ordering_suspended": "В настоящее время прием заказов временно приостановлен",
+  "checkout.inactive": "Неактивно",
   "checkout.delivery_method": "Способ доставки",
   "checkout.order_items_title": "Состав заказа",
   "checkout.recipient_title": "Получатель",

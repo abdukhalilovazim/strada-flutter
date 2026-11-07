@@ -37,6 +37,9 @@ class AppTextField extends StatefulWidget {
   final bool showClearButton;
   final String? errorText;
   final FormFieldValidator<String>? validator;
+  final bool autocorrect;
+  final bool enableSuggestions;
+  final SpellCheckConfiguration? spellCheckConfiguration;
 
   const AppTextField({
     super.key,
@@ -65,6 +68,9 @@ class AppTextField extends StatefulWidget {
     this.showClearButton = true,
     this.errorText,
     this.validator,
+    this.autocorrect = false,
+    this.enableSuggestions = false,
+    this.spellCheckConfiguration = const SpellCheckConfiguration.disabled(),
   });
 
   @override
@@ -195,6 +201,9 @@ class _AppTextFieldState extends State<AppTextField> {
       readOnly: widget.readOnly,
       enabled: widget.enabled,
       autofocus: widget.autofocus,
+      autocorrect: widget.autocorrect,
+      enableSuggestions: widget.enableSuggestions,
+      spellCheckConfiguration: widget.spellCheckConfiguration,
       maxLines: widget.maxLines,
       minLines: widget.minLines,
       maxLength: widget.maxLength,

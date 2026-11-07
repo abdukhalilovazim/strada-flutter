@@ -148,6 +148,9 @@ class _LoginPageState extends State<LoginPage> {
                     TextField(
                       controller: _nameController,
                       focusNode: _nameFocus,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
                       textInputAction: TextInputAction.next,
                       onSubmitted: (_) => _phoneFocus.requestFocus(),
                       style: AppTextStyles.bodyLarge.copyWith(
@@ -164,6 +167,9 @@ class _LoginPageState extends State<LoginPage> {
                     TextField(
                       controller: _phoneController,
                       focusNode: _phoneFocus,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
                       keyboardType: TextInputType.phone,
                       textInputAction: TextInputAction.done,
                       inputFormatters: const [

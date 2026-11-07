@@ -610,6 +610,9 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
           // Feedback comment input
           TextField(
             controller: _commentController,
+            autocorrect: false,
+            enableSuggestions: false,
+            spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
             maxLines: 2,
             decoration: InputDecoration(
               hintText: 'orders.rate_comment_hint'.tr(),

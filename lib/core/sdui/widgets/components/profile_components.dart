@@ -65,76 +65,84 @@ class _SDUIProfileHeaderComponentState extends State<SDUIProfileHeaderComponent>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
+    return InkWell(
+      onTap: () async {
+        HapticFeedback.lightImpact();
+        await context.push('/profile/edit');
+        _loadUser();
+      },
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCard : Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
+          ),
+          boxShadow: AppColors.softShadow(isDark),
         ),
-        boxShadow: AppColors.softShadow(isDark),
-      ),
-      child: Row(
-        children: [
-          // Clean Minimalist User Initials Avatar (No gradient border, no camera icon)
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isDark ? AppColors.neutral800 : const Color(0xFFF1F3F5),
-              border: Border.all(
-                color: isDark ? AppColors.darkBorder : AppColors.neutral200,
-                width: 1.2,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                _initials,
-                style: AppTextStyles.h3.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 20,
+        child: Row(
+          children: [
+            // Clean Minimalist User Initials Avatar (No gradient border, no camera icon)
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isDark ? AppColors.neutral800 : const Color(0xFFF1F3F5),
+                border: Border.all(
+                  color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+                  width: 1.2,
                 ),
               ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _userName,
-                  style: AppTextStyles.h4.copyWith(
+              child: Center(
+                child: Text(
+                  _initials,
+                  style: AppTextStyles.h3.copyWith(
+                    color: AppColors.primary,
                     fontWeight: FontWeight.w800,
-                    color: isDark ? Colors.white : AppColors.neutral900,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _userPhone,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.neutral500,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 20,
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('profile.edit_profile_dialog'.tr())),
-              );
-            },
-          ),
-        ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _userName,
+                    style: AppTextStyles.h4.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : AppColors.neutral900,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _userPhone,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.neutral500,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
+              onPressed: () async {
+                HapticFeedback.lightImpact();
+                await context.push('/profile/edit');
+                _loadUser();
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

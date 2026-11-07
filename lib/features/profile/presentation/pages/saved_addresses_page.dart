@@ -233,6 +233,9 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                   // Label (Uy, Ishxona)
                   TextField(
                     controller: titleCtrl,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
                     textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
                       labelText: 'Manzil nomi (Masalan: Uy, Ishxona)',
@@ -245,6 +248,9 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                   // Street & building
                   TextField(
                     controller: streetCtrl,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
                     textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
                       labelText: 'Ko\'cha va uy raqami *',
@@ -274,6 +280,9 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                       Expanded(
                         child: TextField(
                           controller: aptCtrl,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
                           textInputAction: TextInputAction.next,
                           decoration: InputDecoration(
                             labelText: 'Xonadon',
@@ -285,6 +294,9 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                       Expanded(
                         child: TextField(
                           controller: floorCtrl,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
                           textInputAction: TextInputAction.next,
                           decoration: InputDecoration(
                             labelText: 'Qavat',
@@ -296,6 +308,9 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                       Expanded(
                         child: TextField(
                           controller: entranceCtrl,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
                           textInputAction: TextInputAction.done,
                           decoration: InputDecoration(
                             labelText: 'Podyezd',

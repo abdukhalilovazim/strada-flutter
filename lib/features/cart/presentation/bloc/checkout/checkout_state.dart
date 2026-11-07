@@ -37,6 +37,11 @@ class CheckoutState extends Equatable {
   final String? submitError;
   final Map<String, dynamic>? successData;
 
+  // Settings & Ordering Permissions
+  final bool canOrder;
+  final String? canOrderMessage;
+  final bool isSettingsLoading;
+
   const CheckoutState({
     this.isDelivery = true,
     this.branchId,
@@ -67,6 +72,9 @@ class CheckoutState extends Equatable {
     this.isSubmitting = false,
     this.submitError,
     this.successData,
+    this.canOrder = true,
+    this.canOrderMessage,
+    this.isSettingsLoading = false,
   });
 
   /// Chegirma turi foizda ekanligini tekshirish
@@ -154,6 +162,9 @@ class CheckoutState extends Equatable {
     bool? isSubmitting,
     String? submitError,
     Map<String, dynamic>? successData,
+    bool? canOrder,
+    String? canOrderMessage,
+    bool? isSettingsLoading,
   }) {
     return CheckoutState(
       isDelivery: isDelivery ?? this.isDelivery,
@@ -185,6 +196,9 @@ class CheckoutState extends Equatable {
       isSubmitting: isSubmitting ?? this.isSubmitting,
       submitError: submitError,
       successData: successData ?? this.successData,
+      canOrder: canOrder ?? this.canOrder,
+      canOrderMessage: canOrderMessage ?? this.canOrderMessage,
+      isSettingsLoading: isSettingsLoading ?? this.isSettingsLoading,
     );
   }
 
@@ -223,5 +237,8 @@ class CheckoutState extends Equatable {
         isSubmitting,
         submitError,
         successData,
+        canOrder,
+        canOrderMessage,
+        isSettingsLoading,
       ];
 }

@@ -13,7 +13,6 @@ import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
 import 'package:pizza_strada/features/cart/presentation/widgets/checkout_promo_code_widget.dart';
-import 'package:pizza_strada/features/cart/presentation/widgets/order_type_bottom_sheet.dart';
 
 /// 💳 CheckoutPage: Bosqichli (Stepped) Native Checkout
 /// Step 1: Yetkazib berish (Manzil / Filial tanlash & Qabul qiluvchi)
@@ -35,6 +34,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
   void initState() {
     super.initState();
     _loadProfileInfo();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<CheckoutCubit>().loadSettings();
+      }
+    });
   }
 
   Future<void> _loadProfileInfo() async {
@@ -400,29 +404,77 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       ),
                       child: SafeArea(
                         top: false,
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 54,
-                          child: ElevatedButton(
-                            onPressed: () => _proceedToStep2(checkoutState, cartState),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                              elevation: 0,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'checkout.next'.tr(),
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (!checkoutState.canOrder) ...[
+                              Container(
+                                width: double.infinity,
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF3E2D12) : const Color(0xFFFEF3C7),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isDark ? const Color(0xFF78350F) : const Color(0xFFFDE68A),
+                                    width: 1,
+                                  ),
                                 ),
-                                const SizedBox(width: 8),
-                                const Icon(Icons.arrow_forward_rounded, size: 20),
-                              ],
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.info_outline_rounded,
+                                      color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        checkoutState.canOrderMessage ?? 'checkout.ordering_suspended'.tr(),
+                                        style: TextStyle(
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            SizedBox(
+                              width: double.infinity,
+                              height: 54,
+                              child: ElevatedButton(
+                                onPressed: !checkoutState.canOrder
+                                    ? null
+                                    : () => _proceedToStep2(checkoutState, cartState),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: checkoutState.canOrder
+                                      ? AppColors.primary
+                                      : (isDark ? AppColors.neutral800 : AppColors.neutral300),
+                                  disabledBackgroundColor: isDark ? AppColors.neutral800 : AppColors.neutral300,
+                                  foregroundColor: Colors.white,
+                                  disabledForegroundColor: isDark ? AppColors.neutral500 : AppColors.neutral500,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  elevation: 0,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      checkoutState.canOrder
+                                          ? 'checkout.next'.tr()
+                                          : '${'checkout.next'.tr()} (${'checkout.inactive'.tr()})',
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.arrow_forward_rounded, size: 20),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                     )

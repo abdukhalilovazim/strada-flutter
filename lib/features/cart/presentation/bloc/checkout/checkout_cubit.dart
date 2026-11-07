@@ -13,7 +13,31 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   CheckoutCubit({ApiClient? apiClient, OrderRepository? orderRepository})
       : _apiClient = apiClient ?? ApiClient(),
         _orderRepository = orderRepository ?? getIt<OrderRepository>(),
-        super(const CheckoutState());
+        super(const CheckoutState()) {
+    loadSettings();
+  }
+
+  /// Backend settings orqali can_order va buyurtma holatini yuklash
+  Future<void> loadSettings() async {
+    emit(state.copyWith(isSettingsLoading: true));
+    try {
+      final response = await _apiClient.get('settings');
+      if (response is Map<String, dynamic>) {
+        final rawCanOrder = response['can_order'];
+        final canOrder = rawCanOrder == true || rawCanOrder == 1 || rawCanOrder == '1';
+        final canOrderMsg = response['can_order_message']?.toString();
+        emit(state.copyWith(
+          canOrder: canOrder,
+          canOrderMessage: canOrderMsg,
+          isSettingsLoading: false,
+        ));
+      } else {
+        emit(state.copyWith(isSettingsLoading: false));
+      }
+    } catch (_) {
+      emit(state.copyWith(isSettingsLoading: false));
+    }
+  }
 
   /// Yetkazib berish turini o'zgartirish.
   /// Pickup ga o'tganda delivery narxi avtomatik sifirlanadi.
@@ -22,23 +46,10 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       emit(state.copyWith(isDelivery: true, showLocationError: false));
     } else {
       // Pickup rejimida delivery narxini sifirlaymiz
-      emit(CheckoutState(
+      emit(state.copyWith(
         isDelivery: false,
         showLocationError: false,
-        branchId: state.branchId,
-        branchTitle: state.branchTitle,
-        lat: state.lat,
-        lng: state.lng,
-        address: state.address,
         deliveryPrice: 0,
-        appliedPromoCode: state.appliedPromoCode,
-        promoType: state.promoType,
-        promoValue: state.promoValue,
-        selectedPaymentMethodKey: state.selectedPaymentMethodKey,
-        changeAmount: state.changeAmount,
-        comment: state.comment,
-        recipientName: state.recipientName,
-        recipientPhone: state.recipientPhone,
       ));
     }
   }
@@ -192,6 +203,14 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     required List<Map<String, dynamic>> products,
     String? commentOverride,
   }) async {
+    if (!state.canOrder) {
+      emit(state.copyWith(
+        isSubmitting: false,
+        submitError: state.canOrderMessage ?? 'Hozirda buyurtma olish vaqtincha to\'xtatilgan',
+      ));
+      return;
+    }
+
     emit(state.copyWith(isSubmitting: true, submitError: null));
     final effectiveComment = commentOverride ??
         (state.fullComment.isNotEmpty
@@ -244,6 +263,8 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       lng: state.lng,
       address: state.address,
       deliveryPrice: state.deliveryPrice,
+      canOrder: state.canOrder,
+      canOrderMessage: state.canOrderMessage,
     ));
   }
 }

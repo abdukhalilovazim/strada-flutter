@@ -156,6 +156,9 @@ class _HomePageState extends State<HomePage> {
             key: const Key('home_search_input'),
             controller: _searchController,
             focusNode: _searchFocusNode,
+            autocorrect: false,
+            enableSuggestions: false,
+            spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
             textInputAction: TextInputAction.search,
             onChanged: (val) {
               context.read<HomeCubit>().search(val);

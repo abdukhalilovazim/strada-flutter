@@ -109,6 +109,7 @@ class SettingsModel extends SettingsEntity {
   const SettingsModel({
     required super.discount,
     required super.canOrder,
+    super.canOrderMessage,
     required super.supportPhone,
     required List<PaymentMethodModel> super.paymentMethods,
   });
@@ -118,6 +119,7 @@ class SettingsModel extends SettingsEntity {
     return SettingsModel(
       discount: int.tryParse(json['discount']?.toString() ?? '0') ?? 0,
       canOrder: rawCanOrder == true || rawCanOrder == 1 || rawCanOrder == '1',
+      canOrderMessage: json['can_order_message'] as String?,
       supportPhone: json['support_phone']?.toString() ?? '',
       paymentMethods: (json['payment_methods'] as List? ?? [])
           .map((e) => PaymentMethodModel.fromJson(e as Map<String, dynamic>))

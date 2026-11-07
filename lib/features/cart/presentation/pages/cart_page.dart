@@ -12,6 +12,7 @@ import 'package:pizza_strada/core/utils/variant_localization_helper.dart';
 import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
+import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 
 /// 🛒 CartPage powered 100% by Native Flutter UI & BLoC
@@ -456,57 +457,109 @@ class CartPage extends StatelessWidget {
   Widget _buildCheckoutBottomBar(BuildContext context, CartState cartState, bool isDark) {
     final total = cartState.subtotal.toInt();
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
-        border: Border(
-          top: BorderSide(
-            color: isDark ? AppColors.neutral800 : AppColors.neutral200,
-            width: 1,
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -3),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          width: double.infinity,
-          height: 54,
-          child: ElevatedButton(
-            onPressed: () {
-              HapticFeedback.mediumImpact();
-              context.push('/checkout');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+    return BlocBuilder<CheckoutCubit, CheckoutState>(
+      builder: (context, checkoutState) {
+        final canOrder = checkoutState.canOrder;
+
+        return Container(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurface : Colors.white,
+            border: Border(
+              top: BorderSide(
+                color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                width: 1,
+              ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -3),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  'cart.checkout'.tr(),
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                ),
-                Text(
-                  '${NumberFormatter.formatSum(total)} ${'common.currency'.tr()}',
-                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                if (!canOrder) ...[
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF3E2D12) : const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF78350F) : const Color(0xFFFDE68A),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline_rounded,
+                          color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            checkoutState.canOrderMessage ?? 'checkout.ordering_suspended'.tr(),
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: ElevatedButton(
+                    onPressed: !canOrder
+                        ? null
+                        : () {
+                            HapticFeedback.mediumImpact();
+                            context.push('/checkout');
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: canOrder
+                          ? AppColors.primary
+                          : (isDark ? AppColors.neutral800 : AppColors.neutral300),
+                      disabledBackgroundColor: isDark ? AppColors.neutral800 : AppColors.neutral300,
+                      foregroundColor: Colors.white,
+                      disabledForegroundColor: isDark ? AppColors.neutral500 : AppColors.neutral500,
+                      elevation: canOrder ? 0 : 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          canOrder ? 'cart.checkout'.tr() : '${'cart.checkout'.tr()} (${'checkout.inactive'.tr()})',
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                        ),
+                        Text(
+                          '${NumberFormatter.formatSum(total)} ${'common.currency'.tr()}',
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

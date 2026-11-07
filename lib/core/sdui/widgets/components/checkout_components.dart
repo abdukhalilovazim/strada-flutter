@@ -238,6 +238,7 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
           controller: controller,
           autocorrect: false,
           enableSuggestions: false,
+          spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
           onChanged: (_) => _syncDetailsToCubit(),
           textInputAction: TextInputAction.next,
           style: AppTextStyles.bodyMedium.copyWith(
@@ -1068,6 +1069,7 @@ class _SDUICustomerInfoComponentState extends State<SDUICustomerInfoComponent> {
                   controller: _nameController,
                   autocorrect: false,
                   enableSuggestions: false,
+                  spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
                   textCapitalization: TextCapitalization.words,
                   style: AppTextStyles.bodyMedium.copyWith(
                     fontWeight: FontWeight.w600,
@@ -1100,6 +1102,7 @@ class _SDUICustomerInfoComponentState extends State<SDUICustomerInfoComponent> {
                   controller: _phoneController,
                   autocorrect: false,
                   enableSuggestions: false,
+                  spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
                   keyboardType: TextInputType.phone,
                   style: AppTextStyles.bodyMedium.copyWith(
                     fontWeight: FontWeight.w600,
@@ -1477,6 +1480,9 @@ class _SDUICourierNotesComponentState extends State<SDUICourierNotesComponent> {
           const SizedBox(height: 10),
           TextField(
             controller: _notesController,
+            autocorrect: false,
+            enableSuggestions: false,
+            spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
             onChanged: (_) => _syncPreferences(),
             maxLines: 2,
             decoration: InputDecoration(
@@ -1763,37 +1769,80 @@ class SDUISubmitOrderCtaComponent extends StatelessWidget {
         return BlocBuilder<CartCubit, CartState>(
           builder: (context, cartState) {
             final isSubmitting = checkoutState.isSubmitting;
+            final canOrder = checkoutState.canOrder;
+            final isDark = Theme.of(context).brightness == Brightness.dark;
 
             return Container(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-              child: SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: ElevatedButton(
-                  onPressed: isSubmitting
-                      ? null
-                      : () => _handleSubmit(context, checkoutState, cartState),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    elevation: 4,
-                  ),
-                  child: isSubmitting
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
-                        )
-                      : Text(
-                          btnText,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!canOrder) ...[
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF3E2D12) : const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF78350F) : const Color(0xFFFDE68A),
+                          width: 1,
                         ),
-                ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline_rounded,
+                            color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              checkoutState.canOrderMessage ?? 'checkout.ordering_suspended'.tr(),
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: ElevatedButton(
+                      onPressed: (!canOrder || isSubmitting)
+                          ? null
+                          : () => _handleSubmit(context, checkoutState, cartState),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: canOrder ? AppColors.primary : (isDark ? AppColors.neutral800 : AppColors.neutral300),
+                        disabledBackgroundColor: isDark ? AppColors.neutral800 : AppColors.neutral300,
+                        foregroundColor: Colors.white,
+                        disabledForegroundColor: isDark ? AppColors.neutral500 : AppColors.neutral500,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: canOrder ? 4 : 0,
+                      ),
+                      child: isSubmitting
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : Text(
+                              canOrder ? btnText : '$btnText (${'checkout.inactive'.tr()})',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                            ),
+                    ),
+                  ),
+                ],
               ),
             );
           },
