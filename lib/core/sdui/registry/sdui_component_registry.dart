@@ -50,21 +50,25 @@ class SDUIComponentRegistry {
       );
     });
 
-    // 2. Horizontal Category Bar
+    // 2. Horizontal Category Bar (Pinned / Sticky Header on scroll down)
     registerSliver('horizontal_category_bar', (context, section, onAction, selectedCategorySlug) {
       if (section.items.isEmpty) {
         return const SliverToBoxAdapter(child: SizedBox.shrink());
       }
-      final categoryWidget = SDUICategoryBarComponent(
-        section: section,
-        onAction: onAction,
-        selectedSlug: selectedCategorySlug,
+      final categoryWidget = SDUISafeErrorBoundary(
+        type: 'horizontal_category_bar',
+        child: SDUICategoryBarComponent(
+          section: section,
+          onAction: onAction,
+          selectedSlug: selectedCategorySlug,
+        ),
       );
 
-      return SliverToBoxAdapter(
-        child: SDUISafeErrorBoundary(
-          type: 'horizontal_category_bar',
+      return SliverPersistentHeader(
+        pinned: true,
+        delegate: _StickyCategoryHeaderDelegate(
           child: categoryWidget,
+          height: 52.0,
         ),
       );
     });
@@ -341,5 +345,36 @@ class SDUIComponentRegistry {
       );
     }
     return builder(context, section, onAction, selectedCategorySlug);
+  }
+}
+
+/// 📌 SliverPersistentHeaderDelegate to keep the Category Bar sticky / fixed
+/// at the top of the viewport when scrolling down.
+class _StickyCategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+  final double height;
+
+  _StickyCategoryHeaderDelegate({
+    required this.child,
+    this.height = 52.0,
+  });
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return SizedBox(
+      height: height,
+      child: child,
+    );
+  }
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  bool shouldRebuild(covariant _StickyCategoryHeaderDelegate oldDelegate) {
+    return oldDelegate.child != child || oldDelegate.height != height;
   }
 }

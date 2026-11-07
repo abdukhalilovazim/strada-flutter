@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/sdui/sdui.dart';
@@ -30,37 +29,22 @@ class HomePage extends StatelessWidget {
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       titleSpacing: 16,
-      title: Row(
-        children: [
-          Image.asset(
-            'assets/icons/logo.png',
-            height: 28,
-            errorBuilder: (_, __, ___) => Text(
-              'Strada',
-              style: AppTextStyles.h3.copyWith(color: AppColors.primary),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: BlocBuilder<CheckoutCubit, CheckoutState>(
-              builder: (context, checkoutState) {
-                return HeaderLocationPill(
-                  orderType: checkoutState.isDelivery ? 0 : 1,
-                  addressName: checkoutState.address,
-                  branchTitle: checkoutState.branchTitle,
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => const OrderTypeBottomSheet(),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
+      title: BlocBuilder<CheckoutCubit, CheckoutState>(
+        builder: (context, checkoutState) {
+          return HeaderLocationPill(
+            orderType: checkoutState.isDelivery ? 0 : 1,
+            addressName: checkoutState.address,
+            branchTitle: checkoutState.branchTitle,
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => const OrderTypeBottomSheet(),
+              );
+            },
+          );
+        },
       ),
       actions: [
         BlocBuilder<CartCubit, CartState>(
@@ -107,107 +91,35 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildHeaderCategoriesAndSearch(BuildContext context, HomeLoaded state) {
+  Widget _buildSearchBar(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final categories = state.categories;
-    final selectedSlug = state.selectedCategory;
 
     return SliverToBoxAdapter(
       child: Container(
         color: isDark ? AppColors.darkSurface : Colors.white,
-        padding: const EdgeInsets.fromLTRB(0, 4, 0, 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Categories Horizontal Scroll (EVOS / Yandex Eats style) ──
-            if (categories.isNotEmpty) ...[
-              SizedBox(
-                height: 38,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: categories.length + 1,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    final isAll = index == 0;
-                    final isSelected = isAll
-                        ? selectedSlug == null
-                        : selectedSlug == categories[index - 1].slug;
-                    final title = isAll ? 'Barchasi' : categories[index - 1].title;
-                    final slug = isAll ? null : categories[index - 1].slug;
-
-                    return GestureDetector(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        context.read<HomeCubit>().selectCategory(slug);
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.primary
-                              : (isDark ? AppColors.neutral800 : const Color(0xFFF1F3F5)),
-                          borderRadius: BorderRadius.circular(18),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: AppColors.primary.withValues(alpha: 0.32),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ]
-                              : null,
-                        ),
-                        child: Center(
-                          child: Text(
-                            title,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                              color: isSelected
-                                  ? Colors.white
-                                  : (isDark ? Colors.white : AppColors.neutral800),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+        child: Container(
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.search_rounded, size: 20, color: AppColors.neutral500),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Pitsa, kombo, ichimlik qidirish...',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.neutral400,
+                    fontSize: 13.5,
+                  ),
                 ),
               ),
-              const SizedBox(height: 10),
             ],
-
-            // ── Modern Search Input ──
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                height: 44,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.search_rounded, size: 20, color: AppColors.neutral500),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Pitsa, kombo, ichimlik qidirish...',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.neutral400,
-                          fontSize: 13.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -281,37 +193,7 @@ class HomePage extends StatelessWidget {
                 selectedCategorySlug: state.selectedCategory,
                 leadingSlivers: [
                   _buildAppBar(context),
-                  _buildHeaderCategoriesAndSearch(context, state),
-                  if (state.isUpdatingUI)
-                    SliverToBoxAdapter(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const SizedBox(
-                              width: 10,
-                              height: 10,
-                              child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.primary),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'home.updating_ui'.tr(),
-                              style: AppTextStyles.bodyExtraSmall.copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  _buildSearchBar(context),
                 ],
                 onRefresh: () => context.read<HomeCubit>().init(forceRefresh: true),
                 onFilterCategory: (slug) => context.read<HomeCubit>().selectCategory(slug),

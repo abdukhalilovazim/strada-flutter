@@ -29,7 +29,15 @@ class SDUICategoryBarComponent extends StatelessWidget {
     final activeSlug = selectedSlug ?? section.properties['default_selected'] as String?;
 
     return Container(
-      color: isDark ? AppColors.darkSurface : Colors.white,
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? AppColors.neutral800 : AppColors.neutral200.withValues(alpha: 0.6),
+            width: 0.5,
+          ),
+        ),
+      ),
       height: 52,
       alignment: Alignment.centerLeft,
       child: ListView.builder(

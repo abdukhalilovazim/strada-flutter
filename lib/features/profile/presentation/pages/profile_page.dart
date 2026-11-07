@@ -76,38 +76,7 @@ class ProfilePage extends StatelessWidget {
                 child: SDUIRenderer(
                   key: ValueKey('profile_sdui_${state.page.versionUuid}'),
                   page: state.page,
-                  leadingSlivers: [
-                    if (state.isUpdatingUI)
-                      SliverToBoxAdapter(
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const SizedBox(
-                                width: 10,
-                                height: 10,
-                                child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.primary),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'home.updating_ui'.tr(),
-                                style: AppTextStyles.bodyExtraSmall.copyWith(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
+                  leadingSlivers: const [],
                   onRefresh: () => context.read<SDUIPageCubit>().load(forceRefresh: true),
                 ),
               );
