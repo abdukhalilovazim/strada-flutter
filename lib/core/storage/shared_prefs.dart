@@ -34,4 +34,7 @@ class SharedPrefs {
   /// Marks an order as rated by the customer
   static Future<void> setOrderRated(int orderId) =>
       _prefs.setBool('order_rated_$orderId', true);
+
+  static String? getString(String key) => _prefs.getString(key);
+  static Future<bool> setString(String key, String value) => _prefs.setString(key, value);
 }

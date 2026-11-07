@@ -431,7 +431,7 @@ class SDUIUpsellSliderComponent extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   SizedBox(
-                    height: 116,
+                    height: 156,
                     child: ListView.separated(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       scrollDirection: Axis.horizontal,
@@ -440,58 +440,104 @@ class SDUIUpsellSliderComponent extends StatelessWidget {
                       itemBuilder: (context, i) {
                         final product = match.products[i];
                         return Container(
-                          width: 130,
+                          width: 115,
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: isDark ? AppColors.darkSurface : Colors.white,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isDark ? AppColors.darkBorder : AppColors.neutral200,
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // Image with Floating '+' button (EVOS style)
                               Expanded(
-                                child: Center(
-                                  child: product.hasValidImage
-                                      ? CachedNetworkImage(
-                                          imageUrl: product.validImageUrl,
-                                          fit: BoxFit.contain,
-                                        )
-                                      : const Icon(Icons.fastfood_rounded, color: AppColors.primary),
+                                flex: 5,
+                                child: Stack(
+                                  children: [
+                                    Container(
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      decoration: BoxDecoration(
+                                        color: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: product.hasValidImage
+                                          ? CachedNetworkImage(
+                                              imageUrl: product.validImageUrl,
+                                              fit: BoxFit.contain,
+                                            )
+                                          : const Icon(Icons.fastfood_rounded, color: AppColors.primary, size: 28),
+                                    ),
+                                    Positioned(
+                                      bottom: 4,
+                                      right: 4,
+                                      child: Material(
+                                        color: isDark ? AppColors.darkCard : Colors.white,
+                                        shape: const CircleBorder(),
+                                        elevation: 2,
+                                        shadowColor: Colors.black.withValues(alpha: 0.2),
+                                        child: InkWell(
+                                          customBorder: const CircleBorder(),
+                                          onTap: () {
+                                            HapticFeedback.lightImpact();
+                                            context.read<CartCubit>().addToCart(product);
+                                          },
+                                          child: Container(
+                                            width: 26,
+                                            height: 26,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                                                width: 1,
+                                              ),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: Icon(
+                                              Icons.add_rounded,
+                                              size: 17,
+                                              color: isDark ? Colors.white : AppColors.neutral900,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
+                              const SizedBox(height: 6),
+                              // Price (Bold)
+                              Text(
+                                '${NumberFormatter.formatSum(product.price.toInt())} ${'common.currency'.tr()}',
+                                style: AppTextStyles.priceSmall.copyWith(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: isDark ? Colors.white : AppColors.neutral900,
+                                ),
+                                maxLines: 1,
+                              ),
+                              const SizedBox(height: 2),
+                              // Title
                               Text(
                                 product.title,
                                 style: AppTextStyles.labelSmall.copyWith(
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w600,
                                   fontSize: 11,
+                                  color: isDark ? AppColors.neutral300 : AppColors.neutral700,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                              ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    '${NumberFormatter.formatSum(product.price.toInt())} ${'common.currency'.tr()}',
-                                    style: AppTextStyles.priceSmall.copyWith(fontSize: 11),
-                                  ),
-                                  InkWell(
-                                    onTap: () {
-                                      context.read<CartCubit>().addToCart(product);
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.all(3),
-                                      decoration: const BoxDecoration(
-                                        color: AppColors.primary,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(Icons.add, size: 14, color: Colors.white),
-                                    ),
-                                  ),
-                                ],
                               ),
                             ],
                           ),

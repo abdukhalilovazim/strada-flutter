@@ -1,8 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/sdui/sdui.dart';
+import 'package:pizza_strada/core/widgets/strada_refresh_control.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_icons.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
@@ -105,6 +107,107 @@ class HomePage extends StatelessWidget {
     );
   }
 
+  Widget _buildDeliveryModeAndSearchBar(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return SliverToBoxAdapter(
+      child: Container(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+        child: Column(
+          children: [
+            // ── Delivery vs Takeout Mode Switcher (Image 3 Yandex Eats style) ──
+            BlocBuilder<CheckoutCubit, CheckoutState>(
+              builder: (context, state) {
+                final isDelivery = state.isDelivery;
+
+                return Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        context.read<CheckoutCubit>().setDeliveryType(true);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: isDelivery
+                              ? const Border(bottom: BorderSide(color: AppColors.primary, width: 2.5))
+                              : null,
+                        ),
+                        child: Text(
+                          'Yetkazib berish',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: isDelivery ? FontWeight.w900 : FontWeight.w600,
+                            color: isDelivery
+                                ? (isDark ? Colors.white : AppColors.neutral900)
+                                : AppColors.neutral400,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        context.read<CheckoutCubit>().setDeliveryType(false);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: !isDelivery
+                              ? const Border(bottom: BorderSide(color: AppColors.primary, width: 2.5))
+                              : null,
+                        ),
+                        child: Text(
+                          'Olib ketish',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: !isDelivery ? FontWeight.w900 : FontWeight.w600,
+                            color: !isDelivery
+                                ? (isDark ? Colors.white : AppColors.neutral900)
+                                : AppColors.neutral400,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+
+            // ── Search Input (Image 3 style) ──
+            Container(
+              height: 44,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.search_rounded, size: 20, color: AppColors.neutral500),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Pitsa, kombo, ichimlik qidirish...',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.neutral400,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,13 +228,16 @@ class HomePage extends StatelessWidget {
           }
 
           if (state is HomeFailure) {
-            return RefreshIndicator(
-              onRefresh: () => context.read<HomeCubit>().init(forceRefresh: true),
-              color: AppColors.primary,
-              child: CustomScrollView(
-                slivers: [
-                  _buildAppBar(context),
-                  SliverFillRemaining(
+            return CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
+              slivers: [
+                StradaSliverRefreshControl(
+                  onRefresh: () => context.read<HomeCubit>().init(forceRefresh: true),
+                ),
+                _buildAppBar(context),
+                SliverFillRemaining(
                     child: Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -158,8 +264,7 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
                 ],
-              ),
-            );
+              );
           }
 
           if (state is HomeLoaded) {
@@ -171,6 +276,7 @@ class HomePage extends StatelessWidget {
                 selectedCategorySlug: state.selectedCategory,
                 leadingSlivers: [
                   _buildAppBar(context),
+                  _buildDeliveryModeAndSearchBar(context),
                   if (state.isUpdatingUI)
                     SliverToBoxAdapter(
                       child: Container(

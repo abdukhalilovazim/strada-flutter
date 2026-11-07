@@ -137,10 +137,21 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         isSubmitting: false,
         submitError: failure.messageKey,
       )),
-      (data) => emit(state.copyWith(
-        isSubmitting: false,
-        successData: data,
-      )),
+      (data) {
+        final orderId = data['id']?.toString() ?? '';
+        final totalAmount = double.tryParse(data['total_price']?.toString() ?? '') ?? 0;
+        AnalyticsService.instance.logOrderPlaced(
+          orderId: orderId,
+          totalAmount: totalAmount,
+          paymentMethod: (state.selectedPaymentMethodKey == '1' || state.selectedPaymentMethodKey == 'payme') ? 'payme' : 'cash',
+          isDelivery: state.isDelivery,
+          itemsCount: products.length,
+        );
+        emit(state.copyWith(
+          isSubmitting: false,
+          successData: data,
+        ));
+      },
     );
   }
 

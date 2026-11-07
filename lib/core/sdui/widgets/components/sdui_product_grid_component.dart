@@ -42,13 +42,29 @@ class SDUIProductGridComponent extends StatelessWidget {
     final cleanThumb = _cleanImageUrl(rawThumb);
     final cleanPhoto = _cleanImageUrl(rawPhoto);
 
+    final rawBadges = props['badges'] as List<dynamic>?;
+    final badgesList = rawBadges?.map((b) {
+      if (b is Map<String, dynamic>) {
+        return ProductBadgeEntity(
+          text: b['text']?.toString() ?? '',
+          type: b['type']?.toString() ?? 'discount',
+          bgColor: b['bg_color']?.toString(),
+          textColor: b['text_color']?.toString(),
+        );
+      }
+      return ProductBadgeEntity(text: b.toString());
+    }).toList() ?? const [];
+
     return ProductEntity(
+      id: (props['id'] as num?)?.toInt() ?? 0,
       slug: props['slug']?.toString() ?? item.id,
       title: props['title']?.toString() ?? '',
       description: props['description']?.toString(),
       thumbnail: cleanThumb,
       photo: cleanPhoto.isNotEmpty ? cleanPhoto : cleanThumb,
       price: (props['price'] as num?)?.toDouble() ?? 0.0,
+      oldPrice: (props['old_price'] as num?)?.toDouble(),
+      badges: badgesList,
       category: catMap != null
           ? CategoryEntity(
               slug: catMap['slug']?.toString() ?? '',

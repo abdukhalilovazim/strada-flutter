@@ -50,6 +50,8 @@ class ProductModel extends ProductEntity {
     required super.thumbnail,
     required super.photo,
     required super.price,
+    super.oldPrice,
+    super.badges = const [],
     super.category,
     required List<VariantModel> super.variants,
     required List<KeyValueModel> super.values,
@@ -84,6 +86,18 @@ class ProductModel extends ProductEntity {
       thumbnail: cleanThumb,
       photo: cleanPhoto.isNotEmpty ? cleanPhoto : cleanThumb,
       price: double.tryParse(json['price']?.toString() ?? '0') ?? 0,
+      oldPrice: double.tryParse(json['old_price']?.toString() ?? ''),
+      badges: (json['badges'] as List? ?? []).map((b) {
+        if (b is Map<String, dynamic>) {
+          return ProductBadgeEntity(
+            text: b['text']?.toString() ?? '',
+            type: b['type']?.toString() ?? 'discount',
+            bgColor: b['bg_color']?.toString(),
+            textColor: b['text_color']?.toString(),
+          );
+        }
+        return ProductBadgeEntity(text: b.toString());
+      }).toList(),
       category: json['category'] != null ? CategoryModel.fromJson(json['category'] as Map<String, dynamic>) : null,
       variants: (json['variants'] as List? ?? []).map((e) => VariantModel.fromJson(e as Map<String, dynamic>)).toList(),
       values: (json['values'] as List? ?? []).map((e) => KeyValueModel.fromJson(e as Map<String, dynamic>)).toList(),

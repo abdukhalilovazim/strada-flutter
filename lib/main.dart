@@ -11,6 +11,7 @@ import 'package:pizza_strada/core/theme/app_theme.dart';
 import 'package:pizza_strada/core/theme/theme_cubit.dart';
 import 'package:pizza_strada/core/utils/device_info_helper.dart';
 import 'package:pizza_strada/core/storage/shared_prefs.dart';
+import 'package:pizza_strada/core/sdui/bloc/sdui_navigation_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
@@ -55,6 +56,7 @@ void main() async {
           BlocProvider(create: (context) => getIt<HomeCubit>()..init()),
           BlocProvider(create: (context) => getIt<ThemeCubit>()),
           BlocProvider(create: (context) => CheckoutCubit()),
+          BlocProvider(create: (_) => SDUINavigationCubit()),
         ],
         child: BlocBuilder<ThemeCubit, ThemeMode>(
           builder: (context, themeMode) => MyApp(themeMode: themeMode),

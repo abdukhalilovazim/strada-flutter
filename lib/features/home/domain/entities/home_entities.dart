@@ -36,6 +36,23 @@ class KeyValueEntity extends Equatable {
   List<Object?> get props => [key, value];
 }
 
+class ProductBadgeEntity extends Equatable {
+  final String text;
+  final String type; // 'discount', 'tag', 'hit', 'promo'
+  final String? bgColor;
+  final String? textColor;
+
+  const ProductBadgeEntity({
+    required this.text,
+    this.type = 'discount',
+    this.bgColor,
+    this.textColor,
+  });
+
+  @override
+  List<Object?> get props => [text, type, bgColor, textColor];
+}
+
 class ProductEntity extends Equatable {
   final int id;
   final String slug;
@@ -48,6 +65,7 @@ class ProductEntity extends Equatable {
   final CategoryEntity? category;
   final List<VariantEntity> variants;
   final List<KeyValueEntity> values;
+  final List<ProductBadgeEntity> badges;
 
   const ProductEntity({
     this.id = 0,
@@ -61,7 +79,16 @@ class ProductEntity extends Equatable {
     this.category,
     required this.variants,
     required this.values,
+    this.badges = const [],
   });
+
+  /// Real discount saved amount (e.g. 73 000 - 61 000 = 12 000)
+  double? get discountAmount {
+    if (oldPrice != null && oldPrice! > price) {
+      return oldPrice! - price;
+    }
+    return null;
+  }
 
   /// Check whether the product has a genuine photography rather than a logo/default fallback.
   bool get hasValidImage {
@@ -83,7 +110,7 @@ class ProductEntity extends Equatable {
   String get validImageUrl => hasValidImage ? (thumbnail.isNotEmpty ? thumbnail : photo) : '';
 
   @override
-  List<Object?> get props => [id, slug, title, description, thumbnail, photo, price, oldPrice, category, variants, values];
+  List<Object?> get props => [id, slug, title, description, thumbnail, photo, price, oldPrice, category, variants, values, badges];
 }
 
 /// Banner slider entity (Swiper Slider uchun)

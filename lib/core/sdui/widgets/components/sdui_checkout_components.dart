@@ -104,8 +104,8 @@ class SDUIOrderTypeComponent extends StatelessWidget {
   }
 }
 
-/// 📍 Checkout: Manzil kiritish & Xarita
-class SDUIAddressSelectorComponent extends StatelessWidget {
+/// 📍 Checkout: Manzil kiritish & Xarita (Yandex Eats / EVOS "Where to" uslubi)
+class SDUIAddressSelectorComponent extends StatefulWidget {
   final SDUISectionModel section;
   final SDUIActionHandler onAction;
 
@@ -116,10 +116,97 @@ class SDUIAddressSelectorComponent extends StatelessWidget {
   });
 
   @override
+  State<SDUIAddressSelectorComponent> createState() => _SDUIAddressSelectorComponentState();
+}
+
+class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorComponent> {
+  final _entranceController = TextEditingController();
+  final _floorController = TextEditingController();
+  final _apartmentController = TextEditingController();
+  final _doorPhoneController = TextEditingController();
+  final _courierNotesController = TextEditingController();
+  bool _leaveAtDoor = false;
+
+  void _syncDetailsToCubit() {
+    final parts = <String>[];
+    if (_entranceController.text.trim().isNotEmpty) {
+      parts.add('Podyezd: ${_entranceController.text.trim()}');
+    }
+    if (_floorController.text.trim().isNotEmpty) {
+      parts.add('Qavat: ${_floorController.text.trim()}');
+    }
+    if (_apartmentController.text.trim().isNotEmpty) {
+      parts.add('Xonadon: ${_apartmentController.text.trim()}');
+    }
+    if (_doorPhoneController.text.trim().isNotEmpty) {
+      parts.add('Domofon: ${_doorPhoneController.text.trim()}');
+    }
+    if (_leaveAtDoor) {
+      parts.add('Eshik oldida qoldiring');
+    }
+    if (_courierNotesController.text.trim().isNotEmpty) {
+      parts.add('Izoh: ${_courierNotesController.text.trim()}');
+    }
+
+    context.read<CheckoutCubit>().setComment(parts.join(', '));
+  }
+
+  @override
+  void dispose() {
+    _entranceController.dispose();
+    _floorController.dispose();
+    _apartmentController.dispose();
+    _doorPhoneController.dispose();
+    _courierNotesController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildMiniInput({
+    required BuildContext context,
+    required String label,
+    required TextEditingController controller,
+    required bool isDark,
+  }) {
+    return Expanded(
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+          ),
+        ),
+        alignment: Alignment.centerLeft,
+        child: TextField(
+          controller: controller,
+          onChanged: (_) => _syncDetailsToCubit(),
+          style: AppTextStyles.bodyMedium.copyWith(
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+            color: isDark ? Colors.white : AppColors.neutral900,
+          ),
+          decoration: InputDecoration(
+            hintText: label,
+            hintStyle: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.neutral400,
+              fontSize: 12,
+            ),
+            border: InputBorder.none,
+            isDense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final props = section.properties;
-    final title = props['title']?.toString() ?? 'Yetkazib berish manzili';
+    final props = widget.section.properties;
+    final title = props['title']?.toString() ?? 'Where to';
     final mapBtn = props['map_button_text']?.toString() ?? 'Xaritadan tanlash';
 
     return BlocBuilder<CheckoutCubit, CheckoutState>(
@@ -137,21 +224,44 @@ class SDUIAddressSelectorComponent extends StatelessWidget {
             border: Border.all(
               color: isDark ? AppColors.darkBorder : AppColors.neutral200,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Title Row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(title, style: AppTextStyles.labelSmall.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w600)),
+                  Text(
+                    title,
+                    style: AppTextStyles.h4.copyWith(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                      color: isDark ? Colors.white : AppColors.neutral900,
+                    ),
+                  ),
                   GestureDetector(
                     onTap: () => context.push('/map-picker'),
-                    child: Text(mapBtn, style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                    child: Text(
+                      mapBtn,
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
+
+              // Address Bar with Home Icon
               GestureDetector(
                 onTap: () => context.push('/map-picker'),
                 child: Container(
@@ -159,16 +269,20 @@ class SDUIAddressSelectorComponent extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
                     borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isDark ? AppColors.darkBorder : const Color(0xFFEDF2F7),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 20),
+                      const Icon(Icons.home_rounded, color: AppColors.primary, size: 22),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           address,
                           style: AppTextStyles.labelMedium.copyWith(
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -178,6 +292,107 @@ class SDUIAddressSelectorComponent extends StatelessWidget {
                     ],
                   ),
                 ),
+              ),
+              const SizedBox(height: 12),
+
+              // ── 2x2 Grid (Podyezd, Qavat, Xonadon, Domofon - Optional) ──
+              Row(
+                children: [
+                  _buildMiniInput(
+                    context: context,
+                    label: 'Podyezd (Entrance)',
+                    controller: _entranceController,
+                    isDark: isDark,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildMiniInput(
+                    context: context,
+                    label: 'Qavat (Floor)',
+                    controller: _floorController,
+                    isDark: isDark,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _buildMiniInput(
+                    context: context,
+                    label: 'Xonadon (Apartment)',
+                    controller: _apartmentController,
+                    isDark: isDark,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildMiniInput(
+                    context: context,
+                    label: 'Domofon (Door phone)',
+                    controller: _doorPhoneController,
+                    isDark: isDark,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Courier Notes Input
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.chat_bubble_outline_rounded, size: 18, color: AppColors.neutral400),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: _courierNotesController,
+                        onChanged: (_) => _syncDetailsToCubit(),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark ? Colors.white : AppColors.neutral900,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Kuryer uchun ko\'rsatma (ixtiyoriy)...',
+                          hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400),
+                          border: InputBorder.none,
+                          isDense: true,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // "Leave at the door" (Eshik oldida qoldiring) Switch
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.door_front_door_outlined, size: 20, color: AppColors.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Eshik oldida qoldiring',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : AppColors.neutral900,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Switch(
+                    value: _leaveAtDoor,
+                    activeThumbColor: AppColors.primary,
+                    onChanged: (val) {
+                      setState(() => _leaveAtDoor = val);
+                      _syncDetailsToCubit();
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -372,7 +587,7 @@ class SDUICustomerInfoComponent extends StatelessWidget {
   }
 }
 
-/// 💳 Checkout: To'lov usullari (Payment Method Card)
+/// 💳 Checkout: To'lov usullari (Yandex Eats horizontal card selector uslubi)
 class SDUIPaymentMethodComponent extends StatefulWidget {
   final SDUISectionModel section;
   final SDUIActionHandler onAction;
@@ -394,12 +609,12 @@ class _SDUIPaymentMethodComponentState extends State<SDUIPaymentMethodComponent>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final props = widget.section.properties;
-    final title = props['title']?.toString() ?? 'To\'lov usuli';
+    final title = props['title']?.toString() ?? 'Payment';
 
     final options = [
-      {'key': 'payme', 'title': 'Payme / Click (Onlayn)', 'icon': Icons.payment_rounded},
-      {'key': 'cash', 'title': 'Naqd pul orqali (Kuryerga)', 'icon': Icons.payments_outlined},
-      {'key': 'terminal', 'title': 'Karta orqali terminalda', 'icon': Icons.credit_card_rounded},
+      {'key': 'payme', 'title': 'Payme', 'subtitle': 'Onlayn to\'lov', 'icon': Icons.credit_card_rounded},
+      {'key': 'cash', 'title': 'Naqd pul', 'subtitle': 'Kuryerga', 'icon': Icons.payments_outlined},
+      {'key': 'terminal', 'title': 'Terminal', 'subtitle': 'Karta bilan', 'icon': Icons.point_of_sale_rounded},
     ];
 
     return Container(
@@ -411,53 +626,126 @@ class _SDUIPaymentMethodComponentState extends State<SDUIPaymentMethodComponent>
         border: Border.all(
           color: isDark ? AppColors.darkBorder : AppColors.neutral200,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: AppTextStyles.labelSmall.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w600)),
+          Text(
+            title,
+            style: AppTextStyles.h4.copyWith(
+              fontWeight: FontWeight.w800,
+              fontSize: 16,
+              color: isDark ? Colors.white : AppColors.neutral900,
+            ),
+          ),
           const SizedBox(height: 10),
-          ...options.map((opt) {
-            final isSelected = _selectedMethod == opt['key'];
-            return GestureDetector(
-              onTap: () {
-                setState(() => _selectedMethod = opt['key'] as String);
-              },
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primary.withValues(alpha: 0.08)
-                      : (isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA)),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: isSelected ? AppColors.primary : Colors.transparent,
-                    width: 1.5,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(opt['icon'] as IconData, color: isSelected ? AppColors.primary : AppColors.neutral500, size: 20),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        opt['title'] as String,
-                        style: AppTextStyles.labelMedium.copyWith(
-                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                        ),
+
+          // Helpful info box (Image 1 style)
+          if (_selectedMethod == 'cash')
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.neutral500),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Naqd pul orqali to\'lov: Iltimos, qaytim uchun yirik pul bo\'lsa kuryerga xabar bering.',
+                      style: AppTextStyles.bodyExtraSmall.copyWith(
+                        color: AppColors.neutral600,
                       ),
                     ),
-                    Icon(
-                      isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                      color: isSelected ? AppColors.primary : AppColors.neutral400,
-                      size: 20,
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            );
-          }),
+            ),
+
+          // Horizontal Payment Cards (Image 1 style)
+          SizedBox(
+            height: 74,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: options.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, i) {
+                final opt = options[i];
+                final isSelected = _selectedMethod == opt['key'];
+
+                return GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _selectedMethod = opt['key'] as String);
+                    context.read<CheckoutCubit>().setPaymentMethod(opt['key'] as String);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 110,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? (isDark ? AppColors.darkSurface : Colors.white)
+                          : (isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA)),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isSelected ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.neutral200),
+                        width: isSelected ? 2 : 1,
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.18),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Icon(
+                              opt['icon'] as IconData,
+                              color: isSelected ? AppColors.primary : AppColors.neutral500,
+                              size: 20,
+                            ),
+                            if (isSelected)
+                              const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 16),
+                          ],
+                        ),
+                        Text(
+                          opt['title'] as String,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                            color: isSelected
+                                ? (isDark ? Colors.white : AppColors.neutral900)
+                                : AppColors.neutral600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );

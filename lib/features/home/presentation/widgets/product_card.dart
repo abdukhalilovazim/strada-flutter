@@ -36,7 +36,28 @@ class ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasVariants = product.variants.length > 1;
-    final hasDiscount = product.oldPrice != null && product.oldPrice! > product.price;
+    final discountVal = product.discountAmount;
+    final hasDiscount = discountVal != null;
+
+    final effectiveBadges = <ProductBadgeEntity>[
+      ...product.badges,
+      if (product.badges.isEmpty && hasDiscount)
+        ProductBadgeEntity(
+          text: '-${NumberFormatter.formatSum(discountVal.toInt())} ${'common.currency'.tr()}',
+          type: 'discount',
+          bgColor: '#16A34A',
+          textColor: '#FFFFFF',
+        ),
+    ];
+
+    Color parseHex(String? hex, Color fallback) {
+      if (hex == null || hex.isEmpty) return fallback;
+      final clean = hex.replaceAll('#', '');
+      if (clean.length == 6) {
+        return Color(int.parse('0xFF$clean'));
+      }
+      return fallback;
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -117,34 +138,42 @@ class ProductCard extends StatelessWidget {
                       ),
                     ),
 
-                    // Discount Pill (Top Left)
-                    if (hasDiscount)
+                    // Dynamic Badges (Top Left: -12 000 sum, Yangi, Ommabop, etc.)
+                    if (effectiveBadges.isNotEmpty)
                       Positioned(
                         top: 8,
                         left: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.error,
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.error.withValues(alpha: 0.3),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
+                        child: Wrap(
+                          direction: Axis.vertical,
+                          spacing: 4,
+                          children: effectiveBadges.map((b) {
+                            final bg = parseHex(b.bgColor, const Color(0xFF16A34A));
+                            final fg = parseHex(b.textColor, Colors.white);
+
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: bg,
+                                borderRadius: BorderRadius.circular(7),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: bg.withValues(alpha: 0.35),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1.5),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: Text(
-                            '${NumberFormatter.formatSum(product.oldPrice!)} ${'common.currency'.tr()}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              decoration: TextDecoration.lineThrough,
-                              decorationColor: Colors.white,
-                            ),
-                          ),
+                              child: Text(
+                                b.text,
+                                style: TextStyle(
+                                  color: fg,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ),
 
@@ -169,29 +198,147 @@ class ProductCard extends StatelessWidget {
                           ),
                         ),
                       ),
+
+                    // Floating circular Add Button / Stepper (Bottom Right of Photo - EVOS style)
+                    Positioned(
+                      bottom: 8,
+                      right: 8,
+                      child: quantityInCart == 0
+                          ? Material(
+                              color: isDark ? AppColors.darkCard : Colors.white,
+                              shape: const CircleBorder(),
+                              elevation: 3,
+                              shadowColor: Colors.black.withValues(alpha: 0.2),
+                              child: InkWell(
+                                customBorder: const CircleBorder(),
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  (hasVariants ? onTap : (onAdd ?? onTap))?.call();
+                                },
+                                child: Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    Icons.add_rounded,
+                                    size: 20,
+                                    color: isDark ? Colors.white : AppColors.neutral900,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Container(
+                              height: 32,
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withValues(alpha: 0.4),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      onRemove?.call();
+                                    },
+                                    child: const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                                      child: Icon(Icons.remove_rounded, size: 16, color: Colors.white),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                                    child: Text(
+                                      '$quantityInCart',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      onAdd?.call();
+                                    },
+                                    child: const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                                      child: Icon(Icons.add_rounded, size: 16, color: Colors.white),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                    ),
                   ],
                 ),
               ),
 
               // ── 2. Information & Actions Section ──
               Padding(
-                padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Price Row with Old Price (EVOS / Yandex Eats style)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          '${NumberFormatter.formatSum(product.price)} ${'common.currency'.tr()}',
+                          style: AppTextStyles.priceMedium.copyWith(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800,
+                            color: hasDiscount ? AppColors.primary : (isDark ? Colors.white : AppColors.neutral900),
+                          ),
+                        ),
+                        if (hasDiscount) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            NumberFormatter.formatSum(product.oldPrice!),
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.neutral400,
+                              decoration: TextDecoration.lineThrough,
+                              decorationColor: AppColors.neutral400,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+
                     // Title
                     Text(
                       product.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.h4.copyWith(
-                        fontSize: 14.5,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.w700,
                         color: isDark ? Colors.white : AppColors.neutral900,
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
 
                     // Ingredients / Short description
                     if (product.description != null && product.description!.isNotEmpty)
@@ -200,152 +347,12 @@ class ProductCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.bodySmall.copyWith(
-                          fontSize: 11.5,
+                          fontSize: 11,
                           color: AppColors.neutral500,
                         ),
                       )
                     else
                       const SizedBox(height: 14),
-
-                    const SizedBox(height: 8),
-
-                    // Price & Action Button Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // Price
-                        Expanded(
-                          child: Text(
-                            '${NumberFormatter.formatSum(product.price)} ${'common.currency'.tr()}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.priceMedium.copyWith(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: isDark ? Colors.white : AppColors.neutral900,
-                            ),
-                          ),
-                        ),
-
-                        // Action Button or Stepper
-                        if (quantityInCart == 0)
-                          // Single Tap Add / Select
-                          hasVariants
-                              ? Material(
-                                  color: AppColors.primaryLight,
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: InkWell(
-                                    onTap: () {
-                                      HapticFeedback.lightImpact();
-                                      onTap?.call();
-                                    },
-                                    borderRadius: BorderRadius.circular(10),
-                                    child: Container(
-                                      height: 34,
-                                      padding: const EdgeInsets.symmetric(horizontal: 11),
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        'product.open_btn'.tr(),
-                                        style: AppTextStyles.labelSmall.copyWith(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.primary,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : Material(
-                                  color: AppColors.primary,
-                                  borderRadius: BorderRadius.circular(10),
-                                  elevation: 2,
-                                  shadowColor: AppColors.primary.withValues(alpha: 0.35),
-                                  child: InkWell(
-                                    onTap: () {
-                                      HapticFeedback.lightImpact();
-                                      (onAdd ?? onTap)?.call();
-                                    },
-                                    borderRadius: BorderRadius.circular(10),
-                                    child: const SizedBox(
-                                      width: 34,
-                                      height: 34,
-                                      child: Icon(
-                                        Icons.add_rounded,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                        else
-                          // Active Stepper in Cart
-                          Container(
-                            height: 34,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primary.withValues(alpha: 0.32),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    HapticFeedback.lightImpact();
-                                    onRemove?.call();
-                                  },
-                                  behavior: HitTestBehavior.opaque,
-                                  child: Container(
-                                    width: 28,
-                                    height: 34,
-                                    alignment: Alignment.center,
-                                    child: const Icon(
-                                      Icons.remove_rounded,
-                                      color: Colors.white,
-                                      size: 16,
-                                    ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                                  child: Text(
-                                    '$quantityInCart',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onTap: () {
-                                    HapticFeedback.lightImpact();
-                                    (onAdd ?? onTap)?.call();
-                                  },
-                                  behavior: HitTestBehavior.opaque,
-                                  child: Container(
-                                    width: 28,
-                                    height: 34,
-                                    alignment: Alignment.center,
-                                    child: const Icon(
-                                      Icons.add_rounded,
-                                      color: Colors.white,
-                                      size: 16,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
                   ],
                 ),
               ),

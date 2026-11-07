@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pizza_strada/core/widgets/strada_refresh_control.dart';
 import '../models/sdui_action_model.dart';
 import '../models/sdui_page_model.dart';
 import '../registry/sdui_action_dispatcher.dart';
@@ -49,6 +50,8 @@ class SDUIRenderer extends StatelessWidget {
     final registry = SDUIComponentRegistry();
 
     final slivers = <Widget>[
+      if (onRefresh != null)
+        StradaSliverRefreshControl(onRefresh: onRefresh),
       if (leadingSlivers != null) ...leadingSlivers!,
       ...page.sections.map((section) {
         return registry.buildSliver(
@@ -60,20 +63,10 @@ class SDUIRenderer extends StatelessWidget {
       }),
     ];
 
-    if (onRefresh != null) {
-      return RefreshIndicator(
-        onRefresh: onRefresh!,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          slivers: slivers,
-        ),
-      );
-    }
-
     return CustomScrollView(
-      physics: const BouncingScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
+      ),
       slivers: slivers,
     );
   }
