@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,60 +13,24 @@ import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_card.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_detail_modal.dart';
-
-class PromoDeal {
-  final int id;
-  final String code;
-  final String title;
-  final String description;
-  final double price;
-  final double oldPrice;
-  final String badgeText;
-
-  const PromoDeal({
-    required this.id,
-    required this.code,
-    required this.title,
-    required this.description,
-    required this.price,
-    required this.oldPrice,
-    required this.badgeText,
-  });
-}
+import '../../domain/entities/promotion_deal_entity.dart';
+import '../bloc/promotions_cubit.dart';
 
 /// 🏷️ PromotionsPage powered 100% by Native Flutter UI & BLoC
 class PromotionsPage extends StatelessWidget {
   const PromotionsPage({super.key});
 
-  static const _deals = [
-    PromoDeal(
-      id: 1,
-      code: 'STRADA20',
-      title: 'Pitsa + Ichimlik kombo',
-      description: 'Istalgan o\'rtacha pitsa va 0.5L ichimlikka 20% maxsus chegirma',
-      price: 65000.0,
-      oldPrice: 85000.0,
-      badgeText: '-20 000 so\'m',
-    ),
-    PromoDeal(
-      id: 2,
-      code: 'COMBO3',
-      title: 'Katta Do\'stlar To\'plami (3 ta pitsa)',
-      description: '3 ta katta pitsa buyurtma bering va uchinchi pitsani 50% chegirma bilan oling',
-      price: 169000.0,
-      oldPrice: 225000.0,
-      badgeText: '-56 000 so\'m',
-    ),
-    PromoDeal(
-      id: 3,
-      code: 'WEEKEND',
-      title: 'Dam olish kunlari pitsasi',
-      description: 'Shanba va yakshanba kunlari har bir buyurtmaga bepul sous qo\'shiladi',
-      price: 89000.0,
-      oldPrice: 99000.0,
-      badgeText: 'Bepul sous',
-    ),
-  ];
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => PromotionsCubit()..loadPromotions(),
+      child: const _PromotionsView(),
+    );
+  }
+}
+
+class _PromotionsView extends StatelessWidget {
+  const _PromotionsView();
 
   @override
   Widget build(BuildContext context) {
@@ -93,12 +56,105 @@ class PromotionsPage extends StatelessWidget {
           ),
         ),
       ),
-      body: BlocBuilder<HomeCubit, HomeState>(
-        builder: (context, state) {
-          final sliders = state is HomeLoaded ? state.sliders : <SliderEntity>[];
-          final discountProducts = state is HomeLoaded
-              ? state.fullProducts.where((p) => p.oldPrice != null || p.badges.isNotEmpty).toList()
-              : <ProductEntity>[];
+      body: BlocBuilder<PromotionsCubit, PromotionsState>(
+        builder: (context, promoState) {
+          if (promoState is PromotionsLoading || promoState is PromotionsInitial) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            );
+          }
+
+          if (promoState is PromotionsFailure) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.neutral400),
+                    const SizedBox(height: 12),
+                    Text(
+                      promoState.message,
+                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => context.read<PromotionsCubit>().loadPromotions(forceRefresh: true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text('common.retry'.tr()),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          final deals = promoState is PromotionsLoaded ? promoState.deals : <PromotionDealEntity>[];
+          
+          // Agar promotions APIdan discountProducts bo'lsa uni olamiz, aks holda HomeCubit'dan to'ldiramiz
+          List<ProductEntity> discountProducts = promoState is PromotionsLoaded ? promoState.discountProducts : [];
+          if (discountProducts.isEmpty) {
+            final homeState = context.watch<HomeCubit>().state;
+            if (homeState is HomeLoaded) {
+              discountProducts = homeState.fullProducts
+                  .where((p) => p.oldPrice != null || p.badges.isNotEmpty)
+                  .toList();
+            }
+          }
+
+          if (deals.isEmpty && discountProducts.isEmpty) {
+            return CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              slivers: [
+                StradaSliverRefreshControl(
+                  onRefresh: () => context.read<PromotionsCubit>().loadPromotions(forceRefresh: true),
+                ),
+                SliverFillRemaining(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Center(
+                              child: Icon(Icons.local_offer_outlined, size: 32, color: AppColors.neutral400),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            'promotions.empty_title'.tr(),
+                            style: AppTextStyles.h4.copyWith(
+                              color: isDark ? Colors.white : AppColors.neutral800,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'promotions.empty_subtitle'.tr(),
+                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
 
           return CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(
@@ -106,7 +162,7 @@ class PromotionsPage extends StatelessWidget {
             ),
             slivers: [
               StradaSliverRefreshControl(
-                onRefresh: () => context.read<HomeCubit>().init(forceRefresh: true),
+                onRefresh: () => context.read<PromotionsCubit>().loadPromotions(forceRefresh: true),
               ),
 
               // ── Announcement Banner ──
@@ -138,7 +194,7 @@ class PromotionsPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Maxsus Takliflar va Aksiyalar',
+                              'promotions.banner_title'.tr(),
                               style: AppTextStyles.labelLarge.copyWith(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 14,
@@ -147,7 +203,7 @@ class PromotionsPage extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Strada pitsalaridan eng lazzatli kombolar va chegirmalar',
+                              'promotions.banner_subtitle'.tr(),
                               style: AppTextStyles.bodySmall.copyWith(
                                 color: isDark ? AppColors.neutral300 : AppColors.neutral600,
                                 fontSize: 12,
@@ -161,215 +217,221 @@ class PromotionsPage extends StatelessWidget {
                 ),
               ),
 
-              // ── Banners Slider ──
-              if (sliders.isNotEmpty)
+              // ── Coupons & Deals Section Header ──
+              if (deals.isNotEmpty) ...[
                 SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: 180,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      itemCount: sliders.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 12),
-                      itemBuilder: (ctx, i) {
-                        final slider = sliders[i];
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: SizedBox(
-                            width: 290,
-                            child: CachedNetworkImage(
-                              imageUrl: slider.imageUrl,
-                              fit: BoxFit.cover,
-                              placeholder: (_, __) => Container(
-                                color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
-                              ),
-                              errorWidget: (_, __, ___) => Container(
-                                color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
-                                child: const Icon(Icons.image_outlined, color: AppColors.neutral400),
-                              ),
-                            ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.confirmation_number_rounded, color: AppColors.primary, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'promotions.deals_title'.tr(),
+                          style: AppTextStyles.h4.copyWith(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16.5,
+                            color: isDark ? Colors.white : AppColors.neutral900,
                           ),
-                        );
-                      },
+                        ),
+                      ],
                     ),
                   ),
                 ),
 
-              // ── Coupons & Deals Section Header ──
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.confirmation_number_rounded, color: AppColors.primary, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Mavjud kuponlar va to\'plamlar',
-                        style: AppTextStyles.h4.copyWith(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 16.5,
-                          color: isDark ? Colors.white : AppColors.neutral900,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // ── Deals Cards ──
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (ctx, i) {
-                      final deal = _deals[i];
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: isDark ? AppColors.darkCard : Colors.white,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
+                // ── Deals Cards ──
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) {
+                        final deal = deals[i];
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: isDark ? AppColors.darkCard : Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
+                            ),
+                            boxShadow: AppColors.softShadow(isDark),
                           ),
-                          boxShadow: AppColors.softShadow(isDark),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    deal.badgeText,
-                                    style: const TextStyle(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 11.5,
-                                    ),
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onTap: () {
-                                    HapticFeedback.lightImpact();
-                                    Clipboard.setData(ClipboardData(text: deal.code));
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('promotions.coupon_copied'.tr(namedArgs: {'code': deal.code})),
-                                        backgroundColor: AppColors.success,
-                                        duration: const Duration(seconds: 2),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  if (deal.badgeText.isNotEmpty)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                    );
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: isDark ? AppColors.darkSurface : const Color(0xFFF1F3F5),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: AppColors.primary.withValues(alpha: 0.3),
-                                        style: BorderStyle.solid,
+                                      child: Text(
+                                        deal.badgeText,
+                                        style: const TextStyle(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 11.5,
+                                        ),
                                       ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          deal.code,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w800,
-                                            letterSpacing: 0.8,
-                                            fontSize: 12,
+                                    )
+                                  else
+                                    const SizedBox.shrink(),
+                                  if (deal.code.isNotEmpty)
+                                    GestureDetector(
+                                      onTap: () {
+                                        HapticFeedback.lightImpact();
+                                        Clipboard.setData(ClipboardData(text: deal.code));
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('promotions.coupon_copied'.tr(namedArgs: {'code': deal.code})),
+                                            backgroundColor: AppColors.success,
+                                            duration: const Duration(seconds: 2),
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: isDark ? AppColors.darkSurface : const Color(0xFFF1F3F5),
+                                          borderRadius: BorderRadius.circular(10),
+                                          border: Border.all(
+                                            color: AppColors.primary.withValues(alpha: 0.3),
+                                            style: BorderStyle.solid,
                                           ),
                                         ),
-                                        const SizedBox(width: 4),
-                                        const Icon(Icons.copy_rounded, size: 12, color: AppColors.primary),
-                                      ],
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              deal.code,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                                letterSpacing: 0.8,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            const Icon(Icons.copy_rounded, size: 12, color: AppColors.primary),
+                                          ],
+                                        ),
+                                      ),
                                     ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                deal.title,
+                                style: AppTextStyles.labelLarge.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              if (deal.description.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  deal.description,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.neutral500,
+                                    height: 1.3,
                                   ),
                                 ),
                               ],
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              deal.title,
-                              style: AppTextStyles.labelLarge.copyWith(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 15,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              deal.description,
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.neutral500,
-                                height: 1.3,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      '${NumberFormatter.formatSum(deal.price.toInt())} ${'common.currency'.tr()}',
-                                      style: AppTextStyles.labelLarge.copyWith(
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 16,
-                                        color: AppColors.primary,
+                              if (deal.items.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 4,
+                                  children: deal.items.map((it) {
+                                    final label = it.variantTitle.isNotEmpty
+                                        ? '${it.productTitle} (${it.variantTitle}) x${it.quantity}'
+                                        : '${it.productTitle} x${it.quantity}';
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: isDark ? AppColors.darkSurface : const Color(0xFFF1F3F5),
+                                        borderRadius: BorderRadius.circular(6),
                                       ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '${NumberFormatter.formatSum(deal.oldPrice.toInt())} ${'common.currency'.tr()}',
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        decoration: TextDecoration.lineThrough,
-                                        color: AppColors.neutral400,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    HapticFeedback.lightImpact();
-                                    final cartSubtotal = context.read<CartCubit>().state.subtotal;
-                                    context.read<CheckoutCubit>().applyPromo(deal.code, cartSubtotal);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('promotions.coupon_applied'.tr(namedArgs: {'code': deal.code})),
-                                        backgroundColor: AppColors.success,
-                                        duration: const Duration(seconds: 2),
+                                      child: Text(
+                                        label,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: isDark ? AppColors.neutral300 : AppColors.neutral700,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
                                     );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primary,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                    minimumSize: Size.zero,
-                                    elevation: 0,
-                                  ),
-                                  child: Text('cart.apply'.tr(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
+                                  }).toList(),
                                 ),
                               ],
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                    childCount: _deals.length,
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  if (deal.price > 0)
+                                    Row(
+                                      children: [
+                                        Text(
+                                          '${NumberFormatter.formatSum(deal.price.toInt())} ${'common.currency'.tr()}',
+                                          style: AppTextStyles.labelLarge.copyWith(
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 16,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                        if (deal.oldPrice > deal.price) ...[
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '${NumberFormatter.formatSum(deal.oldPrice.toInt())} ${'common.currency'.tr()}',
+                                            style: AppTextStyles.bodySmall.copyWith(
+                                              decoration: TextDecoration.lineThrough,
+                                              color: AppColors.neutral400,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    )
+                                  else
+                                    const SizedBox.shrink(),
+                                  if (deal.code.isNotEmpty)
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        HapticFeedback.lightImpact();
+                                        final cartSubtotal = context.read<CartCubit>().state.subtotal;
+                                        context.read<CheckoutCubit>().applyPromo(deal.code, cartSubtotal);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('promotions.coupon_applied'.tr(namedArgs: {'code': deal.code})),
+                                            backgroundColor: AppColors.success,
+                                            duration: const Duration(seconds: 2),
+                                          ),
+                                        );
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                        minimumSize: Size.zero,
+                                        elevation: 0,
+                                      ),
+                                      child: Text('cart.apply'.tr(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      childCount: deals.length,
+                    ),
                   ),
                 ),
-              ),
+              ],
 
               // ── Discount Products Section Header ──
               if (discountProducts.isNotEmpty) ...[
@@ -377,7 +439,7 @@ class PromotionsPage extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
                     child: Text(
-                      'Chegirmadagi mahsulotlar',
+                      'promotions.discount_products_title'.tr(),
                       style: AppTextStyles.h4.copyWith(
                         fontWeight: FontWeight.w800,
                         fontSize: 16.5,

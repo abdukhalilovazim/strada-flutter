@@ -171,11 +171,15 @@ class _MapPickerPageState extends State<MapPickerPage> {
               if (mounted) {
                 final newLat = (data['lat'] as num?)?.toDouble() ?? _currentLat;
                 final newLng = (data['lng'] as num?)?.toDouble() ?? _currentLng;
+                final inRange = data['in_range'] as bool?;
                 setState(() {
                   _currentLat = newLat;
                   _currentLng = newLng;
                   _address = (data['address'] as String?) ?? '';
                   _isGeocoding = false;
+                  if (inRange != null) {
+                    _isOutOfRange = !inRange;
+                  }
                 });
                 _checkDeliveryDistance(newLat, newLng);
               }
@@ -306,69 +310,76 @@ class _MapPickerPageState extends State<MapPickerPage> {
           // Yandex Maps WebView
           if (_controller != null) WebViewWidget(controller: _controller!),
 
-          // Top Search Bar (Samarqand ichida qat'iy)
+          // Top Search Bar (Strada Design System standartida)
           Positioned(
             top: 12,
             left: 16,
             right: 16,
             child: Container(
+              height: 50,
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkSurface : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isDark ? AppColors.neutral800 : AppColors.neutral200,
-                  width: 1,
-                ),
+                borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 14),
-                  const Icon(Icons.search_rounded, color: AppColors.primary, size: 22),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      textInputAction: TextInputAction.search,
-                      onSubmitted: (_) => _onSearch(),
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: isDark ? Colors.white : AppColors.neutral900,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'map.search_hint'.tr(),
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
+              child: TextField(
+                controller: _searchController,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) => _onSearch(),
+                onChanged: (_) => setState(() {}),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: isDark ? Colors.white : AppColors.neutral900,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'map.search_hint'.tr(),
+                  hintStyle: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.neutral400,
+                    fontSize: 13.5,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    size: 22,
+                    color: AppColors.primary,
+                  ),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.neutral500),
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            _searchController.clear();
+                            setState(() {});
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: isDark ? AppColors.darkCard : Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(
+                      color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+                      width: 1,
                     ),
                   ),
-                  if (_searchController.text.isNotEmpty)
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 18),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() {});
-                      },
-                    ),
-                  GestureDetector(
-                    onTap: _onSearch,
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(
+                      color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+                      width: 1,
                     ),
                   ),
-                ],
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                  ),
+                ),
               ),
             ),
           ),
@@ -531,8 +542,8 @@ class _MapPickerPageState extends State<MapPickerPage> {
                       const SizedBox(height: 2),
                       Text(
                         _isGeocoding
-                            ? '...'
-                            : (_address.isNotEmpty ? _address : 'checkout.select_address'.tr()),
+                            ? 'map.determining_address'.tr()
+                            : (_address.isNotEmpty ? _address : 'map.no_address_selected'.tr()),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.bodyLarge.copyWith(
@@ -593,7 +604,13 @@ class _MapPickerPageState extends State<MapPickerPage> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 child: Text(
-                  _isOutOfRange ? 'map.out_of_range_btn'.tr() : 'map.confirm'.tr(),
+                  _isGeocoding
+                      ? 'map.determining_address'.tr()
+                      : (_isOutOfRange
+                          ? 'map.out_of_range_btn'.tr()
+                          : (_address.isEmpty
+                              ? 'map.no_address_selected'.tr()
+                              : 'map.confirm'.tr())),
                   style: AppTextStyles.labelLarge.copyWith(fontSize: 16, color: Colors.white),
                 ),
               ),
