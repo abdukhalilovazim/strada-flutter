@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/network/api_client.dart';
+import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/widgets/app_button.dart';
@@ -31,11 +32,11 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
   Future<void> _fetchBranches() async {
     setState(() => _isLoadingBranches = true);
     try {
-      final response = await ApiClient().get('branches');
-      if (response is List && mounted) {
+      final list = await SecureStorage.getOrFetchBranches();
+      if (mounted) {
         setState(() {
-          _branches = response
-              .map((e) => CheckoutBranch.fromJson(e as Map<String, dynamic>))
+          _branches = list
+              .map((e) => CheckoutBranch.fromJson(e))
               .toList();
 
           final cubit = context.read<CheckoutCubit>();

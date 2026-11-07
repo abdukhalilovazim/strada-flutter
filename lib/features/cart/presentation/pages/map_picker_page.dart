@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/constants/api_constants.dart';
 import 'package:pizza_strada/core/network/api_client.dart';
+import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/device_info_helper.dart';
@@ -78,23 +79,12 @@ class _MapPickerPageState extends State<MapPickerPage> {
 
   Future<void> _loadBranches() async {
     try {
-      final response = await ApiClient().get('branches');
-      List? rawList;
-      if (response is List) {
-        rawList = response;
-      } else if (response is Map && response['data'] is List) {
-        rawList = response['data'] as List;
-      }
-      if (rawList != null) {
-        final list = rawList
-            .map((e) => e as Map<String, dynamic>)
-            .toList();
-        if (mounted) {
-          setState(() {
-            _branches = list;
-          });
-          _checkDeliveryDistance(_currentLat, _currentLng);
-        }
+      final list = await SecureStorage.getOrFetchBranches();
+      if (mounted) {
+        setState(() {
+          _branches = list;
+        });
+        _checkDeliveryDistance(_currentLat, _currentLng);
       }
     } catch (_) {
       _checkDeliveryDistance(_currentLat, _currentLng);

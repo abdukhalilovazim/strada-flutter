@@ -146,13 +146,11 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
   }
 
   Future<void> _loadSavedAddressesAndBranches() async {
-    // 1. Filiallar sonini olish
+    // 1. Filiallar sonini olish (keshdan yoki API dan)
     try {
-      final branchResp = await ApiClient().get('branches');
-      if (branchResp is List && branchResp.isNotEmpty) {
-        _branchCount = branchResp.length;
-      } else if (branchResp is Map && branchResp['data'] is List && (branchResp['data'] as List).isNotEmpty) {
-        _branchCount = (branchResp['data'] as List).length;
+      final branches = await SecureStorage.getOrFetchBranches();
+      if (branches.isNotEmpty && mounted) {
+        _branchCount = branches.length;
       }
     } catch (_) {}
 
@@ -288,6 +286,7 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
 
   Future<void> _pickOnMap(BuildContext context, {bool useMyLocation = false}) async {
     HapticFeedback.lightImpact();
+    context.read<CheckoutCubit>().setLocationError(false);
     final checkoutState = context.read<CheckoutCubit>().state;
     final result = await context.push<Map<String, dynamic>>(
       '/map-picker',
@@ -332,6 +331,8 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
       builder: (context, state) {
         if (!state.isDelivery) return const SizedBox.shrink();
 
+        final hasLocationError = state.showLocationError &&
+            (state.address == null || state.address!.trim().isEmpty);
         final displayedSaved = _savedAddresses.take(_branchCount).toList();
 
         return Container(
@@ -341,11 +342,16 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
             color: isDark ? AppColors.darkCard : Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+              color: hasLocationError
+                  ? AppColors.error
+                  : (isDark ? AppColors.darkBorder : AppColors.neutral200),
+              width: hasLocationError ? 1.8 : 1.0,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                color: hasLocationError
+                    ? AppColors.error.withValues(alpha: 0.15)
+                    : Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
@@ -363,6 +369,32 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                   color: isDark ? Colors.white : AppColors.neutral900,
                 ),
               ),
+              if (hasLocationError) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'checkout.address_required'.tr(),
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
 
               // 1. Xaritadan tanlang
@@ -583,6 +615,7 @@ class SDUIPickupBranchComponent extends StatelessWidget {
 
   void _openBranchSelector(BuildContext context) {
     HapticFeedback.selectionClick();
+    context.read<CheckoutCubit>().setLocationError(false);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -602,6 +635,7 @@ class SDUIPickupBranchComponent extends StatelessWidget {
         if (state.isDelivery) return const SizedBox.shrink();
 
         final hasBranch = state.branchId != null && state.branchId!.trim().isNotEmpty;
+        final hasBranchError = state.showLocationError && !hasBranch;
         final branchTitle = hasBranch
             ? (state.branchTitle ?? 'checkout.selected_branch'.tr())
             : 'checkout.no_branch_selected'.tr();
@@ -613,11 +647,22 @@ class SDUIPickupBranchComponent extends StatelessWidget {
             color: isDark ? AppColors.darkCard : Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: hasBranch
-                  ? (isDark ? AppColors.darkBorder : AppColors.neutral200)
-                  : AppColors.primary.withValues(alpha: 0.6),
-              width: hasBranch ? 1 : 1.5,
+              color: hasBranchError
+                  ? AppColors.error
+                  : (hasBranch
+                      ? (isDark ? AppColors.darkBorder : AppColors.neutral200)
+                      : AppColors.primary.withValues(alpha: 0.6)),
+              width: (hasBranchError || !hasBranch) ? 1.8 : 1.0,
             ),
+            boxShadow: hasBranchError
+                ? [
+                    BoxShadow(
+                      color: AppColors.error.withValues(alpha: 0.15),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -644,6 +689,32 @@ class SDUIPickupBranchComponent extends StatelessWidget {
                   ),
                 ],
               ),
+              if (hasBranchError) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'checkout.branch_required'.tr(),
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 10),
               InkWell(
                 onTap: () => _openBranchSelector(context),

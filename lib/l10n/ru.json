@@ -87,6 +87,8 @@
   "checkout.recipient": "Получатель",
   "checkout.delivery_location": "Адрес доставки",
   "checkout.pickup_location": "Филиал самовывоза",
+  "checkout.address_required": "Пожалуйста, выберите адрес доставки",
+  "checkout.branch_required": "Пожалуйста, выберите филиал",
   "checkout.order_summary": "Детали заказа",
   "orders.title": "Мои заказы",
   "orders.items": "Продукты",
