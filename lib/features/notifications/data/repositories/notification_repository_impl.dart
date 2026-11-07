@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/notification_entity.dart';
@@ -24,10 +23,6 @@ class NotificationRepositoryImpl implements NotificationRepository {
     try {
       list = await _remoteDataSource.getNotifications();
     } catch (_) {}
-
-    if (list.isEmpty) {
-      list = _getDefaultFallbackNotifications();
-    }
 
     return list.map((item) {
       final isRead = item.isRead || readIds.contains(item.id);
@@ -63,50 +58,5 @@ class NotificationRepositoryImpl implements NotificationRepository {
     try {
       await _remoteDataSource.markRead(id);
     } catch (_) {}
-  }
-
-  List<NotificationEntity> _getDefaultFallbackNotifications() {
-    return [
-      NotificationEntity(
-        id: '1',
-        title: 'notifications.item_welcome_title'.tr(),
-        body: 'notifications.item_welcome_body'.tr(),
-        type: NotificationType.system,
-        icon: 'pizza',
-        route: '/home',
-        actionLabel: 'notifications.item_welcome_action'.tr(),
-        createdAt: DateTime.now().subtract(const Duration(minutes: 25)),
-      ),
-      NotificationEntity(
-        id: '2',
-        title: 'notifications.item_promo_2plus1_title'.tr(),
-        body: 'notifications.item_promo_2plus1_body'.tr(),
-        type: NotificationType.promo,
-        icon: 'promo',
-        route: '/promotions',
-        actionLabel: 'notifications.item_promo_2plus1_action'.tr(),
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-      ),
-      NotificationEntity(
-        id: '3',
-        title: 'notifications.item_promo_strada20_title'.tr(),
-        body: 'notifications.item_promo_strada20_body'.tr(),
-        type: NotificationType.promo,
-        icon: 'coupon',
-        route: '/promotions',
-        actionLabel: 'notifications.item_promo_strada20_action'.tr(),
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      NotificationEntity(
-        id: '4',
-        title: 'notifications.item_order_delivery_title'.tr(),
-        body: 'notifications.item_order_delivery_body'.tr(),
-        type: NotificationType.order,
-        icon: 'order',
-        route: '/home',
-        actionLabel: 'notifications.item_order_delivery_action'.tr(),
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-    ];
   }
 }

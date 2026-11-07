@@ -446,15 +446,15 @@ class _HomeStoriesBar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.only(top: 4, bottom: 10),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: SizedBox(
-        height: 106,
+        height: 74,
         child: ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           scrollDirection: Axis.horizontal,
           physics: const BouncingScrollPhysics(),
           itemCount: stories.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 14),
+          separatorBuilder: (_, __) => const SizedBox(width: 12),
           itemBuilder: (context, index) {
             final story = stories[index];
             return _StoryItem(
@@ -486,76 +486,52 @@ class _StoryItem extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: SizedBox(
-        width: 74,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Avatar with Gradient Ring
-            Container(
-              width: 68,
-              height: 68,
-              padding: const EdgeInsets.all(2.5),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: hasUnread
-                    ? const LinearGradient(
-                        colors: [
-                          AppColors.primary,
-                          Color(0xFFFF7A00),
-                          Color(0xFFFFB800),
-                        ],
-                        begin: Alignment.bottomLeft,
-                        end: Alignment.topRight,
-                      )
-                    : null,
-                border: !hasUnread
-                    ? Border.all(
-                        color: isDark ? AppColors.darkBorder : AppColors.neutral300,
-                        width: 1.5,
-                      )
-                    : null,
-              ),
-              child: Container(
-                padding: const EdgeInsets.all(2.0),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isDark ? AppColors.darkSurface : Colors.white,
+      borderRadius: BorderRadius.circular(37),
+      child: Center(
+        child: Container(
+          width: 72,
+          height: 72,
+          padding: const EdgeInsets.all(2.5),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: hasUnread
+                ? const LinearGradient(
+                    colors: [
+                      AppColors.primary,
+                      Color(0xFFFF7A00),
+                      Color(0xFFFFB800),
+                    ],
+                    begin: Alignment.bottomLeft,
+                    end: Alignment.topRight,
+                  )
+                : null,
+            border: !hasUnread
+                ? Border.all(
+                    color: isDark ? AppColors.darkBorder : AppColors.neutral300,
+                    width: 1.5,
+                  )
+                : null,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(2.0),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isDark ? AppColors.darkSurface : Colors.white,
+            ),
+            child: ClipOval(
+              child: CachedNetworkImage(
+                imageUrl: story.previewImage,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => Container(
+                  color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
                 ),
-                child: ClipOval(
-                  child: CachedNetworkImage(
-                    imageUrl: story.previewImage,
-                    fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(
-                      color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
-                    ),
-                    errorWidget: (_, __, ___) => Container(
-                      color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
-                      child: const Icon(Icons.local_pizza_rounded, color: AppColors.primary, size: 28),
-                    ),
-                  ),
+                errorWidget: (_, __, ___) => Container(
+                  color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
+                  child: const Icon(Icons.local_pizza_rounded, color: AppColors.primary, size: 28),
                 ),
               ),
             ),
-            const SizedBox(height: 5),
-
-            // Title below circle
-            Text(
-              story.title,
-              maxLines: 2,
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w600,
-                color: isDark
-                    ? (hasUnread ? Colors.white : AppColors.neutral400)
-                    : (hasUnread ? AppColors.neutral900 : AppColors.neutral600),
-                height: 1.15,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
