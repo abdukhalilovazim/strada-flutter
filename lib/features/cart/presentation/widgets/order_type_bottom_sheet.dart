@@ -141,8 +141,8 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
                   onTap: () async {
                     final result = await context.push<Map<String, dynamic>>('/map-picker');
                     if (result != null && context.mounted) {
-                      final lat = result['lat'] as double?;
-                      final lng = result['lng'] as double?;
+                      final lat = (result['lat'] as num?)?.toDouble();
+                      final lng = (result['lng'] as num?)?.toDouble();
                       final address = result['address'] as String?;
                       if (address != null && address.isNotEmpty) {
                         context.read<CheckoutCubit>().setAddressAndCalculateDelivery(

@@ -215,6 +215,23 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
     );
   }
 
+  Future<void> _pickOnMap(BuildContext context) async {
+    HapticFeedback.lightImpact();
+    final result = await context.push<Map<String, dynamic>>('/map-picker');
+    if (result != null && context.mounted) {
+      final lat = (result['lat'] as num?)?.toDouble();
+      final lng = (result['lng'] as num?)?.toDouble();
+      final address = result['address'] as String?;
+      if (lat != null && lng != null && address != null && address.trim().isNotEmpty) {
+        context.read<CheckoutCubit>().setAddressAndCalculateDelivery(
+              lat,
+              lng,
+              address.trim(),
+            );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -265,10 +282,7 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                     ),
                   ),
                   GestureDetector(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      context.push('/map-picker');
-                    },
+                    onTap: () => _pickOnMap(context),
                     child: Text(
                       mapBtn,
                       style: AppTextStyles.labelSmall.copyWith(
@@ -283,10 +297,7 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
 
               // Address Bar with Pin Icon
               GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  context.push('/map-picker');
-                },
+                onTap: () => _pickOnMap(context),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
@@ -511,7 +522,7 @@ class SDUIPickupBranchComponent extends StatelessWidget {
   }
 }
 
-/// ⏰ Checkout: Yetkazish vaqti (Time Slot)
+/// ⏰ Checkout: Yetkazish vaqti (Time Slot) - Yashirilgan (Faqat order statusda ko'rsatiladi)
 class SDUIDeliveryTimeSlotComponent extends StatelessWidget {
   final SDUISectionModel section;
   final SDUIActionHandler onAction;
@@ -524,45 +535,7 @@ class SDUIDeliveryTimeSlotComponent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final props = section.properties;
-    final title = props['title']?.toString() ?? 'checkout.delivery_time'.tr();
-    final asapText = props['asap_text']?.toString() ?? 'checkout.asap_time'.tr();
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isDark ? AppColors.darkBorder : AppColors.neutral200,
-        ),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.access_time_filled_rounded, color: AppColors.primary, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.neutral500,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(asapText, style: AppTextStyles.labelMedium.copyWith(fontWeight: FontWeight.w700)),
-              ],
-            ),
-          ),
-          const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 20),
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 }
 
@@ -1158,7 +1131,7 @@ class SDUISubmitOrderCtaComponent extends StatelessWidget {
     required this.onAction,
   });
 
-  void _handleSubmit(BuildContext context, CheckoutState checkoutState, CartState cartState) {
+  Future<void> _handleSubmit(BuildContext context, CheckoutState checkoutState, CartState cartState) async {
     HapticFeedback.heavyImpact();
 
     // 1. Savatcha tekshiruvi
@@ -1184,7 +1157,19 @@ class SDUISubmitOrderCtaComponent extends StatelessWidget {
             backgroundColor: AppColors.error,
           ),
         );
-        context.push('/map-picker');
+        final result = await context.push<Map<String, dynamic>>('/map-picker');
+        if (result != null && context.mounted) {
+          final lat = (result['lat'] as num?)?.toDouble();
+          final lng = (result['lng'] as num?)?.toDouble();
+          final address = result['address'] as String?;
+          if (lat != null && lng != null && address != null && address.trim().isNotEmpty) {
+            context.read<CheckoutCubit>().setAddressAndCalculateDelivery(
+                  lat,
+                  lng,
+                  address.trim(),
+                );
+          }
+        }
         return;
       }
     } else {

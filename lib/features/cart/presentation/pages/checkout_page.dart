@@ -25,7 +25,7 @@ class CheckoutPage extends StatefulWidget {
 class _CheckoutPageState extends State<CheckoutPage> {
   int _currentStep = 0; // 0 = Yetkazib berish, 1 = To'lov va tasdiqlash
 
-  void _proceedToStep2(BuildContext context, CheckoutState checkoutState, CartState cartState) {
+  Future<void> _proceedToStep2(CheckoutState checkoutState, CartState cartState) async {
     HapticFeedback.mediumImpact();
 
     if (cartState.items.isEmpty) {
@@ -49,7 +49,19 @@ class _CheckoutPageState extends State<CheckoutPage> {
             backgroundColor: AppColors.error,
           ),
         );
-        context.push('/map-picker');
+        final result = await context.push<Map<String, dynamic>>('/map-picker');
+        if (result != null && mounted) {
+          final lat = (result['lat'] as num?)?.toDouble();
+          final lng = (result['lng'] as num?)?.toDouble();
+          final address = result['address'] as String?;
+          if (lat != null && lng != null && address != null && address.trim().isNotEmpty) {
+            context.read<CheckoutCubit>().setAddressAndCalculateDelivery(
+                  lat,
+                  lng,
+                  address.trim(),
+                );
+          }
+        }
         return;
       }
     } else {
@@ -276,7 +288,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           width: double.infinity,
                           height: 54,
                           child: ElevatedButton(
-                            onPressed: () => _proceedToStep2(context, checkoutState, cartState),
+                            onPressed: () => _proceedToStep2(checkoutState, cartState),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
@@ -319,7 +331,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
           SDUIAddressSelectorComponent(section: dummySection, onAction: (_) {})
         else
           SDUIPickupBranchComponent(section: dummySection, onAction: (_) {}),
-        SDUIDeliveryTimeSlotComponent(section: dummySection, onAction: (_) {}),
       ],
     );
   }

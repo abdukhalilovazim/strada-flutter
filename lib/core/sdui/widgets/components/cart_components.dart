@@ -35,7 +35,6 @@ class SDUICartDeliveryInfoComponent extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final props = section.properties;
     final title = props['title']?.toString() ?? 'Yetkazib berish';
-    final etaMinutes = (props['eta_minutes'] as num?)?.toInt() ?? 35;
 
     return BlocBuilder<CheckoutCubit, CheckoutState>(
       builder: (context, checkoutState) {
@@ -100,13 +99,13 @@ class SDUICartDeliveryInfoComponent extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: AppColors.secondary.withValues(alpha: 0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '~$etaMinutes daq',
+                    'common.change'.tr(),
                     style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.secondary,
+                      color: AppColors.primary,
                       fontWeight: FontWeight.w800,
                     ),
                   ),

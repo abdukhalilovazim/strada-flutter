@@ -248,7 +248,7 @@ class CartPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isDelivery ? 'Yetkazib berish ~35-45 daqiqa' : 'Olib ketish ~15-20 daqiqa',
+                      isDelivery ? 'checkout.delivery'.tr() : 'checkout.pickup'.tr(),
                       style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.neutral500,
                         fontSize: 12,
