@@ -174,12 +174,14 @@ class SDUIProfileMenuGroupComponent extends StatelessWidget {
         ),
         boxShadow: AppColors.softShadow(isDark),
       ),
-      child: Column(
-        children: menuItems.map((item) {
-          final isLast = item == menuItems.last;
-          return Column(
-            children: [
-              ListTile(
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          children: menuItems.map((item) {
+            final isLast = item == menuItems.last;
+            return Column(
+              children: [
+                ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                 leading: Container(
                   padding: const EdgeInsets.all(8),
@@ -216,6 +218,7 @@ class SDUIProfileMenuGroupComponent extends StatelessWidget {
           );
         }).toList(),
       ),
+    ),
     );
   }
 }
@@ -247,9 +250,11 @@ class SDUIAppSettingsComponent extends StatelessWidget {
         ),
         boxShadow: AppColors.softShadow(isDark),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
             child: Text(
@@ -290,6 +295,7 @@ class SDUIAppSettingsComponent extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

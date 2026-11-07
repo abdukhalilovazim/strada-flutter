@@ -278,7 +278,7 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
 
               // Confirm button
               AppButton(
-                text: 'common.yes'.tr(),
+                text: 'checkout.confirm'.tr(),
                 onTap: () => Navigator.pop(context),
               ),
               ],

@@ -44,6 +44,7 @@ class ApiClient {
       if (token != null)
         'Authorization': token.startsWith('Bearer ') ? token : 'Bearer $token',
       'language': lang,
+      'Accept-Language': lang,
       'theme': isDark ? 'dark' : 'light',
       'source': DeviceInfoHelper.appSource,
       'device-id': _sanitizeHeader(DeviceInfoHelper.deviceId),

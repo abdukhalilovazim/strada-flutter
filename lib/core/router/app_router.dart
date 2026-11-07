@@ -192,13 +192,15 @@ class MainScaffold extends StatelessWidget {
     final icon = _resolveIcon(item.icon, false);
     final activeIcon = _resolveIcon(item.icon, true);
 
+    final localizedLabel = item.getLocalizedLabel(context);
+
     if (item.showBadge) {
       return _NavItemWithBadge(
         index: index,
         currentIndex: currentIndex,
         icon: icon,
         activeIcon: activeIcon,
-        label: item.label,
+        label: localizedLabel,
         onTap: () {
           HapticFeedback.selectionClick();
           GoRouter.of(context).go(item.route);
@@ -212,7 +214,7 @@ class MainScaffold extends StatelessWidget {
       icon: icon,
       activeIcon: activeIcon,
       badgeText: item.badge,
-      label: item.label,
+      label: localizedLabel,
       onTap: () {
         HapticFeedback.selectionClick();
         GoRouter.of(context).go(item.route);

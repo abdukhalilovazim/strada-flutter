@@ -14,6 +14,7 @@ import '../../../services/smart_recommendation_engine.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_text_styles.dart';
 import '../../../utils/number_formatter.dart';
+import '../../../utils/variant_localization_helper.dart';
 import '../../../widgets/pizza_image_placeholder.dart';
 import '../../models/sdui_section_model.dart';
 import '../../registry/sdui_action_dispatcher.dart';
@@ -222,7 +223,7 @@ class SDUICartItemListComponent extends StatelessWidget {
                           if (item.variant != null) ...[
                             const SizedBox(height: 2),
                             Text(
-                              item.variant!.title,
+                              VariantLocalizationHelper.localize(item.variant!.title),
                               style: AppTextStyles.bodySmall.copyWith(
                                 color: AppColors.neutral500,
                                 fontSize: 12,

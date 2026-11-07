@@ -50,6 +50,7 @@ void main() async {
       supportedLocales: const [Locale('uz'), Locale('ru'), Locale('en')],
       path: 'lib/l10n',
       fallbackLocale: const Locale('uz'),
+      startLocale: const Locale('uz'),
       child: MultiBlocProvider(
         providers: [
           BlocProvider(create: (context) => getIt<CartCubit>()),
