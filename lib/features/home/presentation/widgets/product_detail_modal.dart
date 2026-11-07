@@ -11,6 +11,7 @@ import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';
 import 'package:pizza_strada/features/cart/domain/entities/cart_item_entity.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
+import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 
 /// 🍕 Modal popup for product detail & variant selection.
 /// Built strictly conforming to ui-ux-design tokens.
@@ -174,21 +175,44 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                         ),
                       ),
 
-                      // Tavsif
-                      if (widget.product.description != null &&
-                          widget.product.description!.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Text(
-                          widget.product.description!,
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            fontSize: 13,
-                            height: 1.45,
-                            color: isDark
-                                ? AppColors.neutral400
-                                : AppColors.neutral600,
-                          ),
-                        ),
-                      ],
+                      // Tavsif (Description)
+                      Builder(
+                        builder: (ctx) {
+                          final desc = (widget.product.description != null &&
+                                  widget.product.description!.trim().isNotEmpty)
+                              ? widget.product.description!.trim()
+                              : () {
+                                  try {
+                                    final homeState = ctx.read<HomeCubit>().state;
+                                    if (homeState is HomeLoaded) {
+                                      return homeState.fullProducts
+                                          .firstWhere((p) => p.slug == widget.product.slug)
+                                          .description
+                                          ?.trim();
+                                    }
+                                  } catch (_) {}
+                                  return null;
+                                }();
+
+                          if (desc == null || desc.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              desc,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                fontSize: 13.5,
+                                height: 1.45,
+                                color: isDark
+                                    ? AppColors.neutral400
+                                    : AppColors.neutral600,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
 
                       // ── 3. Variantlar (O'lchamlar tanlash) ──
                       if (hasVariants) ...[

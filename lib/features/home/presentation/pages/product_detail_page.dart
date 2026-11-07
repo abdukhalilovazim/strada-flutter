@@ -32,13 +32,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   void initState() {
     super.initState();
     _resolvedProduct = widget.product;
-    if (_resolvedProduct == null) {
+    if (_resolvedProduct == null ||
+        _resolvedProduct!.description == null ||
+        _resolvedProduct!.description!.trim().isEmpty) {
       final homeState = context.read<HomeCubit>().state;
       if (homeState is HomeLoaded) {
         try {
-          _resolvedProduct = homeState.fullProducts.firstWhere(
+          final full = homeState.fullProducts.firstWhere(
             (p) => p.slug == widget.slug,
           );
+          _resolvedProduct = full;
         } catch (_) {}
       }
     }

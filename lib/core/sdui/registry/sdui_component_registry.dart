@@ -6,6 +6,7 @@ import '../widgets/components/sdui_announcement_component.dart';
 import '../widgets/components/sdui_cart_components.dart';
 import '../widgets/components/sdui_category_bar_component.dart';
 import '../widgets/components/sdui_checkout_components.dart';
+import '../widgets/components/sdui_coupon_components.dart';
 import '../widgets/components/sdui_delivery_bar_component.dart';
 import '../widgets/components/sdui_product_grid_component.dart';
 import '../widgets/components/sdui_profile_components.dart';
@@ -94,6 +95,16 @@ class SDUIComponentRegistry {
         child: SDUISafeErrorBoundary(
           type: 'announcement_banner',
           child: SDUIAnnouncementComponent(section: section, onAction: onAction),
+        ),
+      );
+    });
+
+    // 5.1. Coupon & Combos Grid (Aksiyalar & Kuponlar)
+    registerSliver('coupon_grid', (context, section, onAction, _) {
+      return SliverToBoxAdapter(
+        child: SDUISafeErrorBoundary(
+          type: 'coupon_grid',
+          child: SDUICouponGridComponent(section: section, onAction: onAction),
         ),
       );
     });

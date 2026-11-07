@@ -26,6 +26,8 @@ import 'package:pizza_strada/features/orders/domain/entities/order_entity.dart';
 import 'package:pizza_strada/features/orders/presentation/pages/order_detail_page.dart';
 import 'package:pizza_strada/features/orders/presentation/pages/orders_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/profile_page.dart';
+import 'package:pizza_strada/features/profile/presentation/pages/branches_page.dart';
+import 'package:pizza_strada/features/profile/presentation/pages/saved_addresses_page.dart';
 import 'package:pizza_strada/features/promotions/presentation/pages/promotions_page.dart';
 import 'package:pizza_strada/features/splash/presentation/pages/splash_page.dart';
 import 'package:pizza_strada/core/sdui/bloc/sdui_navigation_cubit.dart';
@@ -526,7 +528,7 @@ final appRouter = GoRouter(
           }
         }
 
-        if (product == null && slug.isNotEmpty) {
+        if ((product == null || product.description == null || product.description!.isEmpty) && slug.isNotEmpty) {
           try {
             final homeState = context.read<HomeCubit>().state;
             if (homeState is HomeLoaded) {
@@ -545,6 +547,9 @@ final appRouter = GoRouter(
       path: '/checkout',
       builder: (_, __) => const CheckoutPage(),
     ),
+    GoRoute(path: '/branches', builder: (_, __) => const BranchesPage()),
+    GoRoute(path: '/saved-addresses', builder: (_, __) => const SavedAddressesPage()),
+    GoRoute(path: '/locations', builder: (_, __) => const SavedAddressesPage()),
     GoRoute(path: '/map-picker', builder: (_, __) => const MapPickerPage()),
     GoRoute(
       path: '/order/:id',

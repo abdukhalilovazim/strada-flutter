@@ -15,7 +15,7 @@ class PromotionsPage extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return BlocProvider(
-      create: (_) => SDUIPageCubit(slug: 'home')..load(), // syncs with home deals
+      create: (_) => SDUIPageCubit(slug: 'promotions')..load(),
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(

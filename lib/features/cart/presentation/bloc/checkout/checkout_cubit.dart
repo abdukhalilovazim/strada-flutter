@@ -100,6 +100,10 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     emit(state.clearSubmitError());
   }
 
+  void applyPromoCode(String code) {
+    emit(state.copyWith(appliedPromoCode: code.trim(), promoError: null));
+  }
+
   Future<void> applyPromo(String code, double subtotal) async {
     emit(state.copyWith(loadingPromo: true, promoError: null));
     try {

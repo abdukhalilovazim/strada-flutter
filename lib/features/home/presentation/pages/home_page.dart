@@ -1,13 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/sdui/sdui.dart';
 import 'package:pizza_strada/core/widgets/strada_refresh_control.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_icons.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
-import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
 import 'package:pizza_strada/features/cart/presentation/widgets/order_type_bottom_sheet.dart';
@@ -17,8 +16,152 @@ import 'package:pizza_strada/features/home/presentation/widgets/header_location_
 /// 📱 HomePage powered 100% by Server-Driven UI (SDUI)
 /// Benchmarked against Dodo Pizza, Bellissimo, Uzum Tezkor, and Yandex Eats.
 /// Compliant with Apple Guideline 2.5.2 & Google Play policies.
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  bool _hasSearchText = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+    _searchFocusNode.addListener(() => setState(() {}));
+  }
+
+  void _onSearchChanged() {
+    final hasText = _searchController.text.trim().isNotEmpty;
+    if (hasText != _hasSearchText) {
+      setState(() => _hasSearchText = hasText);
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _showNotificationsModal(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkCard : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.neutral700 : AppColors.neutral300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'profile.notifications'.tr(),
+                    style: AppTextStyles.h3.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : AppColors.neutral900,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '1 ta yangi',
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkSurface : const Color(0xFFF8F9FA),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.local_pizza_rounded,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Xush kelibsiz!',
+                            style: AppTextStyles.labelLarge.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.white : AppColors.neutral900,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Strada Pizza ilovasiga xush kelibsiz. Maxsus aksiyalar va kuponlardan foydalaning!',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildAppBar(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -47,43 +190,32 @@ class HomePage extends StatelessWidget {
         },
       ),
       actions: [
-        BlocBuilder<CartCubit, CartState>(
-          builder: (ctx, cartState) {
-            final count = cartState.totalQuantity;
-            return Stack(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    AppIcons.cart,
-                    color: isDark ? Colors.white : AppColors.neutral900,
+        IconButton(
+          icon: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(
+                Icons.notifications_none_rounded,
+                color: isDark ? Colors.white : AppColors.neutral900,
+                size: 24,
+              ),
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
                   ),
-                  onPressed: () => context.push('/cart'),
                 ),
-                if (count > 0)
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          '$count',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            );
+              ),
+            ],
+          ),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            _showNotificationsModal(context);
           },
         ),
         const SizedBox(width: 8),
@@ -99,25 +231,80 @@ class HomePage extends StatelessWidget {
         color: isDark ? AppColors.darkSurface : Colors.white,
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
         child: Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
+          height: 46,
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
             borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: _searchFocusNode.hasFocus
+                  ? AppColors.primary
+                  : (isDark ? AppColors.darkBorder : Colors.transparent),
+              width: 1.2,
+            ),
           ),
           child: Row(
             children: [
-              const Icon(Icons.search_rounded, size: 20, color: AppColors.neutral500),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
+              Icon(
+                Icons.search_rounded,
+                size: 20,
+                color: _searchFocusNode.hasFocus ? AppColors.primary : AppColors.neutral500,
+              ),
+              const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  'Pitsa, kombo, ichimlik qidirish...',
+                child: TextField(
+                  key: const Key('home_search_input'),
+                  controller: _searchController,
+                  focusNode: _searchFocusNode,
+                  textInputAction: TextInputAction.search,
+                  onChanged: (val) {
+                    context.read<HomeCubit>().search(val);
+                  },
+                  onSubmitted: (val) {
+                    context.read<HomeCubit>().search(val);
+                    _searchFocusNode.unfocus();
+                  },
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.neutral400,
-                    fontSize: 13.5,
+                    color: isDark ? Colors.white : AppColors.neutral900,
+                    fontSize: 14,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Pitsa, kombo, ichimlik qidirish...',
+                    hintStyle: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.neutral400,
+                      fontSize: 13.5,
+                    ),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
               ),
+              if (_hasSearchText)
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _searchController.clear();
+                    context.read<HomeCubit>().search('');
+                    _searchFocusNode.unfocus();
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.neutral700 : AppColors.neutral300,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 14,
+                        color: isDark ? Colors.white : AppColors.neutral700,
+                      ),
+                    ),
+                  ),
+                ),
+              const SizedBox(width: 4),
             ],
           ),
         ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../theme/app_colors.dart';
 import '../models/sdui_action_model.dart';
 
 typedef SDUIActionHandler = void Function(SDUIAction action);
@@ -52,6 +54,21 @@ class SDUIActionDispatcher {
         final sheetTarget = action.target;
         if (sheetTarget == 'cart') {
           context.push('/cart');
+        }
+        break;
+
+      case 'apply_coupon':
+        final code = action.target ?? action.payload['code']?.toString();
+        if (code != null && code.isNotEmpty) {
+          Clipboard.setData(ClipboardData(text: code));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Kupon kodi nusxalandi: $code'),
+              backgroundColor: AppColors.primary,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+            ),
+          );
         }
         break;
 

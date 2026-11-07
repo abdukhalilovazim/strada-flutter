@@ -161,6 +161,8 @@ class SDUIPageCubit extends Cubit<SDUIPageState> {
         return SDUIScreenBuilder.buildCheckoutScreen();
       case 'profile':
         return SDUIScreenBuilder.buildProfileScreen();
+      case 'promotions':
+        return SDUIScreenBuilder.buildPromotionsScreen();
       default:
         return null;
     }

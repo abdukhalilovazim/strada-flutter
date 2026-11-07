@@ -57,6 +57,15 @@ class SDUIScreenBuilder {
               'photo': product.photo,
               'image_url': product.validImageUrl,
               'price': product.price,
+              'old_price': product.oldPrice,
+              'badges': product.badges
+                  .map((b) => {
+                        'text': b.text,
+                        'type': b.type,
+                        'bg_color': b.bgColor,
+                        'text_color': b.textColor,
+                      })
+                  .toList(),
               'category': product.category != null
                   ? {'slug': product.category!.slug, 'title': product.category!.title}
                   : null,
@@ -398,6 +407,150 @@ class SDUIScreenBuilder {
           type: 'app_version_card',
           properties: {},
         ),
+      ],
+    );
+  }
+
+  /// 🎁 Default fallback Promotions SDUI Screen with Coupons and Special Offers
+  static SDUIPageModel buildPromotionsScreen({
+    List<SliderEntity> sliders = const [],
+    List<ProductEntity> products = const [],
+  }) {
+    return SDUIPageModel(
+      version: '1.2.0',
+      versionUuid: 'promotions_default_v1',
+      screenId: 'promotions',
+      meta: const {
+        'title': 'Aksiyalar & Kuponlar',
+        'cache_ttl_seconds': 300,
+      },
+      sections: [
+        const SDUISectionModel(
+          id: 'promos_announcement',
+          type: 'announcement_banner',
+          properties: {
+            'title': 'Maxsus Takliflar va Aksiya',
+            'message': 'Strada pitsalaridan eng lazzatli kombolar va chegirmalar',
+            'is_warning': false,
+            'icon': 'local_offer',
+          },
+        ),
+        if (sliders.isNotEmpty)
+          SDUISectionModel(
+            id: 'promos_carousel',
+            type: 'carousel_slider',
+            properties: {
+              'height': 190.0,
+              'viewport_fraction': 0.92,
+              'auto_play': true,
+            },
+            items: sliders.map((slider) {
+              return SDUIComponentModel(
+                id: slider.id.toString(),
+                type: 'banner_card',
+                properties: {
+                  'image_url': slider.imageUrl,
+                  'caption': slider.title,
+                },
+              );
+            }).toList(),
+          ),
+        const SDUISectionModel(
+          id: 'promos_coupons_grid',
+          type: 'coupon_grid',
+          properties: {
+            'title': 'Mavjud kuponlar va to\'plamlar',
+          },
+          items: [
+            SDUIComponentModel(
+              id: 'coupon_strada1',
+              type: 'coupon_card',
+              properties: {
+                'id': 1,
+                'code': 'STRADA20',
+                'title': 'Pitsa + Ichimlik kombo',
+                'description': 'Istalgan o\'rtacha pitsa va 0.5L ichimlikka 20% maxsus chegirma',
+                'price': 65000.0,
+                'old_price': 85000.0,
+                'badges': [
+                  {'text': '-20 000 so\'m'},
+                ],
+              },
+              action: SDUIAction(
+                type: 'apply_coupon',
+                target: 'STRADA20',
+                payload: {'code': 'STRADA20'},
+              ),
+            ),
+            SDUIComponentModel(
+              id: 'coupon_strada2',
+              type: 'coupon_card',
+              properties: {
+                'id': 2,
+                'code': 'COMBO3',
+                'title': 'Katta Do\'stlar To\'plami (3 ta pitsa)',
+                'description': '3 ta katta pitsa buyurtma bering va uchinchi pitsani 50% chegirma bilan oling',
+                'price': 169000.0,
+                'old_price': 225000.0,
+                'badges': [
+                  {'text': '-56 000 so\'m'},
+                ],
+              },
+              action: SDUIAction(
+                type: 'apply_coupon',
+                target: 'COMBO3',
+                payload: {'code': 'COMBO3'},
+              ),
+            ),
+          ],
+        ),
+        if (products.isNotEmpty)
+          SDUISectionModel(
+            id: 'promos_products_grid',
+            type: 'product_grid',
+            properties: {
+              'columns': 2,
+              'child_aspect_ratio': 0.68,
+              'spacing': 16.0,
+              'bottom_padding': 100.0,
+            },
+            items: products.map((product) {
+              return SDUIComponentModel(
+                id: product.slug,
+                type: 'product_card',
+                properties: {
+                  'id': product.id,
+                  'slug': product.slug,
+                  'title': product.title,
+                  'description': product.description,
+                  'thumbnail': product.thumbnail,
+                  'photo': product.photo,
+                  'image_url': product.validImageUrl,
+                  'price': product.price,
+                  'old_price': product.oldPrice,
+                  'category': product.category != null
+                      ? {'slug': product.category!.slug, 'title': product.category!.title}
+                      : null,
+                  'variants': product.variants
+                      .map((v) => {
+                            'id': v.id,
+                            'title': v.title,
+                            'price': v.price,
+                          })
+                      .toList(),
+                },
+                action: SDUIAction(
+                  type: 'navigate',
+                  target: '/product/${product.slug}',
+                  payload: {
+                    'slug': product.slug,
+                    'title': product.title,
+                    'description': product.description,
+                  },
+                ),
+              );
+            }).toList(),
+          ),
       ],
     );
   }

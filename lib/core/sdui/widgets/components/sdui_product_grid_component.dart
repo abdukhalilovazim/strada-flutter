@@ -1,6 +1,9 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../../features/cart/presentation/bloc/cart_cubit.dart';
 import '../../../../features/home/domain/entities/home_entities.dart';
 import '../../../../features/home/presentation/widgets/product_card.dart';
@@ -85,7 +88,53 @@ class SDUIProductGridComponent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (section.items.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (section.items.isEmpty) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.search_off_rounded,
+                      size: 32,
+                      color: AppColors.neutral400,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'home.search_empty'.tr(),
+                  style: AppTextStyles.h4.copyWith(
+                    color: isDark ? Colors.white : AppColors.neutral800,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Boshqa so\'z yoki mahsulot nomini kiritib ko\'ring',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.neutral500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     final columns = (section.properties['columns'] as num?)?.toInt() ?? 2;
     final childAspectRatio = (section.properties['child_aspect_ratio'] as num?)?.toDouble() ?? 0.68;
@@ -119,8 +168,6 @@ class SDUIProductGridComponent extends StatelessWidget {
                     onTap: () {
                       if (product.variants.length > 1) {
                         ProductDetailModal.show(context, product);
-                      } else if (item.action != null) {
-                        onAction(item.action!);
                       } else {
                         context.push('/product/${product.slug}', extra: product);
                       }

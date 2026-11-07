@@ -23,6 +23,7 @@ class HomeLoaded extends HomeState {
   final List<ProductEntity> products;
   final SettingsEntity? settings;
   final String? selectedCategory;
+  final String searchQuery;
   final SDUIPageModel sduiPage;
   final String? currentVersionUuid;
   final bool isUpdatingUI;
@@ -35,6 +36,7 @@ class HomeLoaded extends HomeState {
     required this.sduiPage,
     this.settings,
     this.selectedCategory,
+    this.searchQuery = '',
     this.currentVersionUuid,
     this.isUpdatingUI = false,
   });
@@ -46,6 +48,7 @@ class HomeLoaded extends HomeState {
     List<ProductEntity>? products,
     SettingsEntity? settings,
     String? selectedCategory,
+    String? searchQuery,
     SDUIPageModel? sduiPage,
     String? currentVersionUuid,
     bool? isUpdatingUI,
@@ -57,6 +60,7 @@ class HomeLoaded extends HomeState {
       products: products ?? this.products,
       settings: settings ?? this.settings,
       selectedCategory: selectedCategory ?? this.selectedCategory,
+      searchQuery: searchQuery ?? this.searchQuery,
       sduiPage: sduiPage ?? this.sduiPage,
       currentVersionUuid: currentVersionUuid ?? this.currentVersionUuid,
       isUpdatingUI: isUpdatingUI ?? this.isUpdatingUI,
@@ -71,6 +75,7 @@ class HomeLoaded extends HomeState {
         products,
         settings,
         selectedCategory,
+        searchQuery,
         sduiPage,
         currentVersionUuid,
         isUpdatingUI,
@@ -421,6 +426,47 @@ class HomeCubit extends Cubit<HomeState> {
     return const [];
   }
 
+  void search(String query) {
+    final currentState = state;
+    if (currentState is! HomeLoaded) return;
+
+    final trimmed = query.trim();
+    final lower = trimmed.toLowerCase();
+
+    List<ProductEntity> filtered;
+    if (lower.isEmpty) {
+      if (currentState.selectedCategory != null && currentState.selectedCategory != 'all') {
+        filtered = currentState.fullProducts
+            .where((p) => p.category?.slug == currentState.selectedCategory)
+            .toList();
+      } else {
+        filtered = currentState.fullProducts;
+      }
+    } else {
+      // ⚡ Search across all products by title or description
+      filtered = currentState.fullProducts.where((p) {
+        final matchTitle = p.title.toLowerCase().contains(lower);
+        final matchDesc = p.description?.toLowerCase().contains(lower) ?? false;
+        return matchTitle || matchDesc;
+      }).toList();
+    }
+
+    // ⚡ 0ms Instant SDUI update
+    final updatedSDUIPage = SDUIScreenBuilder.updatePageCategory(
+      currentState.sduiPage,
+      selectedCategorySlug: lower.isEmpty ? currentState.selectedCategory : null,
+      filteredProducts: filtered,
+      categories: currentState.categories,
+    );
+
+    emit(currentState.copyWith(
+      searchQuery: trimmed,
+      products: filtered,
+      sduiPage: updatedSDUIPage,
+      isUpdatingUI: false,
+    ));
+  }
+
   Future<void> selectCategory(String? slug) async {
     final currentState = state;
     if (currentState is HomeLoaded) {
@@ -435,6 +481,16 @@ class HomeCubit extends Cubit<HomeState> {
         filteredProducts = currentState.fullProducts
             .where((p) => p.category?.slug == slug)
             .toList();
+      }
+
+      // If search query is currently active, apply search filter too
+      if (currentState.searchQuery.isNotEmpty) {
+        final lower = currentState.searchQuery.toLowerCase();
+        filteredProducts = filteredProducts.where((p) {
+          final matchTitle = p.title.toLowerCase().contains(lower);
+          final matchDesc = p.description?.toLowerCase().contains(lower) ?? false;
+          return matchTitle || matchDesc;
+        }).toList();
       }
 
       // 100% Instant local update (0ms, zero network lag): strictly preserves layout & section order

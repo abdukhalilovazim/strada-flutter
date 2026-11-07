@@ -65,27 +65,79 @@ class _SDUIProfileHeaderComponentState extends State<SDUIProfileHeaderComponent>
       ),
       child: Row(
         children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.primary, AppColors.secondary],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                _userName.isNotEmpty ? _userName[0].toUpperCase() : 'S',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary, Color(0xFFFF6B6B), AppColors.secondary],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.25),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(2.5),
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isDark ? AppColors.darkCard : Colors.white,
+                  ),
+                  padding: const EdgeInsets.all(2),
+                  child: ClipOval(
+                    child: Container(
+                      color: isDark ? AppColors.neutral800 : const Color(0xFFFFF0F2),
+                      child: Center(
+                        child: Icon(
+                          Icons.person_rounded,
+                          size: 32,
+                          color: isDark ? Colors.white : AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
+              Positioned(
+                right: -2,
+                bottom: -2,
+                child: Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDark ? AppColors.darkCard : Colors.white,
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.camera_alt_rounded,
+                      size: 11,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -159,9 +211,9 @@ class SDUIProfileMenuGroupComponent extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final menuItems = [
-      {'title': 'Mening buyurtmalarim', 'icon': Icons.receipt_long_outlined, 'route': '/orders'},
-      {'title': 'Mening manzillarim', 'icon': Icons.location_on_outlined, 'route': '/map-picker'},
-      {'title': 'Filiallar va restoranlar', 'icon': Icons.storefront_outlined, 'route': '/branches'},
+      {'title': 'profile.my_orders'.tr(), 'icon': Icons.receipt_long_outlined, 'route': '/orders'},
+      {'title': 'profile.saved_addresses'.tr(), 'icon': Icons.location_on_outlined, 'route': '/saved-addresses'},
+      {'title': 'profile.branches'.tr(), 'icon': Icons.storefront_outlined, 'route': '/branches'},
     ];
 
     return Container(
