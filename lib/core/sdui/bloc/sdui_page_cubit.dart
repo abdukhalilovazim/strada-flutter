@@ -17,6 +17,21 @@ class SDUIPageInitial extends SDUIPageState {}
 
 class SDUIPageLoading extends SDUIPageState {}
 
+class SDUIPageUpdating extends SDUIPageState {
+  final bool isSuccess;
+  final String title;
+  final String? subtitle;
+
+  const SDUIPageUpdating({
+    this.isSuccess = false,
+    this.title = 'UI yangilanmoqda...',
+    this.subtitle,
+  });
+
+  @override
+  List<Object?> get props => [isSuccess, title, subtitle];
+}
+
 class SDUIPageLoaded extends SDUIPageState {
   final SDUIPageModel page;
   final bool isUpdatingUI;

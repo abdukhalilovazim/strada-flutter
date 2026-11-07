@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/models/saved_address_model.dart';
 import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
@@ -79,6 +81,8 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
     final aptCtrl = TextEditingController();
     final floorCtrl = TextEditingController();
     final entranceCtrl = TextEditingController();
+    double selectedLat = 39.6542;
+    double selectedLng = 66.9597;
 
     showModalBottomSheet(
       context: context,
@@ -120,9 +124,71 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                   ),
                   const SizedBox(height: 16),
 
+                  // Xaritadan aniq tanlash tugmasi (Map Picker Access)
+                  InkWell(
+                    onTap: () async {
+                      HapticFeedback.lightImpact();
+                      final result = await context.push<Map<String, dynamic>>('/map-picker');
+                      if (result != null && result['address'] != null) {
+                        streetCtrl.text = result['address'] as String;
+                        if (result['lat'] != null) selectedLat = (result['lat'] as num).toDouble();
+                        if (result['lng'] != null) selectedLng = (result['lng'] as num).toDouble();
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.map_rounded, color: AppColors.primary, size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Xaritadan aniq tanlash',
+                                  style: AppTextStyles.labelMedium.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                                Text(
+                                  'Joylashuvingizni xaritada belgilang',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                                    fontSize: 11.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.primary, size: 14),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
                   // Label (Uy, Ishxona)
                   TextField(
                     controller: titleCtrl,
+                    textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
                       labelText: 'Manzil nomi (Masalan: Uy, Ishxona)',
                       prefixIcon: const Icon(Icons.bookmark_outline_rounded, color: AppColors.primary),
@@ -134,21 +200,36 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                   // Street & building
                   TextField(
                     controller: streetCtrl,
+                    textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
                       labelText: 'Ko\'cha va uy raqami *',
                       hintText: 'Masalan: Oltinvodiy ko\'chasi, 42-uy',
                       prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.primary),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.my_location_rounded, color: AppColors.primary, size: 20),
+                        tooltip: 'Xaritadan tanlash',
+                        onPressed: () async {
+                          HapticFeedback.lightImpact();
+                          final result = await context.push<Map<String, dynamic>>('/map-picker');
+                          if (result != null && result['address'] != null) {
+                            streetCtrl.text = result['address'] as String;
+                            if (result['lat'] != null) selectedLat = (result['lat'] as num).toDouble();
+                            if (result['lng'] != null) selectedLng = (result['lng'] as num).toDouble();
+                          }
+                        },
+                      ),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                   ),
                   const SizedBox(height: 12),
 
-                  // Apt & floor
+                  // Apt, floor, entrance (Row)
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: aptCtrl,
+                          textInputAction: TextInputAction.next,
                           decoration: InputDecoration(
                             labelText: 'Xonadon',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -159,6 +240,7 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                       Expanded(
                         child: TextField(
                           controller: floorCtrl,
+                          textInputAction: TextInputAction.next,
                           decoration: InputDecoration(
                             labelText: 'Qavat',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -169,6 +251,7 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                       Expanded(
                         child: TextField(
                           controller: entranceCtrl,
+                          textInputAction: TextInputAction.done,
                           decoration: InputDecoration(
                             labelText: 'Podyezd',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -179,47 +262,51 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                   ),
                   const SizedBox(height: 20),
 
-                  ElevatedButton(
-                    onPressed: () async {
-                      final street = streetCtrl.text.trim();
-                      if (street.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Iltimos, ko\'cha va uy raqamini kiriting')),
+                  SizedBox(
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        HapticFeedback.lightImpact();
+                        final street = streetCtrl.text.trim();
+                        if (street.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Iltimos, ko\'cha va uy raqamini kiriting')),
+                          );
+                          return;
+                        }
+
+                        final label = titleCtrl.text.trim().isNotEmpty ? titleCtrl.text.trim() : 'Manzil';
+                        final commentParts = [
+                          if (aptCtrl.text.trim().isNotEmpty) '${aptCtrl.text.trim()}-xonadon',
+                          if (entranceCtrl.text.trim().isNotEmpty) '${entranceCtrl.text.trim()}-podyezd',
+                          if (floorCtrl.text.trim().isNotEmpty) '${floorCtrl.text.trim()}-qavat',
+                        ];
+
+                        final newAddress = SavedAddressModel(
+                          id: DateTime.now().millisecondsSinceEpoch.toString(),
+                          label: label,
+                          address: street,
+                          lat: selectedLat,
+                          lng: selectedLng,
+                          comment: commentParts.join(', '),
                         );
-                        return;
-                      }
 
-                      final label = titleCtrl.text.trim().isNotEmpty ? titleCtrl.text.trim() : 'Manzil';
-                      final commentParts = [
-                        if (aptCtrl.text.trim().isNotEmpty) '${aptCtrl.text.trim()}-xonadon',
-                        if (entranceCtrl.text.trim().isNotEmpty) '${entranceCtrl.text.trim()}-podyezd',
-                        if (floorCtrl.text.trim().isNotEmpty) '${floorCtrl.text.trim()}-qavat',
-                      ];
-
-                      final newAddress = SavedAddressModel(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        label: label,
-                        address: street,
-                        lat: 39.6542,
-                        lng: 66.9597,
-                        comment: commentParts.join(', '),
-                      );
-
-                      await SecureStorage.saveAddress(newAddress);
-                      if (ctx.mounted) {
-                        Navigator.pop(ctx);
-                      }
-                      if (mounted) {
-                        _loadAddresses();
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        await SecureStorage.saveAddress(newAddress);
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                        }
+                        if (mounted) {
+                          _loadAddresses();
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: const Text('Saqlash', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                     ),
-                    child: const Text('Saqlash', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ],
               ),

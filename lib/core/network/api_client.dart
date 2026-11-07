@@ -133,12 +133,33 @@ class ApiClient {
     return _processResponse('DELETE', uri.toString(), response);
   }
 
+  static String _formatJsonForLog(String raw) {
+    try {
+      final dynamic decoded = jsonDecode(raw);
+      const encoder = JsonEncoder.withIndent('  ');
+      return encoder.convert(decoded);
+    } catch (_) {
+      return raw;
+    }
+  }
+
   dynamic _processResponse(String method, String url, http.Response response) {
     if (kDebugMode) {
       debugPrint('┌──────────────────────────────────────────────────────────────────');
       debugPrint('│ 📥 [REST RESPONSE] [$method $url] Status: ${response.statusCode}');
-      final bodyStr = response.body.length > 1000 ? "${response.body.substring(0, 1000)}..." : response.body;
-      debugPrint('│ Body: $bodyStr');
+      final formatted = _formatJsonForLog(response.body);
+      final lines = formatted.split('\n');
+      // If output is massive (> 120 lines), print first 100 and indicate total lines
+      if (lines.length > 120) {
+        for (int i = 0; i < 100; i++) {
+          debugPrint('│ ${lines[i]}');
+        }
+        debugPrint('│ ... [${lines.length - 100} lines truncated for readability]');
+      } else {
+        for (final line in lines) {
+          debugPrint('│ $line');
+        }
+      }
       debugPrint('└──────────────────────────────────────────────────────────────────');
     }
 
@@ -196,7 +217,10 @@ class ApiClient {
       debugPrint('┌──────────────────────────────────────────────────────────────────');
       debugPrint('│ 🚀 [REST REQUEST] [$method] ${uri.toString()}');
       if (body != null) {
-        debugPrint('│ Body: $body');
+        final formatted = _formatJsonForLog(body);
+        for (final line in formatted.split('\n')) {
+          debugPrint('│ $line');
+        }
       }
       debugPrint('└──────────────────────────────────────────────────────────────────');
     }

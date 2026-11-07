@@ -230,82 +230,72 @@ class _HomePageState extends State<HomePage> {
       child: Container(
         color: isDark ? AppColors.darkSurface : Colors.white,
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-        child: Container(
-          height: 46,
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: _searchFocusNode.hasFocus
-                  ? AppColors.primary
-                  : (isDark ? AppColors.darkBorder : Colors.transparent),
-              width: 1.2,
+        child: SizedBox(
+          height: 50,
+          child: TextField(
+            key: const Key('home_search_input'),
+            controller: _searchController,
+            focusNode: _searchFocusNode,
+            textInputAction: TextInputAction.search,
+            onChanged: (val) {
+              context.read<HomeCubit>().search(val);
+            },
+            onSubmitted: (val) {
+              context.read<HomeCubit>().search(val);
+              _searchFocusNode.unfocus();
+            },
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: isDark ? Colors.white : AppColors.neutral900,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
             ),
-          ),
-          child: Row(
-            children: [
-              const SizedBox(width: 12),
-              Icon(
+            decoration: InputDecoration(
+              hintText: 'Pitsa, kombo, ichimlik qidirish...',
+              hintStyle: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.neutral400,
+                fontSize: 13.5,
+              ),
+              prefixIcon: Icon(
                 Icons.search_rounded,
-                size: 20,
-                color: _searchFocusNode.hasFocus ? AppColors.primary : AppColors.neutral500,
+                size: 22,
+                color: _searchFocusNode.hasFocus ? AppColors.primary : AppColors.neutral400,
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  key: const Key('home_search_input'),
-                  controller: _searchController,
-                  focusNode: _searchFocusNode,
-                  textInputAction: TextInputAction.search,
-                  onChanged: (val) {
-                    context.read<HomeCubit>().search(val);
-                  },
-                  onSubmitted: (val) {
-                    context.read<HomeCubit>().search(val);
-                    _searchFocusNode.unfocus();
-                  },
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: isDark ? Colors.white : AppColors.neutral900,
-                    fontSize: 14,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Pitsa, kombo, ichimlik qidirish...',
-                    hintStyle: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.neutral400,
-                      fontSize: 13.5,
-                    ),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
+              suffixIcon: _hasSearchText
+                  ? IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.neutral500),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        _searchController.clear();
+                        context.read<HomeCubit>().search('');
+                        _searchFocusNode.unfocus();
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: isDark ? AppColors.darkBorder : Colors.transparent,
+                  width: 1.2,
                 ),
               ),
-              if (_hasSearchText)
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    _searchController.clear();
-                    context.read<HomeCubit>().search('');
-                    _searchFocusNode.unfocus();
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.neutral700 : AppColors.neutral300,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 14,
-                        color: isDark ? Colors.white : AppColors.neutral700,
-                      ),
-                    ),
-                  ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: isDark ? AppColors.darkBorder : Colors.transparent,
+                  width: 1.2,
                 ),
-              const SizedBox(width: 4),
-            ],
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 1.5,
+                ),
+              ),
+            ),
           ),
         ),
       ),

@@ -316,13 +316,39 @@ class SDUIAppSettingsComponent extends StatelessWidget {
           ),
           // Language
           ListTile(
-            leading: const Icon(Icons.language_rounded, color: AppColors.primary),
-            title: Text('profile.select_lang_title'.tr(), style: const TextStyle(fontWeight: FontWeight.w700)),
-            trailing: Text(
-              context.locale.languageCode == 'ru' ? 'Русский' : "O'zbekcha",
-              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.language_rounded, color: AppColors.primary, size: 20),
+            ),
+            title: Text(
+              'profile.select_lang_title'.tr(),
+              style: AppTextStyles.labelMedium.copyWith(
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : AppColors.neutral900,
+              ),
+            ),
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                context.locale.languageCode == 'ru' ? 'Русский' : "O'zbekcha",
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12.5,
+                ),
+              ),
             ),
             onTap: () {
+              HapticFeedback.lightImpact();
               final newLocale = context.locale.languageCode == 'uz'
                   ? const Locale('ru')
                   : const Locale('uz');
@@ -331,19 +357,57 @@ class SDUIAppSettingsComponent extends StatelessWidget {
           ),
           Divider(height: 1, indent: 56, color: isDark ? AppColors.darkBorder : AppColors.neutral200),
           // Theme switch
-          ListTile(
-            leading: Icon(
-              isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-              color: AppColors.primary,
-            ),
-            title: Text('profile.dark_mode_title'.tr(), style: const TextStyle(fontWeight: FontWeight.w700)),
-            trailing: Switch(
-              value: isDark,
-              activeThumbColor: AppColors.primary,
-              onChanged: (_) {
-                context.read<ThemeCubit>().toggleTheme();
-              },
-            ),
+          BlocBuilder<ThemeCubit, ThemeMode>(
+            builder: (context, mode) {
+              final isDarkMode = mode == ThemeMode.dark;
+              return ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: (isDarkMode ? Colors.amber : AppColors.primary).withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                    color: isDarkMode ? Colors.amber : AppColors.primary,
+                    size: 20,
+                  ),
+                ),
+                title: Text(
+                  'profile.dark_mode_title'.tr(),
+                  style: AppTextStyles.labelMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : AppColors.neutral900,
+                  ),
+                ),
+                subtitle: Text(
+                  isDarkMode
+                      ? (context.locale.languageCode == 'ru' ? 'Темная тема включена' : 'Qorong\'i mavzu yoqilgan')
+                      : (context.locale.languageCode == 'ru' ? 'Светлая тема включена' : 'Yorug\' mavzu yoqilgan'),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.neutral400,
+                    fontSize: 12,
+                  ),
+                ),
+                trailing: Transform.scale(
+                  scale: 0.85,
+                  child: Switch.adaptive(
+                    value: isDarkMode,
+                    activeThumbColor: Colors.white,
+                    activeTrackColor: AppColors.primary,
+                    onChanged: (_) {
+                      HapticFeedback.lightImpact();
+                      context.read<ThemeCubit>().toggleTheme();
+                    },
+                  ),
+                ),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  context.read<ThemeCubit>().toggleTheme();
+                },
+              );
+            },
           ),
         ],
       ),

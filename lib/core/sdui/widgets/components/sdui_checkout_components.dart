@@ -165,70 +165,51 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
     required bool isDark,
   }) {
     return Expanded(
-      child: Container(
-        height: 56,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isDark ? AppColors.darkBorder : const Color(0xFFE5E7EB),
-            width: 1.2,
+      child: SizedBox(
+        height: 52,
+        child: TextField(
+          controller: controller,
+          onChanged: (_) => _syncDetailsToCubit(),
+          textInputAction: TextInputAction.next,
+          style: AppTextStyles.bodyMedium.copyWith(
+            fontWeight: FontWeight.w700,
+            fontSize: 13.5,
+            color: isDark ? Colors.white : AppColors.neutral900,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.02),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
+          decoration: InputDecoration(
+            labelText: label,
+            labelStyle: AppTextStyles.bodySmall.copyWith(
+              color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+              fontSize: 12.5,
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: AppColors.primary,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    label.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                      color: isDark ? AppColors.neutral400 : AppColors.neutral500,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  TextField(
-                    controller: controller,
-                    onChanged: (_) => _syncDetailsToCubit(),
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13.5,
-                      color: isDark ? Colors.white : AppColors.neutral900,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'common.optional'.tr(),
-                      hintStyle: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.neutral400,
-                        fontSize: 12,
-                      ),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                ],
+            floatingLabelBehavior: FloatingLabelBehavior.auto,
+            prefixIcon: Icon(icon, size: 18, color: AppColors.primary),
+            prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            filled: true,
+            fillColor: isDark ? AppColors.darkSurface : Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.darkBorder : const Color(0xFFE5E7EB),
+                width: 1.2,
               ),
             ),
-          ],
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.darkBorder : const Color(0xFFE5E7EB),
+                width: 1.2,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(
+                color: AppColors.primary,
+                width: 1.5,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -994,12 +975,27 @@ class _SDUICourierNotesComponentState extends State<SDUICourierNotesComponent> {
               hintText: 'checkout.courier_notes_hint'.tr(),
               hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400),
               filled: true,
-              fillColor: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
+              fillColor: isDark ? AppColors.darkSurface : const Color(0xFFF8F9FA),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide.none,
+                borderSide: BorderSide(
+                  color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+                ),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 1.5,
+                ),
+              ),
             ),
             style: AppTextStyles.bodySmall.copyWith(
               color: isDark ? Colors.white : AppColors.neutral900,
@@ -1013,13 +1009,18 @@ class _SDUICourierNotesComponentState extends State<SDUICourierNotesComponent> {
                 utensilsLabel,
                 style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600),
               ),
-              Switch(
-                value: _noUtensils,
-                activeThumbColor: AppColors.primary,
-                onChanged: (v) {
-                  setState(() => _noUtensils = v);
-                  _syncPreferences();
-                },
+              Transform.scale(
+                scale: 0.85,
+                child: Switch.adaptive(
+                  value: _noUtensils,
+                  activeThumbColor: Colors.white,
+                  activeTrackColor: AppColors.primary,
+                  onChanged: (v) {
+                    HapticFeedback.lightImpact();
+                    setState(() => _noUtensils = v);
+                    _syncPreferences();
+                  },
+                ),
               ),
             ],
           ),

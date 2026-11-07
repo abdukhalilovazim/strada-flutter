@@ -618,87 +618,192 @@ class _SDUIPromoCodeComponentState extends State<SDUIPromoCodeComponent> {
             final isLoading = checkoutState.loadingPromo;
 
             return Container(
-              margin: const EdgeInsets.fromLTRB(16, 4, 16, 6),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.darkCard : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isApplied
-                      ? AppColors.success
-                      : (isDark ? AppColors.darkBorder : AppColors.neutral200),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    isApplied ? Icons.check_circle_rounded : Icons.confirmation_number_outlined,
-                    color: isApplied ? AppColors.success : AppColors.primary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: isApplied
-                        ? Text(
-                            '${'cart.promo_active_label'.tr()}: ${checkoutState.appliedPromoCode}',
-                            style: AppTextStyles.labelMedium.copyWith(
-                              fontWeight: FontWeight.w700,
+              margin: const EdgeInsets.fromLTRB(16, 6, 16, 8),
+              child: isApplied
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.success.withValues(alpha: 0.4),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.check_circle_rounded,
                               color: AppColors.success,
+                              size: 20,
                             ),
-                          )
-                        : TextField(
-                            controller: _controller,
-                            decoration: InputDecoration(
-                              hintText: placeholder,
-                              border: InputBorder.none,
-                              isDense: true,
-                              hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400),
-                            ),
-                            style: AppTextStyles.labelMedium,
                           ),
-                  ),
-                  if (isApplied)
-                    TextButton(
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        _controller.clear();
-                        context.read<CheckoutCubit>().clearPromo();
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.error,
-                        minimumSize: Size.zero,
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      ),
-                      child: Text('common.cancel'.tr(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                    )
-                  else
-                    ElevatedButton(
-                      onPressed: isLoading
-                          ? null
-                          : () {
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'cart.promo_activated'.tr(),
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.success,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 11.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 1),
+                                Text(
+                                  checkoutState.appliedPromoCode!,
+                                  style: AppTextStyles.labelLarge.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.8,
+                                    color: isDark ? Colors.white : AppColors.neutral900,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: () {
                               HapticFeedback.lightImpact();
-                              final code = _controller.text.trim();
-                              if (code.isNotEmpty) {
-                                context.read<CheckoutCubit>().applyPromo(code, cartState.subtotal);
-                              }
+                              _controller.clear();
+                              context.read<CheckoutCubit>().clearPromo();
                             },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        minimumSize: Size.zero,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.error),
+                            label: Text(
+                              'common.cancel'.tr(),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.error,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              minimumSize: Size.zero,
+                            ),
+                          ),
+                        ],
                       ),
-                      child: isLoading
-                          ? const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : Text(buttonText, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 50,
+                            child: TextField(
+                              controller: _controller,
+                              textCapitalization: TextCapitalization.characters,
+                              textInputAction: TextInputAction.done,
+                              style: AppTextStyles.labelMedium.copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                                fontSize: 14,
+                                color: isDark ? Colors.white : AppColors.neutral900,
+                              ),
+                              onChanged: (_) => setState(() {}),
+                              onSubmitted: (code) {
+                                if (code.trim().isNotEmpty) {
+                                  context.read<CheckoutCubit>().applyPromo(code.trim(), cartState.subtotal);
+                                }
+                              },
+                              decoration: InputDecoration(
+                                labelText: 'Promokod',
+                                labelStyle: AppTextStyles.bodySmall.copyWith(
+                                  color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                                  fontSize: 13,
+                                ),
+                                hintText: placeholder,
+                                hintStyle: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.neutral400,
+                                  fontSize: 13,
+                                ),
+                                prefixIcon: const Icon(
+                                  Icons.confirmation_number_outlined,
+                                  color: AppColors.primary,
+                                  size: 20,
+                                ),
+                                suffixIcon: _controller.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.neutral400),
+                                        onPressed: () {
+                                          HapticFeedback.lightImpact();
+                                          _controller.clear();
+                                          setState(() {});
+                                        },
+                                      )
+                                    : null,
+                                filled: true,
+                                fillColor: isDark ? AppColors.darkCard : Colors.white,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: BorderSide(
+                                    color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+                                    width: 1.2,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: BorderSide(
+                                    color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+                                    width: 1.2,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.primary,
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        SizedBox(
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: (isLoading || _controller.text.trim().isEmpty)
+                                ? null
+                                : () {
+                                    HapticFeedback.lightImpact();
+                                    final code = _controller.text.trim();
+                                    if (code.isNotEmpty) {
+                                      context.read<CheckoutCubit>().applyPromo(code, cartState.subtotal);
+                                    }
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: isDark ? AppColors.neutral800 : AppColors.neutral200,
+                              disabledForegroundColor: AppColors.neutral400,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(horizontal: 18),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                            child: isLoading
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                                  )
+                                : Text(
+                                    buttonText,
+                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                                  ),
+                          ),
+                        ),
+                      ],
                     ),
-                ],
-              ),
             );
           },
         );
