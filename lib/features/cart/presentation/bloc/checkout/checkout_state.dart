@@ -29,6 +29,8 @@ class CheckoutState extends Equatable {
   final String? doorPhone;
   final bool noUtensils;
   final String? courierNote;
+  final String? recipientName;
+  final String? recipientPhone;
 
   final bool isSubmitting;
   final String? submitError;
@@ -58,6 +60,8 @@ class CheckoutState extends Equatable {
     this.doorPhone,
     this.noUtensils = false,
     this.courierNote,
+    this.recipientName,
+    this.recipientPhone,
     this.isSubmitting = false,
     this.submitError,
     this.successData,
@@ -106,6 +110,12 @@ class CheckoutState extends Equatable {
     if (courierNote != null && courierNote!.trim().isNotEmpty) {
       parts.add('Izoh: ${courierNote!.trim()}');
     }
+    if (recipientName != null && recipientName!.trim().isNotEmpty) {
+      final phonePart = (recipientPhone != null && recipientPhone!.trim().isNotEmpty)
+          ? ' (${recipientPhone!.trim()})'
+          : '';
+      parts.add('Qabul qiluvchi: ${recipientName!.trim()}$phonePart');
+    }
     if (comment.trim().isNotEmpty && !parts.any((p) => p.contains(comment.trim()))) {
       parts.add(comment.trim());
     }
@@ -136,6 +146,8 @@ class CheckoutState extends Equatable {
     String? doorPhone,
     bool? noUtensils,
     String? courierNote,
+    String? recipientName,
+    String? recipientPhone,
     bool? isSubmitting,
     String? submitError,
     Map<String, dynamic>? successData,
@@ -164,6 +176,8 @@ class CheckoutState extends Equatable {
       doorPhone: doorPhone ?? this.doorPhone,
       noUtensils: noUtensils ?? this.noUtensils,
       courierNote: courierNote ?? this.courierNote,
+      recipientName: recipientName ?? this.recipientName,
+      recipientPhone: recipientPhone ?? this.recipientPhone,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       submitError: submitError,
       successData: successData ?? this.successData,
@@ -199,6 +213,8 @@ class CheckoutState extends Equatable {
         doorPhone,
         noUtensils,
         courierNote,
+        recipientName,
+        recipientPhone,
         isSubmitting,
         submitError,
         successData,

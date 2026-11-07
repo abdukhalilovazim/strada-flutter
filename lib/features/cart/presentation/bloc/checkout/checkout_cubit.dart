@@ -164,6 +164,13 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     ));
   }
 
+  void setRecipient({String? name, String? phone}) {
+    emit(state.copyWith(
+      recipientName: name,
+      recipientPhone: phone,
+    ));
+  }
+
   Future<void> submitOrder({
     required List<Map<String, dynamic>> products,
     String? commentOverride,
