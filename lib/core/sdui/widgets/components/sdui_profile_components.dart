@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../features/home/presentation/bloc/home_cubit.dart';
+import '../../bloc/sdui_page_cubit.dart';
 import '../../../storage/secure_storage.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_text_styles.dart';
@@ -48,6 +50,18 @@ class _SDUIProfileHeaderComponentState extends State<SDUIProfileHeaderComponent>
     }
   }
 
+  String get _initials {
+    final trimmed = _userName.trim();
+    if (trimmed.isEmpty || trimmed == 'Mijoz' || trimmed == 'checkout.guest_customer'.tr()) {
+      return 'S';
+    }
+    final parts = trimmed.split(RegExp(r'\s+'));
+    if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return trimmed.isNotEmpty ? trimmed[0].toUpperCase() : 'S';
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -65,79 +79,28 @@ class _SDUIProfileHeaderComponentState extends State<SDUIProfileHeaderComponent>
       ),
       child: Row(
         children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primary, Color(0xFFFF6B6B), AppColors.secondary],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.25),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(2.5),
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isDark ? AppColors.darkCard : Colors.white,
-                  ),
-                  padding: const EdgeInsets.all(2),
-                  child: ClipOval(
-                    child: Container(
-                      color: isDark ? AppColors.neutral800 : const Color(0xFFFFF0F2),
-                      child: Center(
-                        child: Icon(
-                          Icons.person_rounded,
-                          size: 32,
-                          color: isDark ? Colors.white : AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ),
+          // Clean Minimalist User Initials Avatar (No gradient border, no camera icon)
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isDark ? AppColors.neutral800 : const Color(0xFFF1F3F5),
+              border: Border.all(
+                color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+                width: 1.2,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                _initials,
+                style: AppTextStyles.h3.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 20,
                 ),
               ),
-              Positioned(
-                right: -2,
-                bottom: -2,
-                child: Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isDark ? AppColors.darkCard : Colors.white,
-                      width: 2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.camera_alt_rounded,
-                      size: 11,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -286,6 +249,196 @@ class SDUIAppSettingsComponent extends StatelessWidget {
     required this.onAction,
   });
 
+  String _getLanguageLabel(String code) {
+    switch (code) {
+      case 'ru':
+        return 'Русский';
+      case 'en':
+        return 'English';
+      case 'uz':
+      default:
+        return "O'zbekcha";
+    }
+  }
+
+  void _showLanguageBottomSheet(BuildContext context) {
+    HapticFeedback.lightImpact();
+    final currentCode = context.locale.languageCode;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final languages = [
+      {
+        'code': 'uz',
+        'title': "O'zbekcha",
+        'subtitle': "O'zbek tili",
+        'flag': '🇺🇿',
+      },
+      {
+        'code': 'ru',
+        'title': 'Русский',
+        'subtitle': 'Русский язык',
+        'flag': '🇷🇺',
+      },
+      {
+        'code': 'en',
+        'title': 'English',
+        'subtitle': 'English language',
+        'flag': '🇬🇧',
+      },
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkCard : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.neutral700 : AppColors.neutral300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.language_rounded, color: AppColors.primary, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'profile.select_lang_title'.tr(),
+                      style: AppTextStyles.h4.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? Colors.white : AppColors.neutral900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ...languages.map((lang) {
+                final code = lang['code'] as String;
+                final isSelected = currentCode == code;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: InkWell(
+                    onTap: () async {
+                      HapticFeedback.lightImpact();
+                      await context.setLocale(Locale(code));
+                      if (ctx.mounted) {
+                        Navigator.of(ctx).pop();
+                      }
+                      if (context.mounted) {
+                        context.read<HomeCubit>().init(forceRefresh: true);
+                        context.read<SDUIPageCubit>().load(forceRefresh: true);
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.08)
+                            : (isDark ? AppColors.darkSurface : const Color(0xFFF8F9FA)),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primary
+                              : (isDark ? AppColors.darkBorder : AppColors.neutral200),
+                          width: isSelected ? 1.5 : 1.0,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            lang['flag'] as String,
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  lang['title'] as String,
+                                  style: AppTextStyles.labelMedium.copyWith(
+                                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : (isDark ? Colors.white : AppColors.neutral900),
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                const SizedBox(height: 1),
+                                Text(
+                                  lang['subtitle'] as String,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isSelected)
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.check_rounded,
+                                size: 14,
+                                color: Colors.white,
+                              ),
+                            )
+                          else
+                            Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isDark ? AppColors.neutral600 : AppColors.neutral300,
+                                  width: 1.5,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -333,27 +486,28 @@ class SDUIAppSettingsComponent extends StatelessWidget {
               ),
             ),
             trailing: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(
-                context.locale.languageCode == 'ru' ? 'Русский' : "O'zbekcha",
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12.5,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _getLanguageLabel(context.locale.languageCode),
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12.5,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primary, size: 16),
+                ],
               ),
             ),
-            onTap: () {
-              HapticFeedback.lightImpact();
-              final newLocale = context.locale.languageCode == 'uz'
-                  ? const Locale('ru')
-                  : const Locale('uz');
-              context.setLocale(newLocale);
-            },
+            onTap: () => _showLanguageBottomSheet(context),
           ),
           Divider(height: 1, indent: 56, color: isDark ? AppColors.darkBorder : AppColors.neutral200),
           // Theme switch

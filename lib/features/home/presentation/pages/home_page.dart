@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/sdui/sdui.dart';
 import 'package:pizza_strada/core/widgets/strada_refresh_control.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
@@ -48,119 +49,6 @@ class _HomePageState extends State<HomePage> {
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
-  }
-
-  void _showNotificationsModal(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return Container(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.neutral700 : AppColors.neutral300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'profile.notifications'.tr(),
-                    style: AppTextStyles.h3.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : AppColors.neutral900,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '1 ta yangi',
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkSurface : const Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark ? AppColors.darkBorder : AppColors.neutral200,
-                  ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.local_pizza_rounded,
-                        color: AppColors.primary,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Xush kelibsiz!',
-                            style: AppTextStyles.labelLarge.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white : AppColors.neutral900,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Strada Pizza ilovasiga xush kelibsiz. Maxsus aksiyalar va kuponlardan foydalaning!',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: isDark ? AppColors.neutral400 : AppColors.neutral600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   Widget _buildAppBar(BuildContext context) {
@@ -215,7 +103,7 @@ class _HomePageState extends State<HomePage> {
           ),
           onPressed: () {
             HapticFeedback.lightImpact();
-            _showNotificationsModal(context);
+            context.push('/notifications');
           },
         ),
         const SizedBox(width: 8),
@@ -308,6 +196,14 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: AppColors.surface,
       body: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, state) {
+          if (state is HomeUpdatingUI) {
+            return SDUIUpdateView(
+              isSuccess: state.isSuccess,
+              title: state.title,
+              subtitle: state.subtitle,
+            );
+          }
+
           if (state is HomeLoading) {
             return CustomScrollView(
               slivers: [

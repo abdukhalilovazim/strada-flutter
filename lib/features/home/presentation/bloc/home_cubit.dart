@@ -16,6 +16,21 @@ abstract class HomeState extends Equatable {
 class HomeInitial extends HomeState {}
 class HomeLoading extends HomeState {}
 
+class HomeUpdatingUI extends HomeState {
+  final bool isSuccess;
+  final String title;
+  final String? subtitle;
+
+  const HomeUpdatingUI({
+    this.isSuccess = false,
+    this.title = 'UI yangilanmoqda...',
+    this.subtitle,
+  });
+
+  @override
+  List<Object?> get props => [isSuccess, title, subtitle];
+}
+
 class HomeLoaded extends HomeState {
   final List<SliderEntity> sliders;
   final List<CategoryEntity> categories;
@@ -107,57 +122,22 @@ class HomeCubit extends Cubit<HomeState> {
   ) : super(HomeInitial());
 
   Future<void> init({bool forceRefresh = false}) async {
-    SDUIPageModel? cachedPage;
+    // ⚡ 1. Peek local cached page and version
+    final localCachedPage = await _cacheManager.getCachedPage('home');
+    final localVersionUuid = localCachedPage?.versionUuid;
 
-    // ⚡ 1. SWR 0ms Initial Paint: Load cached UI version immediately
-    if (!forceRefresh) {
-      cachedPage = await _cacheManager.getCachedPage('home');
-      if (cachedPage != null) {
-        cachedPage = _normalizeHomeLayout(cachedPage);
-        final categories = _extractCategoriesFromSDUI(cachedPage);
-        final fullProducts = _extractProductsFromSDUI(cachedPage);
-        final sliders = _extractSlidersFromSDUI(cachedPage);
-        final settings = _extractSettingsFromSDUI(cachedPage);
-
-        final defaultSlug = categories.isNotEmpty ? categories.first.slug : null;
-        final initialProducts = defaultSlug != null
-            ? fullProducts.where((p) => p.category?.slug == defaultSlug).toList()
-            : fullProducts;
-
-        emit(HomeLoaded(
-          sliders: sliders,
-          categories: categories,
-          fullProducts: fullProducts,
-          products: initialProducts,
-          settings: settings,
-          selectedCategory: defaultSlug,
-          sduiPage: cachedPage,
-          currentVersionUuid: cachedPage.versionUuid,
-          isUpdatingUI: true, // Checking for background manifest version sync
-        ));
-      } else if (state is! HomeLoaded) {
-        emit(HomeLoading());
-      }
-    } else {
-      if (state is HomeLoaded) {
-        emit((state as HomeLoaded).copyWith(isUpdatingUI: true));
-      } else {
-        emit(HomeLoading());
-      }
-    }
-
-    // ⚡ 2. Manifest check: Query lightweight manifest (~150 bytes) instead of downloading heavy full JSON
+    // ⚡ 2. Check server version in lightweight manifest (~150 bytes) FIRST
     String? serverVersionUuid;
-    bool needsFullPageFetch = forceRefresh || cachedPage == null;
+    bool hasManifestError = false;
 
-    if (!forceRefresh && cachedPage != null) {
+    try {
       final manifestResult = await _getSDUIManifestUseCase();
       manifestResult.fold(
         (failure) {
+          hasManifestError = true;
           if (kDebugMode) {
-            debugPrint('⚠️ [HomeCubit] Manifest check failed (${failure.messageKey}). Retaining local cache.');
+            debugPrint('⚠️ [HomeCubit] Manifest check failed (${failure.messageKey}).');
           }
-          needsFullPageFetch = false;
         },
         (manifest) {
           final homeData = manifest['home'];
@@ -166,36 +146,43 @@ class HomeCubit extends Cubit<HomeState> {
           } else if (homeData is String) {
             serverVersionUuid = homeData;
           }
-
-          if (serverVersionUuid != null && serverVersionUuid == cachedPage?.versionUuid) {
-            // Version match! Zero-traffic cache hit!
-            if (kDebugMode) {
-              debugPrint('⚡ [SDUI Zero-Traffic] Local cache up-to-date ($serverVersionUuid). Skipping full home JSON fetch!');
-            }
-            needsFullPageFetch = false;
-          } else {
-            if (kDebugMode) {
-              debugPrint('🔄 [SDUI Sync] Version mismatch (local: ${cachedPage?.versionUuid}, server: $serverVersionUuid). Fetching full layout.');
-            }
-            needsFullPageFetch = true;
-          }
         },
       );
+    } catch (_) {
+      hasManifestError = true;
     }
 
-    if (!needsFullPageFetch && cachedPage != null && state is HomeLoaded) {
-      // Local cache is already up-to-date and rendered
-      emit((state as HomeLoaded).copyWith(isUpdatingUI: false));
+    // ⚡ 3. Check if versions match:
+    final isVersionMatch = !forceRefresh &&
+        localCachedPage != null &&
+        (serverVersionUuid != null && serverVersionUuid == localVersionUuid);
+
+    if (isVersionMatch || (hasManifestError && localCachedPage != null)) {
+      // 🚀 ZERO-TRAFFIC CACHE HIT!
+      // Versions match! Do NOT call full page API! Open UI immediately.
+      if (kDebugMode) {
+        debugPrint('⚡ [SDUI Zero-Traffic] Home versions match ($localVersionUuid). Skipping API! Instant load.');
+      }
+      _renderLoadedPage(localCachedPage);
       return;
     }
 
-    // ⚡ 3. Fetch full SDUI layout only when version changed or cache is empty
+    // ⚡ 4. Version MISMATCH or cache empty:
+    // User requirement:
+    // "versiyalar bir xil bo'lmasa full screenda ui updated deb loader chiqsin va updated deb success icon chiqsin va ui ochilsin"
+    if (kDebugMode) {
+      debugPrint('🔄 [SDUI Sync] Home version mismatch (local: $localVersionUuid, server: $serverVersionUuid). Updating UI.');
+    }
+
+    emit(const HomeUpdatingUI(isSuccess: false));
+
+    // Call full page API
     final sduiResult = await _getSDUIPageUseCase(slug: 'home');
 
     await sduiResult.fold(
       (failure) async {
-        if (state is HomeLoaded) {
-          emit((state as HomeLoaded).copyWith(isUpdatingUI: false));
+        if (localCachedPage != null) {
+          _renderLoadedPage(localCachedPage);
           return;
         }
 
@@ -217,43 +204,32 @@ class HomeCubit extends Cubit<HomeState> {
             ? products.where((p) => p.category?.slug == defaultSlug).toList()
             : products;
 
-        if (state is! HomeLoaded) {
-          if (categories.isEmpty && products.isEmpty) {
-            emit(HomeFailure(failure.messageKey));
-            return;
-          }
-
-          final localSduiPage = SDUIScreenBuilder.buildHomeScreen(
-            sliders: sliders,
-            categories: categories,
-            products: initialProducts,
-            settings: null,
-            selectedCategorySlug: defaultSlug,
-          );
-
-          _cacheManager.savePage(localSduiPage);
-
-          emit(HomeLoaded(
-            sliders: sliders,
-            categories: categories,
-            fullProducts: products,
-            products: initialProducts,
-            settings: null,
-            selectedCategory: defaultSlug,
-            sduiPage: localSduiPage,
-            currentVersionUuid: localSduiPage.versionUuid,
-            isUpdatingUI: false,
-          ));
-        } else {
-          final currentState = state as HomeLoaded;
-          emit(currentState.copyWith(
-            sliders: sliders.isNotEmpty ? sliders : currentState.sliders,
-            categories: categories.isNotEmpty ? categories : currentState.categories,
-            fullProducts: products.isNotEmpty ? products : currentState.fullProducts,
-            products: initialProducts.isNotEmpty ? initialProducts : currentState.products,
-            isUpdatingUI: false,
-          ));
+        if (categories.isEmpty && products.isEmpty) {
+          emit(HomeFailure(failure.messageKey));
+          return;
         }
+
+        final localSduiPage = SDUIScreenBuilder.buildHomeScreen(
+          sliders: sliders,
+          categories: categories,
+          products: initialProducts,
+          settings: null,
+          selectedCategorySlug: defaultSlug,
+        );
+
+        _cacheManager.savePage(localSduiPage);
+
+        emit(HomeLoaded(
+          sliders: sliders,
+          categories: categories,
+          fullProducts: products,
+          products: initialProducts,
+          settings: null,
+          selectedCategory: defaultSlug,
+          sduiPage: localSduiPage,
+          currentVersionUuid: localSduiPage.versionUuid,
+          isUpdatingUI: false,
+        ));
       },
       (serverSduiPage) async {
         final normalizedPage = _normalizeHomeLayout(serverSduiPage);
@@ -278,6 +254,12 @@ class HomeCubit extends Cubit<HomeState> {
         // Always save fresh layout to persistent cache
         _cacheManager.savePage(normalizedPage);
 
+        // Show success icon & text "UI yangilandi!"
+        emit(const HomeUpdatingUI(isSuccess: true));
+
+        // Wait brief moment for user to see success state
+        await Future.delayed(const Duration(milliseconds: 700));
+
         // Transition to the new UI structure
         emit(HomeLoaded(
           sliders: sliders,
@@ -292,6 +274,31 @@ class HomeCubit extends Cubit<HomeState> {
         ));
       },
     );
+  }
+
+  void _renderLoadedPage(SDUIPageModel page) {
+    final normalized = _normalizeHomeLayout(page);
+    final categories = _extractCategoriesFromSDUI(normalized);
+    final fullProducts = _extractProductsFromSDUI(normalized);
+    final sliders = _extractSlidersFromSDUI(normalized);
+    final settings = _extractSettingsFromSDUI(normalized);
+
+    final defaultSlug = categories.isNotEmpty ? categories.first.slug : null;
+    final initialProducts = defaultSlug != null
+        ? fullProducts.where((p) => p.category?.slug == defaultSlug).toList()
+        : fullProducts;
+
+    emit(HomeLoaded(
+      sliders: sliders,
+      categories: categories,
+      fullProducts: fullProducts,
+      products: initialProducts,
+      settings: settings,
+      selectedCategory: defaultSlug,
+      sduiPage: normalized,
+      currentVersionUuid: normalized.versionUuid,
+      isUpdatingUI: false,
+    ));
   }
 
   SDUIPageModel _normalizeHomeLayout(SDUIPageModel page) {

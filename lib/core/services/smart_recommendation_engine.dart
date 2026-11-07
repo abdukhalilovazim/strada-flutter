@@ -5,9 +5,7 @@ import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 class RecommendationRuleEntity {
   final int id;
   final String name;
-  final String titleUz;
-  final String titleRu;
-  final String? titleEn;
+  final String title;
   final List<int> triggerCategoryIds;
   final List<String> triggerCategorySlugs;
   final List<int> excludeCategoryIds;
@@ -19,9 +17,7 @@ class RecommendationRuleEntity {
   const RecommendationRuleEntity({
     required this.id,
     required this.name,
-    required this.titleUz,
-    required this.titleRu,
-    this.titleEn,
+    required this.title,
     this.triggerCategoryIds = const [],
     this.triggerCategorySlugs = const [],
     this.excludeCategoryIds = const [],
@@ -31,24 +27,16 @@ class RecommendationRuleEntity {
     this.priority = 10,
   });
 
-  String getTitle(String localeCode) {
-    switch (localeCode) {
-      case 'ru':
-        return titleRu;
-      case 'en':
-        return titleEn ?? titleUz;
-      default:
-        return titleUz;
-    }
-  }
+  String getTitle([String? localeCode]) => title;
 
   factory RecommendationRuleEntity.fromJson(Map<String, dynamic> json) {
     return RecommendationRuleEntity(
       id: (json['id'] as num?)?.toInt() ?? 0,
       name: json['name']?.toString() ?? '',
-      titleUz: json['title_uz']?.toString() ?? '',
-      titleRu: json['title_ru']?.toString() ?? '',
-      titleEn: json['title_en']?.toString(),
+      title: json['title']?.toString() ??
+          json['title_uz']?.toString() ??
+          json['name']?.toString() ??
+          '',
       triggerCategoryIds: (json['trigger_category_ids'] as List?)
               ?.map((e) => (e as num).toInt())
               .toList() ??
@@ -103,9 +91,7 @@ class SmartRecommendationEngine {
     const RecommendationRuleEntity(
       id: 1,
       name: 'Pizza -> Sauces',
-      titleUz: 'Pitsa uchun sous tanlang 🥫',
-      titleRu: 'Выберите соус к пицце 🥫',
-      titleEn: 'Choose a sauce for your pizza 🥫',
+      title: 'Pitsa uchun sous tanlang 🥫',
       triggerCategoryIds: [1, 27],
       triggerCategorySlugs: ['pizza', 'pitsa', 'gigant-pizza', 'giant-pizza'],
       excludeCategoryIds: [11],
@@ -119,9 +105,7 @@ class SmartRecommendationEngine {
     const RecommendationRuleEntity(
       id: 2,
       name: 'Burger -> Drinks',
-      titleUz: 'Burger bilan yaxna ichimlik 🥤',
-      titleRu: 'Прохладный напиток к бургеру 🥤',
-      titleEn: 'Cool drink with your burger 🥤',
+      title: 'Burger bilan yaxna ichimlik 🥤',
       triggerCategoryIds: [2],
       triggerCategorySlugs: ['burger', 'burgerlar', 'fast-food', 'sendvich'],
       excludeCategoryIds: [5],
@@ -135,9 +119,7 @@ class SmartRecommendationEngine {
     const RecommendationRuleEntity(
       id: 3,
       name: 'Pizza + Sauce -> Drinks',
-      titleUz: 'Muzdek ichimliklar 🥤',
-      titleRu: 'Освежающие напитки 🥤',
-      titleEn: 'Refreshing drinks 🥤',
+      title: 'Muzdek ichimliklar 🥤',
       triggerCategoryIds: [1, 27],
       triggerCategorySlugs: ['pizza', 'pitsa', 'gigant-pizza'],
       excludeCategoryIds: [5],
@@ -151,9 +133,7 @@ class SmartRecommendationEngine {
     const RecommendationRuleEntity(
       id: 4,
       name: 'Burger -> Sauces',
-      titleUz: 'Mazali souslar 🥫',
-      titleRu: 'Вкусные соусы 🥫',
-      titleEn: 'Tasty sauces 🥫',
+      title: 'Mazali souslar 🥫',
       triggerCategoryIds: [2],
       triggerCategorySlugs: ['burger', 'burgerlar', 'fast-food'],
       excludeCategoryIds: [11],
@@ -167,9 +147,7 @@ class SmartRecommendationEngine {
     const RecommendationRuleEntity(
       id: 5,
       name: 'Any Meal -> Drinks',
-      titleUz: 'Chanqadingizmi? Ichimlik qo\'shing 🥤',
-      titleRu: 'Жажда? Добавьте напиток 🥤',
-      titleEn: 'Thirsty? Add a drink 🥤',
+      title: 'Chanqadingizmi? Ichimlik qo\'shing 🥤',
       triggerCategoryIds: [1, 2, 4, 27],
       triggerCategorySlugs: ['pizza', 'burger', 'salatlar', 'side-dish'],
       excludeCategoryIds: [5],
@@ -183,9 +161,7 @@ class SmartRecommendationEngine {
     const RecommendationRuleEntity(
       id: 6,
       name: 'Global Fallback',
-      titleUz: 'Buyurtmaga qo\'shishni tavsiya qilamiz ✨',
-      titleRu: 'Рекомендуем добавить к заказу ✨',
-      titleEn: 'Recommended with your order ✨',
+      title: 'Buyurtmaga qo\'shishni tavsiya qilamiz ✨',
       triggerCategoryIds: [],
       triggerCategorySlugs: [],
       excludeCategoryIds: [],

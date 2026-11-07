@@ -38,6 +38,14 @@ class PromotionsPage extends StatelessWidget {
         ),
         body: BlocBuilder<SDUIPageCubit, SDUIPageState>(
           builder: (context, state) {
+            if (state is SDUIPageUpdating) {
+              return SDUIUpdateView(
+                isSuccess: state.isSuccess,
+                title: state.title,
+                subtitle: state.subtitle,
+              );
+            }
+
             if (state is SDUIPageLoading) {
               return const Center(
                 child: CircularProgressIndicator(color: AppColors.primary),

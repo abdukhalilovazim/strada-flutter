@@ -25,6 +25,7 @@ import 'package:pizza_strada/features/orders/data/models/order_model.dart';
 import 'package:pizza_strada/features/orders/domain/entities/order_entity.dart';
 import 'package:pizza_strada/features/orders/presentation/pages/order_detail_page.dart';
 import 'package:pizza_strada/features/orders/presentation/pages/orders_page.dart';
+import 'package:pizza_strada/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/profile_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/branches_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/saved_addresses_page.dart';
@@ -551,6 +552,7 @@ final appRouter = GoRouter(
     GoRoute(path: '/saved-addresses', builder: (_, __) => const SavedAddressesPage()),
     GoRoute(path: '/locations', builder: (_, __) => const SavedAddressesPage()),
     GoRoute(path: '/map-picker', builder: (_, __) => const MapPickerPage()),
+    GoRoute(path: '/notifications', builder: (_, __) => const NotificationsPage()),
     GoRoute(
       path: '/order/:id',
       builder: (_, s) {

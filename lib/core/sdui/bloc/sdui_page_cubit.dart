@@ -71,71 +71,56 @@ class SDUIPageCubit extends Cubit<SDUIPageState> {
   SDUIPageCubit({required this.slug}) : super(SDUIPageInitial());
 
   Future<void> load({bool forceRefresh = false}) async {
-    SDUIPageModel? localPage;
+    final localPage = await _cacheManager.getCachedPage(slug);
+    final localVersionUuid = localPage?.versionUuid;
 
-    // 1. SWR 0ms Initial Paint: Load cached or default fallback immediately
-    if (!forceRefresh) {
-      localPage = await _cacheManager.getCachedPage(slug);
-      if (localPage == null) {
-        localPage = _getDefaultFallback(slug);
-        if (localPage != null) {
-          await _cacheManager.savePage(localPage);
-        }
-      }
-
-      if (localPage != null) {
-        emit(SDUIPageLoaded(page: localPage, isUpdatingUI: true));
-      } else {
-        emit(SDUIPageLoading());
-      }
-    } else {
-      if (state is SDUIPageLoaded) {
-        emit((state as SDUIPageLoaded).copyWith(isUpdatingUI: true));
-      } else {
-        emit(SDUIPageLoading());
-      }
-    }
-
-    // 2. Version Check: Query lightweight manifest (~150 bytes)
-    bool needsFetch = forceRefresh || localPage == null;
+    // ⚡ 1. Version Check: Query lightweight manifest (~150 bytes) FIRST
     String? serverVersionUuid;
+    bool hasManifestError = false;
 
-    if (!forceRefresh && localPage != null) {
-      try {
-        final manifestRes = await _client.get('sdui/manifest');
-        final Map<String, dynamic> manifest = manifestRes is Map<String, dynamic>
-            ? (manifestRes['data'] is Map<String, dynamic>
-                ? manifestRes['data'] as Map<String, dynamic>
-                : manifestRes)
-            : {};
+    try {
+      final manifestRes = await _client.get('sdui/manifest');
+      final Map<String, dynamic> manifest = manifestRes is Map<String, dynamic>
+          ? (manifestRes['data'] is Map<String, dynamic>
+              ? manifestRes['data'] as Map<String, dynamic>
+              : manifestRes)
+          : {};
 
-        final pageData = manifest[slug];
-        if (pageData is Map<String, dynamic>) {
-          serverVersionUuid = pageData['version_uuid']?.toString();
-        } else if (pageData is String) {
-          serverVersionUuid = pageData;
-        }
-
-        if (serverVersionUuid != null && serverVersionUuid == localPage.versionUuid) {
-          // Version match! Zero network overhead.
-          needsFetch = false;
-        } else {
-          needsFetch = true;
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint('⚠️ [SDUIPageCubit] Manifest check error: $e');
-        }
-        needsFetch = false;
+      final pageData = manifest[slug];
+      if (pageData is Map<String, dynamic>) {
+        serverVersionUuid = pageData['version_uuid']?.toString();
+      } else if (pageData is String) {
+        serverVersionUuid = pageData;
+      }
+    } catch (e) {
+      hasManifestError = true;
+      if (kDebugMode) {
+        debugPrint('⚠️ [SDUIPageCubit] Manifest check error: $e');
       }
     }
 
-    if (!needsFetch && localPage != null && state is SDUIPageLoaded) {
-      emit((state as SDUIPageLoaded).copyWith(isUpdatingUI: false));
+    // ⚡ 2. Check if versions match:
+    final isVersionMatch = !forceRefresh &&
+        localPage != null &&
+        (serverVersionUuid != null && serverVersionUuid == localVersionUuid);
+
+    if (isVersionMatch || (hasManifestError && localPage != null)) {
+      // 🚀 ZERO-TRAFFIC CACHE HIT!
+      if (kDebugMode) {
+        debugPrint('⚡ [SDUIPageCubit] "$slug" versions match ($localVersionUuid). Skipping API! Instant load.');
+      }
+      emit(SDUIPageLoaded(page: localPage, isUpdatingUI: false));
       return;
     }
 
-    // 3. Fetch Full SDUI Page from Backend if Version Changed
+    // ⚡ 3. Version MISMATCH or cache empty:
+    // Full screen loader: "UI yangilanmoqda..." -> success icon -> open UI
+    if (kDebugMode) {
+      debugPrint('🔄 [SDUIPageCubit] "$slug" version mismatch (local: $localVersionUuid, server: $serverVersionUuid). Updating UI.');
+    }
+
+    emit(const SDUIPageUpdating(isSuccess: false));
+
     try {
       final response = await _client.get('sdui/pages/$slug');
       final Map<String, dynamic> data = response is Map<String, dynamic>
@@ -145,6 +130,12 @@ class SDUIPageCubit extends Cubit<SDUIPageState> {
       final remotePage = SDUIPageModel.fromJson(data);
       await _cacheManager.savePage(remotePage);
 
+      // Show success checkmark: "UI yangilandi!"
+      emit(const SDUIPageUpdating(isSuccess: true));
+
+      // Wait brief moment for user to see success state
+      await Future.delayed(const Duration(milliseconds: 700));
+
       emit(SDUIPageLoaded(page: remotePage, isUpdatingUI: false));
     } catch (e) {
       if (kDebugMode) {
@@ -153,7 +144,12 @@ class SDUIPageCubit extends Cubit<SDUIPageState> {
       if (localPage != null) {
         emit(SDUIPageLoaded(page: localPage, isUpdatingUI: false));
       } else {
-        emit(SDUIPageFailure(e.toString()));
+        final fallback = _getDefaultFallback(slug);
+        if (fallback != null) {
+          emit(SDUIPageLoaded(page: fallback, isUpdatingUI: false));
+        } else {
+          emit(SDUIPageFailure(e.toString()));
+        }
       }
     }
   }
