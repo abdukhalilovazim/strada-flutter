@@ -1200,7 +1200,7 @@ class _DetailRow extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           actionLabel ?? 'orders.view_on_map'.tr(),
-                          style: AppTextStyles.caption.copyWith(
+                          style: AppTextStyles.bodyExtraSmall.copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.w700,
                           ),
