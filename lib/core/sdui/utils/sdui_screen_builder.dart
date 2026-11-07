@@ -109,13 +109,42 @@ class SDUIScreenBuilder {
   }) {
     final sections = <SDUISectionModel>[];
 
-    // 1. Horizontal Category Bar
+    // 1. 🌟 Hero Carousel Sliders (Banners) - Top of screen right under search bar
+    if (sliders.isNotEmpty) {
+      sections.add(SDUISectionModel(
+        id: 'hero_sliders_section',
+        type: 'carousel_slider',
+        properties: {
+          'height': 190.0,
+          'viewport_fraction': 0.92,
+          'auto_play': true,
+        },
+        items: sliders.map((slider) {
+          SDUIAction? action;
+          if (slider.link != null && slider.link!.isNotEmpty) {
+            action = SDUIAction(type: 'open_url', target: slider.link);
+          }
+
+          return SDUIComponentModel(
+            id: slider.id.toString(),
+            type: 'banner_card',
+            properties: {
+              'image_url': slider.imageUrl,
+              'caption': slider.title,
+            },
+            action: action,
+          );
+        }).toList(),
+      ));
+    }
+
+    // 2. 🌟 Horizontal Category Bar (Menu) - Pinned / Sticky under the app bar on scroll
     if (categories.isNotEmpty) {
       sections.add(SDUISectionModel(
         id: 'category_bar_section',
         type: 'horizontal_category_bar',
         properties: {
-          'sticky': false,
+          'sticky': true,
           'default_selected': selectedCategorySlug ?? categories.first.slug,
         },
         items: categories.map((cat) {
@@ -136,39 +165,7 @@ class SDUIScreenBuilder {
       ));
     }
 
-    // 2. Section Header for active category
-    String activeTitle = 'common.menu'.tr();
-    if (categories.isNotEmpty) {
-      CategoryEntity? matched;
-      for (final cat in categories) {
-        if (cat.slug == selectedCategorySlug) {
-          matched = cat;
-          break;
-        }
-      }
-      activeTitle = (matched ?? categories.first).title;
-    }
-
-    sections.add(SDUISectionModel(
-      id: 'category_title_section',
-      type: 'section_header',
-      properties: {
-        'title': activeTitle,
-      },
-    ));
-
-    // 3. Delivery & Branch Status Bar
-    sections.add(SDUISectionModel(
-      id: 'delivery_status_section',
-      type: 'delivery_status_bar',
-      properties: {
-        'branch_title': branchTitle ?? 'Pizza Strada',
-        'address': 'Delivery',
-        'eta_minutes': etaMinutes ?? 35,
-      },
-    ));
-
-    // 4. Optional Discount Announcement (from server settings)
+    // 3. Optional Discount Announcement (from server settings)
     if (settings != null && settings.discount > 0) {
       sections.add(SDUISectionModel(
         id: 'promo_announcement',
@@ -182,7 +179,7 @@ class SDUIScreenBuilder {
       ));
     }
 
-    // 5. Product Grid
+    // 4. 🍕 Product Grid
     sections.add(SDUISectionModel(
       id: 'products_grid_section',
       type: 'product_grid',
@@ -227,35 +224,6 @@ class SDUIScreenBuilder {
         );
       }).toList(),
     ));
-
-    // 6. Hero Carousel Sliders
-    if (sliders.isNotEmpty) {
-      sections.add(SDUISectionModel(
-        id: 'hero_sliders_section',
-        type: 'carousel_slider',
-        properties: {
-          'height': 200.0,
-          'viewport_fraction': 0.92,
-          'auto_play': true,
-        },
-        items: sliders.map((slider) {
-          SDUIAction? action;
-          if (slider.link != null && slider.link!.isNotEmpty) {
-            action = SDUIAction(type: 'open_url', target: slider.link);
-          }
-
-          return SDUIComponentModel(
-            id: slider.id.toString(),
-            type: 'banner_card',
-            properties: {
-              'image_url': slider.imageUrl,
-              'caption': slider.title,
-            },
-            action: action,
-          );
-        }).toList(),
-      ));
-    }
 
     return SDUIPageModel(
       version: '1.2.0',

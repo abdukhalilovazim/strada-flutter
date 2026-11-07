@@ -108,6 +108,7 @@ class HomeCubit extends Cubit<HomeState> {
     if (!forceRefresh) {
       cachedPage = await _cacheManager.getCachedPage('home');
       if (cachedPage != null) {
+        cachedPage = _normalizeHomeLayout(cachedPage);
         final categories = _extractCategoriesFromSDUI(cachedPage);
         final fullProducts = _extractProductsFromSDUI(cachedPage);
         final sliders = _extractSlidersFromSDUI(cachedPage);
@@ -250,25 +251,27 @@ class HomeCubit extends Cubit<HomeState> {
         }
       },
       (serverSduiPage) async {
+        final normalizedPage = _normalizeHomeLayout(serverSduiPage);
+
         // ⚡ Extract items and settings directly from SDUI layout (eliminates 4 redundant HTTP calls)
-        final categories = _extractCategoriesFromSDUI(serverSduiPage);
-        final fullProducts = _extractProductsFromSDUI(serverSduiPage);
-        final sliders = _extractSlidersFromSDUI(serverSduiPage);
-        final settings = _extractSettingsFromSDUI(serverSduiPage);
+        final categories = _extractCategoriesFromSDUI(normalizedPage);
+        final fullProducts = _extractProductsFromSDUI(normalizedPage);
+        final sliders = _extractSlidersFromSDUI(normalizedPage);
+        final settings = _extractSettingsFromSDUI(normalizedPage);
 
         final defaultSlug = categories.isNotEmpty ? categories.first.slug : null;
         final initialProducts = defaultSlug != null
             ? fullProducts.where((p) => p.category?.slug == defaultSlug).toList()
             : fullProducts;
 
-        final String newVersionUuid = serverSduiPage.versionUuid;
+        final String newVersionUuid = normalizedPage.versionUuid;
 
         if (kDebugMode) {
           debugPrint('💾 [SDUI Cache] Saved screen "home" with version UUID: $newVersionUuid');
         }
 
         // Always save fresh layout to persistent cache
-        _cacheManager.savePage(serverSduiPage);
+        _cacheManager.savePage(normalizedPage);
 
         // Transition to the new UI structure
         emit(HomeLoaded(
@@ -278,11 +281,51 @@ class HomeCubit extends Cubit<HomeState> {
           products: initialProducts,
           settings: settings,
           selectedCategory: defaultSlug,
-          sduiPage: serverSduiPage,
+          sduiPage: normalizedPage,
           currentVersionUuid: newVersionUuid,
           isUpdatingUI: false,
         ));
       },
+    );
+  }
+
+  SDUIPageModel _normalizeHomeLayout(SDUIPageModel page) {
+    final sections = List<SDUISectionModel>.from(page.sections);
+
+    // Remove redundant static text headers or redundant delivery cards
+    sections.removeWhere((s) => s.type == 'section_header' || s.type == 'delivery_status_bar');
+
+    // 1. Extract carousel slider if present
+    SDUISectionModel? sliderSection;
+    final sliderIdx = sections.indexWhere((s) => s.type == 'carousel_slider');
+    if (sliderIdx != -1) {
+      sliderSection = sections.removeAt(sliderIdx);
+    }
+
+    // 2. Extract category bar if present
+    SDUISectionModel? categorySection;
+    final catIdx = sections.indexWhere((s) => s.type == 'horizontal_category_bar');
+    if (catIdx != -1) {
+      categorySection = sections.removeAt(catIdx);
+    }
+
+    // 3. Re-insert slider at the very top (index 0)
+    if (sliderSection != null) {
+      sections.insert(0, sliderSection);
+    }
+
+    // 4. Re-insert category bar immediately after slider (index 1 or 0)
+    if (categorySection != null) {
+      final insertIdx = sliderSection != null ? 1 : 0;
+      sections.insert(insertIdx, categorySection);
+    }
+
+    return SDUIPageModel(
+      version: page.version,
+      versionUuid: page.versionUuid,
+      screenId: page.screenId,
+      meta: page.meta,
+      sections: sections,
     );
   }
 

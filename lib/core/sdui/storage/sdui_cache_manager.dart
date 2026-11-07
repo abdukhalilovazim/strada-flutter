@@ -9,8 +9,8 @@ class SDUICacheManager {
   factory SDUICacheManager() => _instance;
   SDUICacheManager._internal();
 
-  static const String _keyPrefix = 'sdui_page_cache_';
-  static const String _metaPrefix = 'sdui_page_meta_';
+  static const String _keyPrefix = 'sdui_page_cache_v2_';
+  static const String _metaPrefix = 'sdui_page_meta_v2_';
 
   String _buildKey(String screenId, int? branchId) =>
       '$_keyPrefix${screenId}_${branchId ?? 0}';
