@@ -13,6 +13,7 @@ class CheckoutState extends Equatable {
 
   final String? appliedPromoCode;
   final int? promoType;
+  final String? promoTypeString;
   final double? promoValue;
   final String? promoError;
   final bool loadingPromo;
@@ -44,6 +45,7 @@ class CheckoutState extends Equatable {
     this.loadingDelivery = false,
     this.appliedPromoCode,
     this.promoType,
+    this.promoTypeString,
     this.promoValue,
     this.promoError,
     this.loadingPromo = false,
@@ -60,6 +62,26 @@ class CheckoutState extends Equatable {
     this.submitError,
     this.successData,
   });
+
+  /// Chegirma turi foizda ekanligini tekshirish
+  /// Backend PromoTypeEnum: PERCENT = 1, FIXED = 0
+  bool get isPercentagePromo {
+    if (promoType == 1) return true;
+    if (promoTypeString != null) {
+      final s = promoTypeString!.toLowerCase().trim();
+      if (s == 'percent' || s == 'percentage' || s == '1') return true;
+    }
+    return false;
+  }
+
+  /// Subtotal hisobga olingan holda aniq chegirma summasini hisoblash
+  double calculateDiscount(double subtotal) {
+    if (promoValue == null || promoValue! <= 0) return 0.0;
+    if (isPercentagePromo) {
+      return (subtotal * (promoValue! / 100.0)).clamp(0.0, subtotal);
+    }
+    return promoValue!.clamp(0.0, subtotal);
+  }
 
   double get discountAmount => promoValue ?? 0.0;
 
@@ -101,6 +123,7 @@ class CheckoutState extends Equatable {
     bool? loadingDelivery,
     String? appliedPromoCode,
     int? promoType,
+    String? promoTypeString,
     double? promoValue,
     String? promoError,
     bool? loadingPromo,
@@ -128,6 +151,7 @@ class CheckoutState extends Equatable {
       loadingDelivery: loadingDelivery ?? this.loadingDelivery,
       appliedPromoCode: appliedPromoCode ?? this.appliedPromoCode,
       promoType: promoType ?? this.promoType,
+      promoTypeString: promoTypeString ?? this.promoTypeString,
       promoValue: promoValue ?? this.promoValue,
       promoError: promoError,
       loadingPromo: loadingPromo ?? this.loadingPromo,
@@ -162,6 +186,7 @@ class CheckoutState extends Equatable {
         loadingDelivery,
         appliedPromoCode,
         promoType,
+        promoTypeString,
         promoValue,
         promoError,
         loadingPromo,

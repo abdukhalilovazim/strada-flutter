@@ -461,7 +461,7 @@ class CartPage extends StatelessWidget {
       builder: (context, checkoutState) {
         final subtotal = cartState.subtotal;
         final deliveryPrice = checkoutState.isDelivery ? checkoutState.deliveryPrice : 0;
-        final discount = checkoutState.discountAmount;
+        final discount = checkoutState.calculateDiscount(subtotal);
         final total = (subtotal + deliveryPrice - discount).clamp(0, double.infinity).toInt();
 
         return Container(
@@ -494,7 +494,9 @@ class CartPage extends StatelessWidget {
               if (discount > 0) ...[
                 const SizedBox(height: 8),
                 _buildSummaryRow(
-                  'cart.discount'.tr(),
+                  checkoutState.isPercentagePromo
+                      ? '${'cart.discount'.tr()} (${checkoutState.promoValue?.toInt()}%)'
+                      : 'cart.discount'.tr(),
                   '-${NumberFormatter.formatSum(discount)} ${'common.currency'.tr()}',
                   isDark,
                   valueColor: AppColors.success,
@@ -553,7 +555,7 @@ class CartPage extends StatelessWidget {
       builder: (context, checkoutState) {
         final subtotal = cartState.subtotal;
         final deliveryPrice = checkoutState.isDelivery ? checkoutState.deliveryPrice : 0;
-        final discount = checkoutState.discountAmount;
+        final discount = checkoutState.calculateDiscount(subtotal);
         final total = (subtotal + deliveryPrice - discount).clamp(0, double.infinity).toInt();
 
         return Container(

@@ -1025,16 +1025,7 @@ class SDUICheckoutSummaryComponent extends StatelessWidget {
       builder: (context, cartState) {
         return BlocBuilder<CheckoutCubit, CheckoutState>(
           builder: (context, checkoutState) {
-            double discount = 0;
-            if (checkoutState.promoValue != null && checkoutState.promoValue! > 0) {
-              if (checkoutState.promoType == 2) {
-                // Foiz
-                discount = cartState.subtotal * (checkoutState.promoValue! / 100);
-              } else {
-                // Belgilangan summa
-                discount = checkoutState.promoValue!;
-              }
-            }
+            final discount = checkoutState.calculateDiscount(cartState.subtotal);
 
             final deliveryPrice = checkoutState.isDelivery ? checkoutState.deliveryPrice : 0.0;
             final subtotalAfterDiscount = (cartState.subtotal - discount).clamp(0.0, double.infinity);
@@ -1071,7 +1062,9 @@ class SDUICheckoutSummaryComponent extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '${'checkout.promo_discount'.tr()} (${checkoutState.appliedPromoCode}):',
+                          checkoutState.isPercentagePromo
+                              ? '${'checkout.promo_discount'.tr()} (${checkoutState.appliedPromoCode} • ${checkoutState.promoValue?.toInt()}%):'
+                              : '${'checkout.promo_discount'.tr()} (${checkoutState.appliedPromoCode}):',
                           style: AppTextStyles.bodySmall.copyWith(color: AppColors.success),
                         ),
                         Text(

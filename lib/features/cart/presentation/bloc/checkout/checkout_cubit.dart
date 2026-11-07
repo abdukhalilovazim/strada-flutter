@@ -113,11 +113,32 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       );
       final data = response as Map<String, dynamic>?;
       final promoVal = double.tryParse(data?['value']?.toString() ?? '0') ?? 0;
+
+      final rawType = data?['type'];
+      int? parsedType;
+      String? parsedTypeString;
+
+      if (rawType is int) {
+        parsedType = rawType;
+        parsedTypeString = rawType == 1 ? 'percent' : 'fixed';
+      } else if (rawType != null) {
+        final s = rawType.toString().toLowerCase().trim();
+        parsedTypeString = s;
+        if (s == 'percent' || s == 'percentage' || s == '1') {
+          parsedType = 1;
+        } else if (s == 'fixed' || s == '0') {
+          parsedType = 0;
+        } else {
+          parsedType = int.tryParse(s);
+        }
+      }
+
       AnalyticsService.instance.logPromoApplied(code: code, discount: promoVal);
       emit(state.copyWith(
         loadingPromo: false,
         appliedPromoCode: (data?['code'] ?? data?['promo_code']) as String?,
-        promoType: data?['type'] as int?,
+        promoType: parsedType,
+        promoTypeString: parsedTypeString,
         promoValue: promoVal,
         promoError: null,
       ));
@@ -127,6 +148,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         promoError: e is ApiException ? e.message : e.toString(),
         appliedPromoCode: null,
         promoType: null,
+        promoTypeString: null,
         promoValue: null,
       ));
     }
@@ -136,6 +158,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     emit(state.copyWith(
       appliedPromoCode: null,
       promoType: null,
+      promoTypeString: null,
       promoValue: null,
       promoError: null,
     ));

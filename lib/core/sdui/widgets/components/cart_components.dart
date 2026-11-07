@@ -750,14 +750,7 @@ class SDUICartSummaryComponent extends StatelessWidget {
 
         return BlocBuilder<CheckoutCubit, CheckoutState>(
           builder: (context, checkoutState) {
-            double discount = 0;
-            if (checkoutState.promoValue != null && checkoutState.promoValue! > 0) {
-              if (checkoutState.promoType == 2) {
-                discount = cartState.subtotal * (checkoutState.promoValue! / 100);
-              } else {
-                discount = checkoutState.promoValue!;
-              }
-            }
+            final discount = checkoutState.calculateDiscount(cartState.subtotal);
 
             final finalTotal = (cartState.subtotal - discount).clamp(0.0, double.infinity);
 
