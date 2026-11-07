@@ -52,7 +52,7 @@ class CartPage extends StatelessWidget {
                     const Icon(Icons.wifi_off_rounded, size: 48, color: AppColors.neutral400),
                     const SizedBox(height: 12),
                     Text(
-                      'Internet bilan aloqa yo\'q',
+                      'common.no_internet'.tr(),
                       style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
                     ),
                     const SizedBox(height: 16),
@@ -76,38 +76,6 @@ class CartPage extends StatelessWidget {
                 child: SDUIRenderer(
                   key: ValueKey('cart_sdui_${state.page.versionUuid}'),
                   page: state.page,
-                  leadingSlivers: [
-                    if (state.isUpdatingUI)
-                      SliverToBoxAdapter(
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const SizedBox(
-                                width: 10,
-                                height: 10,
-                                child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.primary),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'home.updating_ui'.tr(),
-                                style: AppTextStyles.bodyExtraSmall.copyWith(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
                   onRefresh: () => context.read<SDUIPageCubit>().load(forceRefresh: true),
                 ),
               );

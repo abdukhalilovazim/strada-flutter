@@ -72,6 +72,30 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     emit(state.copyWith(comment: comment));
   }
 
+  void setAddressDetails({
+    String? entrance,
+    String? floor,
+    String? apartment,
+    String? doorPhone,
+  }) {
+    emit(state.copyWith(
+      entrance: entrance ?? state.entrance,
+      floor: floor ?? state.floor,
+      apartment: apartment ?? state.apartment,
+      doorPhone: doorPhone ?? state.doorPhone,
+    ));
+  }
+
+  void setCourierPreferences({
+    String? note,
+    bool? noUtensils,
+  }) {
+    emit(state.copyWith(
+      courierNote: note ?? state.courierNote,
+      noUtensils: noUtensils ?? state.noUtensils,
+    ));
+  }
+
   void clearSubmitError() {
     emit(state.clearSubmitError());
   }
@@ -118,18 +142,23 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     String? commentOverride,
   }) async {
     emit(state.copyWith(isSubmitting: true, submitError: null));
+    final effectiveComment = commentOverride ??
+        (state.fullComment.isNotEmpty
+            ? state.fullComment
+            : (state.comment.isNotEmpty ? state.comment : null));
+
     final vars = {
-        'type': state.isDelivery ? 0 : 1, 
-        'branch_id': state.isDelivery ? null : int.tryParse(state.branchId ?? ''),
-        'latitude': state.isDelivery ? state.lat : null,
-        'longitude': state.isDelivery ? state.lng : null,
-        'address': state.isDelivery ? state.address : null,
-        'payment_method': (state.selectedPaymentMethodKey == '1' || state.selectedPaymentMethodKey == 'payme') ? 1 : 0,
-        'change': null,
-        'comment': commentOverride ?? state.comment,
-        'promo_code': state.appliedPromoCode,
-        'products': products,
-      };
+      'type': state.isDelivery ? 0 : 1,
+      'branch_id': state.isDelivery ? null : int.tryParse(state.branchId ?? ''),
+      'latitude': state.isDelivery ? state.lat : null,
+      'longitude': state.isDelivery ? state.lng : null,
+      'address': state.isDelivery ? state.address : null,
+      'payment_method': (state.selectedPaymentMethodKey == '1' || state.selectedPaymentMethodKey == 'payme') ? 1 : 0,
+      'change': null,
+      'comment': effectiveComment,
+      'promo_code': state.appliedPromoCode,
+      'products': products,
+    };
 
     final result = await _orderRepository.createOrder(vars);
     result.fold(

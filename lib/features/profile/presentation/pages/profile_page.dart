@@ -52,7 +52,7 @@ class ProfilePage extends StatelessWidget {
                     const Icon(Icons.wifi_off_rounded, size: 48, color: AppColors.neutral400),
                     const SizedBox(height: 12),
                     Text(
-                      'Internet bilan aloqa yo\'q',
+                      'common.no_internet'.tr(),
                       style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
                     ),
                     const SizedBox(height: 16),

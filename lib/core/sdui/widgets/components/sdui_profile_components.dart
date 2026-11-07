@@ -116,7 +116,7 @@ class _SDUIProfileHeaderComponentState extends State<SDUIProfileHeaderComponent>
             icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Profilni tahrirlash oynasi')),
+                SnackBar(content: Text('profile.edit_profile_dialog'.tr())),
               );
             },
           ),
@@ -260,7 +260,7 @@ class SDUIAppSettingsComponent extends StatelessWidget {
           // Language
           ListTile(
             leading: const Icon(Icons.language_rounded, color: AppColors.primary),
-            title: const Text('Til / Язык', style: TextStyle(fontWeight: FontWeight.w700)),
+            title: Text('profile.select_lang_title'.tr(), style: const TextStyle(fontWeight: FontWeight.w700)),
             trailing: Text(
               context.locale.languageCode == 'ru' ? 'Русский' : "O'zbekcha",
               style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800),
@@ -279,7 +279,7 @@ class SDUIAppSettingsComponent extends StatelessWidget {
               isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
               color: AppColors.primary,
             ),
-            title: const Text('Tungi rejim', style: TextStyle(fontWeight: FontWeight.w700)),
+            title: Text('profile.dark_mode_title'.tr(), style: const TextStyle(fontWeight: FontWeight.w700)),
             trailing: Switch(
               value: isDark,
               activeThumbColor: AppColors.primary,

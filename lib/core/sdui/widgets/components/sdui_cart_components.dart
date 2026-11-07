@@ -590,53 +590,116 @@ class _SDUIPromoCodeComponentState extends State<SDUIPromoCodeComponent> {
       builder: (context, cartState) {
         if (cartState.items.isEmpty) return const SizedBox.shrink();
 
-        return Container(
-          margin: const EdgeInsets.fromLTRB(16, 4, 16, 6),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? AppColors.darkBorder : AppColors.neutral200,
-            ),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.confirmation_number_outlined, color: AppColors.primary, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  decoration: InputDecoration(
-                    hintText: placeholder,
-                    border: InputBorder.none,
-                    isDense: true,
-                    hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400),
+        return BlocConsumer<CheckoutCubit, CheckoutState>(
+          listenWhen: (prev, curr) =>
+              prev.promoError != curr.promoError ||
+              prev.appliedPromoCode != curr.appliedPromoCode,
+          listener: (context, checkoutState) {
+            if (checkoutState.promoError != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(checkoutState.promoError!),
+                  backgroundColor: AppColors.error,
+                ),
+              );
+              context.read<CheckoutCubit>().clearPromo();
+            } else if (checkoutState.appliedPromoCode != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${'cart.promo_activated'.tr()}: ${checkoutState.appliedPromoCode}'),
+                  backgroundColor: AppColors.success,
+                ),
+              );
+            }
+          },
+          builder: (context, checkoutState) {
+            final isApplied = checkoutState.appliedPromoCode != null;
+            final isLoading = checkoutState.loadingPromo;
+
+            return Container(
+              margin: const EdgeInsets.fromLTRB(16, 4, 16, 6),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkCard : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isApplied
+                      ? AppColors.success
+                      : (isDark ? AppColors.darkBorder : AppColors.neutral200),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isApplied ? Icons.check_circle_rounded : Icons.confirmation_number_outlined,
+                    color: isApplied ? AppColors.success : AppColors.primary,
+                    size: 20,
                   ),
-                  style: AppTextStyles.labelMedium,
-                ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: isApplied
+                        ? Text(
+                            '${'cart.promo_active_label'.tr()}: ${checkoutState.appliedPromoCode}',
+                            style: AppTextStyles.labelMedium.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.success,
+                            ),
+                          )
+                        : TextField(
+                            controller: _controller,
+                            decoration: InputDecoration(
+                              hintText: placeholder,
+                              border: InputBorder.none,
+                              isDense: true,
+                              hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400),
+                            ),
+                            style: AppTextStyles.labelMedium,
+                          ),
+                  ),
+                  if (isApplied)
+                    TextButton(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        _controller.clear();
+                        context.read<CheckoutCubit>().clearPromo();
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.error,
+                        minimumSize: Size.zero,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      ),
+                      child: Text('common.cancel'.tr(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                    )
+                  else
+                    ElevatedButton(
+                      onPressed: isLoading
+                          ? null
+                          : () {
+                              HapticFeedback.lightImpact();
+                              final code = _controller.text.trim();
+                              if (code.isNotEmpty) {
+                                context.read<CheckoutCubit>().applyPromo(code, cartState.subtotal);
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        minimumSize: Size.zero,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : Text(buttonText, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                    ),
+                ],
               ),
-              ElevatedButton(
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  final code = _controller.text.trim();
-                  if (code.isNotEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Promokod: $code tekshirilmoqda...')),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  minimumSize: Size.zero,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: Text(buttonText, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -664,61 +727,95 @@ class SDUICartSummaryComponent extends StatelessWidget {
       builder: (context, cartState) {
         if (cartState.items.isEmpty) return const SizedBox.shrink();
 
-        return Container(
-          margin: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard : Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: isDark ? AppColors.darkBorder : AppColors.neutral200,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: AppTextStyles.labelLarge.copyWith(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 15,
+        return BlocBuilder<CheckoutCubit, CheckoutState>(
+          builder: (context, checkoutState) {
+            double discount = 0;
+            if (checkoutState.promoValue != null && checkoutState.promoValue! > 0) {
+              if (checkoutState.promoType == 2) {
+                discount = cartState.subtotal * (checkoutState.promoValue! / 100);
+              } else {
+                discount = checkoutState.promoValue!;
+              }
+            }
+
+            final finalTotal = (cartState.subtotal - discount).clamp(0.0, double.infinity);
+
+            return Container(
+              margin: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkCard : Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: isDark ? AppColors.darkBorder : AppColors.neutral200,
                 ),
               ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Mahsulotlar summasi', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
                   Text(
-                    '${NumberFormatter.formatSum(cartState.subtotal)} ${'common.currency'.tr()}',
-                    style: AppTextStyles.labelMedium.copyWith(fontWeight: FontWeight.w600),
+                    title,
+                    style: AppTextStyles.labelLarge.copyWith(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('${'cart.subtotal'.tr()}:', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
+                      Text(
+                        '${NumberFormatter.formatSum(cartState.subtotal)} ${'common.currency'.tr()}',
+                        style: AppTextStyles.labelMedium.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                  if (discount > 0) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${'checkout.promo_discount'.tr()}:',
+                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.success),
+                        ),
+                        Text(
+                          '-${NumberFormatter.formatSum(discount)} ${'common.currency'.tr()}',
+                          style: AppTextStyles.labelMedium.copyWith(
+                            color: AppColors.success,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('${'cart.delivery'.tr()}:', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
+                      Text('checkout.free'.tr(), style: AppTextStyles.labelMedium.copyWith(color: AppColors.success, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Divider(height: 1),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('${'cart.total'.tr()}:', style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w800)),
+                      Text(
+                        '${NumberFormatter.formatSum(finalTotal)} ${'common.currency'.tr()}',
+                        style: AppTextStyles.priceLarge.copyWith(color: AppColors.primary, fontSize: 18),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Yetkazib berish', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
-                  Text('Bepul', style: AppTextStyles.labelMedium.copyWith(color: AppColors.success, fontWeight: FontWeight.w700)),
-                ],
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Divider(height: 1),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Jami:', style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w800)),
-                  Text(
-                    '${NumberFormatter.formatSum(cartState.subtotal)} ${'common.currency'.tr()}',
-                    style: AppTextStyles.priceLarge.copyWith(color: AppColors.primary, fontSize: 18),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

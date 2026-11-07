@@ -21,6 +21,14 @@ class CheckoutState extends Equatable {
   final double? changeAmount;
   final String comment;
 
+  // Address details & delivery preferences
+  final String? entrance;
+  final String? floor;
+  final String? apartment;
+  final String? doorPhone;
+  final bool noUtensils;
+  final String? courierNote;
+
   final bool isSubmitting;
   final String? submitError;
   final Map<String, dynamic>? successData;
@@ -42,10 +50,43 @@ class CheckoutState extends Equatable {
     this.selectedPaymentMethodKey = 'cash',
     this.changeAmount,
     this.comment = '',
+    this.entrance,
+    this.floor,
+    this.apartment,
+    this.doorPhone,
+    this.noUtensils = true,
+    this.courierNote,
     this.isSubmitting = false,
     this.submitError,
     this.successData,
   });
+
+  /// Combined comments for order payload (Podyezd, Qavat, Xonadon, Domofon, Salfetka, Izoh)
+  String get fullComment {
+    final parts = <String>[];
+    if (entrance != null && entrance!.trim().isNotEmpty) {
+      parts.add('Podyezd: ${entrance!.trim()}');
+    }
+    if (floor != null && floor!.trim().isNotEmpty) {
+      parts.add('Qavat: ${floor!.trim()}');
+    }
+    if (apartment != null && apartment!.trim().isNotEmpty) {
+      parts.add('Xonadon: ${apartment!.trim()}');
+    }
+    if (doorPhone != null && doorPhone!.trim().isNotEmpty) {
+      parts.add('Domofon: ${doorPhone!.trim()}');
+    }
+    if (noUtensils) {
+      parts.add('Qoshiq va salfetka kerak emas');
+    }
+    if (courierNote != null && courierNote!.trim().isNotEmpty) {
+      parts.add('Izoh: ${courierNote!.trim()}');
+    }
+    if (comment.trim().isNotEmpty && !parts.any((p) => p.contains(comment.trim()))) {
+      parts.add(comment.trim());
+    }
+    return parts.join(', ');
+  }
 
   CheckoutState copyWith({
     bool? isDelivery,
@@ -64,6 +105,12 @@ class CheckoutState extends Equatable {
     String? selectedPaymentMethodKey,
     double? changeAmount,
     String? comment,
+    String? entrance,
+    String? floor,
+    String? apartment,
+    String? doorPhone,
+    bool? noUtensils,
+    String? courierNote,
     bool? isSubmitting,
     String? submitError,
     Map<String, dynamic>? successData,
@@ -80,11 +127,17 @@ class CheckoutState extends Equatable {
       appliedPromoCode: appliedPromoCode ?? this.appliedPromoCode,
       promoType: promoType ?? this.promoType,
       promoValue: promoValue ?? this.promoValue,
-      promoError: promoError, // Set explicitly to clear errors if needed, but normally handled by Cubit
+      promoError: promoError,
       loadingPromo: loadingPromo ?? this.loadingPromo,
       selectedPaymentMethodKey: selectedPaymentMethodKey ?? this.selectedPaymentMethodKey,
       changeAmount: changeAmount ?? this.changeAmount,
       comment: comment ?? this.comment,
+      entrance: entrance ?? this.entrance,
+      floor: floor ?? this.floor,
+      apartment: apartment ?? this.apartment,
+      doorPhone: doorPhone ?? this.doorPhone,
+      noUtensils: noUtensils ?? this.noUtensils,
+      courierNote: courierNote ?? this.courierNote,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       submitError: submitError,
       successData: successData ?? this.successData,
@@ -113,6 +166,12 @@ class CheckoutState extends Equatable {
         selectedPaymentMethodKey,
         changeAmount,
         comment,
+        entrance,
+        floor,
+        apartment,
+        doorPhone,
+        noUtensils,
+        courierNote,
         isSubmitting,
         submitError,
         successData,
