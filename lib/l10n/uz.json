@@ -141,6 +141,7 @@
   "map.pick_new_location": "Yangi manzil tanlash",
   "map.gps_detect_subtitle": "GPS orqali turgan joyingizni aniqlash",
   "map.pick_on_map_subtitle": "Xaritada belgilash yoki qidirish",
+  "common.loading": "Yuklanmoqda...",
   "common.yes": "Ha",
   "common.no": "Yo'q",
   "common.cancel": "Bekor qilish",

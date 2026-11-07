@@ -139,6 +139,7 @@
   "common.yes": "Да",
   "common.no": "Нет",
   "common.cancel": "Отмена",
+  "common.loading": "Загрузка...",
   "common.retry": "Повторить",
   "nav.home": "Главная",
   "nav.promotions": "Акции",

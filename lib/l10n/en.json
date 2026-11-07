@@ -139,6 +139,7 @@
   "common.yes": "Yes",
   "common.no": "No",
   "common.cancel": "Cancel",
+  "common.loading": "Loading...",
   "common.retry": "Retry",
   "nav.home": "Home",
   "nav.promotions": "Promotions",
