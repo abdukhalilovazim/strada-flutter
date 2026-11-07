@@ -78,13 +78,8 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   NotificationsCubit(
     this._getNotifications,
     this._markAllNotificationsRead,
-    this._markNotificationRead, [
-    List<NotificationEntity>? initialNotifications,
-  ]) : super(
-          initialNotifications != null
-              ? NotificationsLoaded(notifications: initialNotifications)
-              : NotificationsInitial(),
-        );
+    this._markNotificationRead,
+  ) : super(NotificationsInitial());
 
   Future<void> loadNotifications() async {
     emit(NotificationsLoading());

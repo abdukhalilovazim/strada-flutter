@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/models/saved_address_model.dart';
+import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
@@ -29,10 +30,60 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
 
   Future<void> _loadAddresses() async {
     setState(() => _isLoading = true);
-    final list = await SecureStorage.getSavedAddresses();
+
+    // 1. Mahalliy saqlangan manzillar
+    final localList = await SecureStorage.getSavedAddresses();
+    final addressMap = <String, SavedAddressModel>{};
+    for (final a in localList) {
+      final key = a.address.trim().toLowerCase();
+      if (key.isNotEmpty) addressMap[key] = a;
+    }
+
+    // 2. Foydalanuvchining eski buyurtmalaridan manzillarni olish
+    try {
+      final token = await SecureStorage.getToken();
+      if (token != null && token.isNotEmpty) {
+        final response = await ApiClient().get('orders');
+        final dynamic rawOrders = (response is Map && response['data'] != null)
+            ? response['data']
+            : response;
+
+        if (rawOrders is List) {
+          for (final order in rawOrders) {
+            if (order is Map<String, dynamic>) {
+              final addressStr = (order['address'] as String?)?.trim();
+              if (addressStr != null && addressStr.isNotEmpty) {
+                final key = addressStr.toLowerCase();
+                if (!addressMap.containsKey(key)) {
+                  final lat = double.tryParse(order['latitude']?.toString() ?? '') ?? 39.6542;
+                  final lng = double.tryParse(order['longitude']?.toString() ?? '') ?? 66.9597;
+                  final comment = (order['comment'] as String?)?.trim();
+                  final orderId = order['order_id'] ?? order['id'] ?? DateTime.now().millisecondsSinceEpoch;
+
+                  final fromOrder = SavedAddressModel(
+                    id: 'order_$orderId',
+                    label: 'Buyurtmadan manzil',
+                    address: addressStr,
+                    lat: lat,
+                    lng: lng,
+                    comment: (comment != null && comment.isNotEmpty) ? comment : null,
+                  );
+                  addressMap[key] = fromOrder;
+                  await SecureStorage.saveAddress(fromOrder);
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (_) {
+      // Tarmoq xatosi yoki oflayn holatda localList ishlatiladi
+    }
+
+    final merged = addressMap.values.toList();
     if (mounted) {
       setState(() {
-        _addresses = list;
+        _addresses = merged;
         _isLoading = false;
       });
     }
@@ -42,13 +93,7 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
     setState(() {
       _addresses.removeWhere((a) => a.id == id);
     });
-    // Persist removal
-    final current = await SecureStorage.getSavedAddresses();
-    current.removeWhere((a) => a.id == id);
-    await SecureStorage.clearAll();
-    for (final a in current) {
-      await SecureStorage.saveAddress(a);
-    }
+    await SecureStorage.deleteAddress(id);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -352,13 +397,15 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                     return _buildAddressCard(context, address, isDark);
                   },
                 ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddAddressSheet,
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded),
-        label: Text('profile.new_address'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
-      ),
+      floatingActionButton: _addresses.isEmpty
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: _showAddAddressSheet,
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add_rounded),
+              label: Text('profile.new_address'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+            ),
     );
   }
 

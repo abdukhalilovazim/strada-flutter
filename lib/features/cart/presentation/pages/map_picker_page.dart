@@ -82,8 +82,14 @@ class _MapPickerPageState extends State<MapPickerPage> {
   Future<void> _loadBranches() async {
     try {
       final response = await ApiClient().get('branches');
-      if (response != null && response['data'] != null) {
-        final list = (response['data'] as List)
+      List? rawList;
+      if (response is List) {
+        rawList = response;
+      } else if (response is Map && response['data'] is List) {
+        rawList = response['data'] as List;
+      }
+      if (rawList != null) {
+        final list = rawList
             .map((e) => e as Map<String, dynamic>)
             .toList();
         if (mounted) {
@@ -592,14 +598,18 @@ class _MapPickerPageState extends State<MapPickerPage> {
                                 color: _isOutOfRange ? AppColors.error : AppColors.secondary,
                               ),
                               const SizedBox(width: 4),
-                              Text(
-                                _isOutOfRange
-                                    ? '${'map.out_of_delivery_range'.tr()} (${_nearestDistanceKm!.toStringAsFixed(1)} km)'
-                                    : '${'map.in_delivery_range'.tr()} (${_nearestDistanceKm!.toStringAsFixed(1)} km)',
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: _isOutOfRange ? AppColors.error : AppColors.secondary,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
+                              Expanded(
+                                child: Text(
+                                  _isOutOfRange
+                                      ? '${_tr('map.out_of_delivery_range', 'Yetkazib berish hududidan tashqarida')} (${_nearestDistanceKm!.toStringAsFixed(1)} km)'
+                                      : '${_tr('map.in_delivery_range', 'Yetkazib berish hududida')} (${_nearestDistanceKm!.toStringAsFixed(1)} km)',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: _isOutOfRange ? AppColors.error : AppColors.secondary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],

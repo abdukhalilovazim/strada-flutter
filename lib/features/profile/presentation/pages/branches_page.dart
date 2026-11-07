@@ -47,10 +47,8 @@ class BranchesPage extends StatefulWidget {
 
 class _BranchesPageState extends State<BranchesPage> {
   final ApiClient _client = ApiClient();
-  final TextEditingController _searchCtrl = TextEditingController();
   List<BranchItem> _branches = [];
   bool _isLoading = true;
-  String _searchQuery = '';
 
   static const List<BranchItem> _defaultBranches = [
     BranchItem(
@@ -88,11 +86,7 @@ class _BranchesPageState extends State<BranchesPage> {
     _fetchBranches();
   }
 
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
+
 
   Future<void> _fetchBranches() async {
     setState(() => _isLoading = true);
@@ -142,12 +136,6 @@ class _BranchesPageState extends State<BranchesPage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final filtered = _branches.where((b) {
-      if (_searchQuery.isEmpty) return true;
-      final q = _searchQuery.toLowerCase();
-      return b.title.toLowerCase().contains(q) || b.address.toLowerCase().contains(q);
-    }).toList();
-
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkSurface : const Color(0xFFF8F9FA),
       appBar: AppBar(
@@ -172,56 +160,9 @@ class _BranchesPageState extends State<BranchesPage> {
           : RefreshIndicator(
               onRefresh: _fetchBranches,
               color: AppColors.primary,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                children: [
-                  // Search Field
-                  Container(
-                    height: 48,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.darkCard : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.search_rounded, size: 20, color: AppColors.neutral500),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: _searchCtrl,
-                            onChanged: (val) => setState(() => _searchQuery = val.trim()),
-                            decoration: const InputDecoration(
-                              hintText: 'Filial yoki ko\'cha nomini qidirish...',
-                              hintStyle: TextStyle(fontSize: 14, color: AppColors.neutral400),
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: isDark ? Colors.white : AppColors.neutral900,
-                            ),
-                          ),
-                        ),
-                        if (_searchQuery.isNotEmpty)
-                          GestureDetector(
-                            onTap: () {
-                              _searchCtrl.clear();
-                              setState(() => _searchQuery = '');
-                            },
-                            child: const Icon(Icons.close_rounded, size: 18, color: AppColors.neutral400),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  if (filtered.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 40),
+              child: _branches.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 60),
                       child: Center(
                         child: Text(
                           'Hech qanday filial topilmadi',
@@ -229,10 +170,11 @@ class _BranchesPageState extends State<BranchesPage> {
                         ),
                       ),
                     )
-                  else
-                    ...filtered.map((branch) => _buildBranchCard(context, branch, isDark)),
-                ],
-              ),
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                      itemCount: _branches.length,
+                      itemBuilder: (context, index) => _buildBranchCard(context, _branches[index], isDark),
+                    ),
             ),
     );
   }

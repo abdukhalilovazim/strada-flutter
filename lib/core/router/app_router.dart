@@ -268,6 +268,10 @@ class MainScaffold extends StatelessWidget {
   }
 
   static int _calculateSelectedIndex(String location) {
+    if (location.startsWith('/orders') || location.startsWith('/order')) {
+      final profileIndex = _navItems.indexWhere((it) => it.route == '/profile');
+      if (profileIndex != -1) return profileIndex;
+    }
     for (int i = 0; i < _navItems.length; i++) {
       if (location.startsWith(_navItems[i].route)) return i;
     }

@@ -49,8 +49,7 @@ import 'package:pizza_strada/features/notifications/data/datasources/notificatio
     as _i324;
 import 'package:pizza_strada/features/notifications/data/repositories/notification_repository_impl.dart'
     as _i160;
-import 'package:pizza_strada/features/notifications/domain/entities/notification_entity.dart'
-    as _i713;
+
 import 'package:pizza_strada/features/notifications/domain/repositories/notification_repository.dart'
     as _i406;
 import 'package:pizza_strada/features/notifications/domain/usecases/notification_usecases.dart'
@@ -118,7 +117,6 @@ extension GetItInjectableX on _i174.GetIt {
           gh<_i912.GetNotificationsUseCase>(),
           gh<_i912.MarkAllNotificationsReadUseCase>(),
           gh<_i912.MarkNotificationReadUseCase>(),
-          gh<List<_i713.NotificationEntity>>(),
         ));
     gh.factory<_i539.OrderCubit>(
         () => _i539.OrderCubit(gh<_i576.GetOrdersUseCase>()));

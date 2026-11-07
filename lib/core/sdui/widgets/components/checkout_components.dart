@@ -281,46 +281,42 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.h4.copyWith(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                      color: isDark ? Colors.white : AppColors.neutral900,
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: AppTextStyles.h4.copyWith(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                        color: isDark ? Colors.white : AppColors.neutral900,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      GestureDetector(
-                        onTap: () => _pickOnMap(context, useMyLocation: true),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.my_location_rounded, size: 14, color: AppColors.primary),
-                            const SizedBox(width: 4),
-                            Text(
-                              'map.my_location'.tr(),
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w700,
-                              ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => _pickOnMap(context, useMyLocation: false),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.map_outlined, size: 14, color: AppColors.primary),
+                          const SizedBox(width: 4),
+                          Text(
+                            mapBtn,
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w700,
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: () => _pickOnMap(context, useMyLocation: false),
-                        child: Text(
-                          mapBtn,
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w700,
                           ),
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),

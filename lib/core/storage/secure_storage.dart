@@ -51,11 +51,29 @@ class SecureStorage {
           a.address == address.address ||
           (a.lat == address.lat && a.lng == address.lng));
       current.insert(0, address);
-      final trimmed = current.take(10).toList();
+      final trimmed = current.take(15).toList();
       await _storage.write(
         key: _savedAddressesKey,
         value: jsonEncode(trimmed.map((e) => e.toJson()).toList()),
       );
+    } catch (_) {}
+  }
+
+  static Future<void> saveAllAddresses(List<SavedAddressModel> list) async {
+    try {
+      final trimmed = list.take(15).toList();
+      await _storage.write(
+        key: _savedAddressesKey,
+        value: jsonEncode(trimmed.map((e) => e.toJson()).toList()),
+      );
+    } catch (_) {}
+  }
+
+  static Future<void> deleteAddress(String id) async {
+    try {
+      final current = await getSavedAddresses();
+      current.removeWhere((a) => a.id == id);
+      await saveAllAddresses(current);
     } catch (_) {}
   }
 

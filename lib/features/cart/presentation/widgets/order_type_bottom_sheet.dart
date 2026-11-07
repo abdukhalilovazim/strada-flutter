@@ -212,79 +212,34 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
                   const SizedBox(height: 12),
                 ],
 
-                // Ikki xil manzil tanlash imkoniyati: Joriy joylashuvim yoki Xaritadan yangi manzil
-                Row(
-                  children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () => _pickDeliveryLocation(useMyLocation: true),
-                        borderRadius: BorderRadius.circular(14),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: isDark ? AppColors.darkCard : const Color(0xFFF8F9FA),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: isDark ? AppColors.darkBorder : const Color(0xFFEDF2F7),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.my_location_rounded, color: AppColors.primary, size: 18),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  'map.my_location'.tr(),
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: theme.textTheme.bodyLarge?.color,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                // Xaritadan manzil tanlash tugmasi
+                InkWell(
+                  onTap: () => _pickDeliveryLocation(useMyLocation: false),
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.darkCard : const Color(0xFFF8F9FA),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isDark ? AppColors.darkBorder : const Color(0xFFEDF2F7),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: InkWell(
-                        onTap: () => _pickDeliveryLocation(useMyLocation: false),
-                        borderRadius: BorderRadius.circular(14),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: isDark ? AppColors.darkCard : const Color(0xFFF8F9FA),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: isDark ? AppColors.darkBorder : const Color(0xFFEDF2F7),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.map_rounded, color: AppColors.primary, size: 18),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  state.address != null && state.address!.trim().isNotEmpty
-                                      ? 'map.pick_new_location'.tr()
-                                      : 'checkout.pick_on_map'.tr(),
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: theme.textTheme.bodyLarge?.color,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.map_rounded, color: AppColors.primary, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'checkout.pick_on_map'.tr(),
+                          style: AppTextStyles.labelMedium.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: theme.textTheme.bodyLarge?.color,
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ] else ...[
                 // Pickup Mode Branch Picker
