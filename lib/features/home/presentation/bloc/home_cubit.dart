@@ -80,13 +80,11 @@ class HomeFailure extends HomeState {
 @injectable
 class HomeCubit extends Cubit<HomeState> {
   final GetCategoriesUseCase _getCategoriesUseCase;
-  final GetSlidersUseCase _getSlidersUseCase;
   final GetStoriesUseCase _getStoriesUseCase;
   final GetProductsUseCase _getProductsUseCase;
 
   HomeCubit(
     this._getCategoriesUseCase,
-    this._getSlidersUseCase,
     this._getStoriesUseCase,
     this._getProductsUseCase,
   ) : super(HomeInitial());
@@ -99,12 +97,10 @@ class HomeCubit extends Cubit<HomeState> {
     try {
       final categoriesResult = await _getCategoriesUseCase();
       final productsResult = await _getProductsUseCase();
-      final slidersResult = await _getSlidersUseCase();
       final storiesResult = await _getStoriesUseCase();
 
       final categories = categoriesResult.getOrElse(() => const []);
       final products = productsResult.getOrElse(() => const []);
-      final sliders = slidersResult.getOrElse(() => const []);
       final rawStories = storiesResult.getOrElse(() => const []);
 
       List<StoryEntity> stories = rawStories;
@@ -128,7 +124,7 @@ class HomeCubit extends Cubit<HomeState> {
           : products;
 
       emit(HomeLoaded(
-        sliders: sliders,
+        sliders: const [],
         stories: stories,
         categories: categories,
         fullProducts: products,

@@ -89,49 +89,10 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
           .where((s) => s.previewImage.isNotEmpty)
           .toList();
 
-      if (stories.isNotEmpty) return stories;
+      return stories;
     } catch (_) {
-      // Fallback below
+      return const [];
     }
-
-    // Defensive fallback: If /stories endpoint fails or is not yet deployed,
-    // convert /sliders to stories so real images are displayed instantly.
-    try {
-      final sliders = await getSliders();
-      if (sliders.isNotEmpty) {
-        final List<String> defaultTitles = [
-          'Yangi pitsalar 🍕',
-          'Aksiya 2+1 🎁',
-          'Kombolar 🔥',
-          'Tezkor yetkazish ⚡',
-        ];
-        return sliders.asMap().entries.map((entry) {
-          final index = entry.key;
-          final slider = entry.value;
-          final title = (slider.title != null && slider.title!.isNotEmpty)
-              ? slider.title!
-              : (index < defaultTitles.length ? defaultTitles[index] : 'Strada Pizza');
-
-          return StoryModel(
-            id: slider.id > 0 ? slider.id : (index + 1),
-            title: title,
-            previewImage: slider.imageUrl,
-            slides: [
-              StorySlideModel(
-                id: slider.id > 0 ? slider.id : (index + 1),
-                imageUrl: slider.imageUrl,
-                title: title,
-                description: 'Strada Pizza eng issiq va mazali pitsalari bilan sizni xursand qiladi!',
-                buttonText: 'Buyurtma berish',
-                buttonUrl: slider.link ?? '/home',
-              ),
-            ],
-          );
-        }).toList();
-      }
-    } catch (_) {}
-
-    return const [];
   }
 }
 
