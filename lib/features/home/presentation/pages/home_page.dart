@@ -18,6 +18,7 @@ import 'package:pizza_strada/features/home/presentation/pages/story_viewer_page.
 import 'package:pizza_strada/features/home/presentation/widgets/header_location_pill.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_card.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_detail_modal.dart';
+import 'package:pizza_strada/core/di/injection.dart';
 import 'package:pizza_strada/features/notifications/presentation/bloc/notifications_cubit.dart';
 
 /// 📱 HomePage powered 100% by Native Flutter UI & BLoC
@@ -83,10 +84,19 @@ class _HomePageState extends State<HomePage> {
       ),
       actions: [
         IconButton(
-          icon: BlocBuilder<NotificationsCubit, NotificationsState>(
-            builder: (context, notifState) {
-              final unreadCount = (notifState is NotificationsLoaded)
-                  ? notifState.unreadCount
+          icon: Builder(
+            builder: (context) {
+              NotificationsCubit? notifCubit;
+              try {
+                notifCubit = context.watch<NotificationsCubit>();
+              } catch (_) {
+                try {
+                  notifCubit = getIt<NotificationsCubit>();
+                } catch (_) {}
+              }
+
+              final unreadCount = (notifCubit?.state is NotificationsLoaded)
+                  ? (notifCubit!.state as NotificationsLoaded).unreadCount
                   : 0;
 
               return Stack(
@@ -118,7 +128,13 @@ class _HomePageState extends State<HomePage> {
             HapticFeedback.lightImpact();
             await context.push('/notifications');
             if (context.mounted) {
-              context.read<NotificationsCubit>().refresh();
+              try {
+                context.read<NotificationsCubit>().refresh();
+              } catch (_) {
+                try {
+                  getIt<NotificationsCubit>().refresh();
+                } catch (_) {}
+              }
             }
           },
         ),
