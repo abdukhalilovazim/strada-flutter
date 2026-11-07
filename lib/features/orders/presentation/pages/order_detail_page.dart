@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/network/api_client.dart';
@@ -265,6 +266,17 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     }
   }
 
+  void _openMap({double? lat, double? lng}) {
+    HapticFeedback.lightImpact();
+    context.push(
+      '/map-picker',
+      extra: {
+        if (lat != null && lat != 0) 'lat': lat,
+        if (lng != null && lng != 0) 'lng': lng,
+      },
+    );
+  }
+
   Widget _buildStatusStepper(BuildContext context, OrderEntity o, bool isDark) {
     final activeStep = _calculateActiveStep(o.status);
     final isRejected = o.status == 1;
@@ -322,7 +334,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         'title': isPickup ? 'orders.status_pickup_ready'.tr() : 'orders.status_delivering'.tr(),
         'icon': isPickup ? Icons.storefront_rounded : Icons.delivery_dining_rounded,
       },
-      {'title': isPickup ? 'Bajarildi' : 'orders.status_completed'.tr(), 'icon': Icons.check_circle_rounded},
+      {'title': isPickup ? 'orders.status_done'.tr() : 'orders.status_completed'.tr(), 'icon': Icons.check_circle_rounded},
     ];
 
     return Container(
@@ -702,25 +714,19 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         leading: _buildBackButton(context),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: () {
-              _fetchOrderSilently();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Yangilandi'),
-                  duration: Duration(milliseconds: 600),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-          ),
-        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () async {
+          HapticFeedback.lightImpact();
+          await _fetchOrderSilently();
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
           children: [
             // 1. Interactive Visual Status Stepper
             _buildStatusStepper(context, o, isDark),
@@ -809,18 +815,31 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'product.info'.tr(), 
+                    'orders.order_info'.tr(), 
                     style: AppTextStyles.labelLarge.copyWith(
                       color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
                   const SizedBox(height: 16),
                   if (o.address != null && o.address!.isNotEmpty) ...[
-                    _DetailRow(label: 'checkout.address'.tr(), value: o.address!),
+                    _DetailRow(
+                      label: 'checkout.address'.tr(),
+                      value: o.address!,
+                      actionLabel: 'orders.view_on_map'.tr(),
+                      onAction: () => _openMap(lat: o.latitude, lng: o.longitude),
+                    ),
                     const Divider(height: 24),
                   ],
                   if (o.branch != null && o.branch!.isNotEmpty) ...[
-                    _DetailRow(label: 'checkout.branch'.tr(), value: o.branch!),
+                    _DetailRow(
+                      label: 'orders.branch'.tr(),
+                      value: o.branch!,
+                      actionLabel: 'orders.view_on_map'.tr(),
+                      onAction: () => _openMap(
+                        lat: (o.address == null || o.address!.isEmpty) ? o.latitude : null,
+                        lng: (o.address == null || o.address!.isEmpty) ? o.longitude : null,
+                      ),
+                    ),
                     const Divider(height: 24),
                   ],
                   if (o.paymentMethodText != null && o.paymentMethodText!.isNotEmpty) ...[
@@ -862,6 +881,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
           ],
         ),
       ),
+    ),
       bottomNavigationBar: (showPayNow || o.status == 6 || (o.phone != null && o.phone!.isNotEmpty))
           ? Container(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -1122,8 +1142,15 @@ class _PriceRow extends StatelessWidget {
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
-  const _DetailRow({required this.label, required this.value});
+  const _DetailRow({
+    required this.label,
+    required this.value,
+    this.actionLabel,
+    this.onAction,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1137,12 +1164,53 @@ class _DetailRow extends StatelessWidget {
         ),
         const SizedBox(width: 16),
         Expanded(
-          child: Text(
-            value,
-            textAlign: TextAlign.end,
-            style: AppTextStyles.labelSmall.copyWith(
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                value,
+                textAlign: TextAlign.end,
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
+              if (onAction != null) ...[
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: onAction,
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 14,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          actionLabel ?? 'orders.view_on_map'.tr(),
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ],

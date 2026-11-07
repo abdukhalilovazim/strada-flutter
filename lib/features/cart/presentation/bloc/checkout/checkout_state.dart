@@ -54,7 +54,7 @@ class CheckoutState extends Equatable {
     this.floor,
     this.apartment,
     this.doorPhone,
-    this.noUtensils = true,
+    this.noUtensils = false,
     this.courierNote,
     this.isSubmitting = false,
     this.submitError,

@@ -903,7 +903,7 @@ class _SDUIPaymentMethodComponentState extends State<SDUIPaymentMethodComponent>
   }
 }
 
-/// 📝 Checkout: Kuryer uchun izoh va salfetka sozlamasi (Faqat bitta joyda)
+/// 📝 Checkout: Kuryer uchun izoh (Faqat bitta joyda)
 class SDUICourierNotesComponent extends StatefulWidget {
   final SDUISectionModel section;
   final SDUIActionHandler onAction;
@@ -920,20 +920,18 @@ class SDUICourierNotesComponent extends StatefulWidget {
 
 class _SDUICourierNotesComponentState extends State<SDUICourierNotesComponent> {
   final _notesController = TextEditingController();
-  bool _noUtensils = true;
 
   @override
   void initState() {
     super.initState();
     final cubitState = context.read<CheckoutCubit>().state;
     _notesController.text = cubitState.courierNote ?? '';
-    _noUtensils = cubitState.noUtensils;
   }
 
   void _syncPreferences() {
     context.read<CheckoutCubit>().setCourierPreferences(
       note: _notesController.text.trim(),
-      noUtensils: _noUtensils,
+      noUtensils: false,
     );
   }
 
@@ -948,7 +946,6 @@ class _SDUICourierNotesComponentState extends State<SDUICourierNotesComponent> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final props = widget.section.properties;
     final title = props['title']?.toString() ?? 'checkout.courier_notes_title'.tr();
-    final utensilsLabel = props['utensils_label']?.toString() ?? 'checkout.no_utensils_label'.tr();
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 6, 16, 6),
@@ -1004,29 +1001,6 @@ class _SDUICourierNotesComponentState extends State<SDUICourierNotesComponent> {
             style: AppTextStyles.bodySmall.copyWith(
               color: isDark ? Colors.white : AppColors.neutral900,
             ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                utensilsLabel,
-                style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600),
-              ),
-              Transform.scale(
-                scale: 0.85,
-                child: Switch.adaptive(
-                  value: _noUtensils,
-                  activeThumbColor: Colors.white,
-                  activeTrackColor: AppColors.primary,
-                  onChanged: (v) {
-                    HapticFeedback.lightImpact();
-                    setState(() => _noUtensils = v);
-                    _syncPreferences();
-                  },
-                ),
-              ),
-            ],
           ),
         ],
       ),

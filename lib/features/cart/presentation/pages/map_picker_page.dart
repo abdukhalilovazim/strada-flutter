@@ -133,6 +133,15 @@ class _MapPickerPageState extends State<MapPickerPage> {
     }
   }
 
+  String _tr(String key, String fallback) {
+    try {
+      final val = key.tr();
+      return (val.isEmpty || val == key) ? fallback : val;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
   void _safeRunJavaScript(String script) {
     if (!mounted || _controller == null) return;
     try {
@@ -562,8 +571,8 @@ class _MapPickerPageState extends State<MapPickerPage> {
                       const SizedBox(height: 2),
                       Text(
                         _isGeocoding
-                            ? 'map.determining_address'.tr()
-                            : (_address.isNotEmpty ? _address : 'map.no_address_selected'.tr()),
+                            ? _tr('map.determining_address', 'Aniqlanmoqda...')
+                            : (_address.isNotEmpty ? _address : _tr('map.no_address_selected', 'Manzil tanlanmagan')),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.bodyLarge.copyWith(
@@ -625,12 +634,12 @@ class _MapPickerPageState extends State<MapPickerPage> {
                 ),
                 child: Text(
                   _isGeocoding
-                      ? 'map.determining_address'.tr()
+                      ? _tr('map.determining_address', 'Aniqlanmoqda...')
                       : (_isOutOfRange
-                          ? 'map.out_of_range_btn'.tr()
+                          ? _tr('map.out_of_range_btn', 'Hududdan tashqarida (max 10 km)')
                           : (_address.isEmpty
-                              ? 'map.no_address_selected'.tr()
-                              : 'map.confirm'.tr())),
+                              ? _tr('map.no_address_selected', 'Manzil tanlanmagan')
+                              : _tr('map.confirm', 'Manzilni tasdiqlash'))),
                   style: AppTextStyles.labelLarge.copyWith(fontSize: 16, color: Colors.white),
                 ),
               ),
