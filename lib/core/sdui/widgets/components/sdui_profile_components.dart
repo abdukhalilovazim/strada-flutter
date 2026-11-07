@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -7,6 +8,7 @@ import '../../../storage/secure_storage.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_text_styles.dart';
 import '../../../theme/theme_cubit.dart';
+import '../../../utils/number_formatter.dart';
 import '../../models/sdui_section_model.dart';
 import '../../registry/sdui_action_dispatcher.dart';
 
@@ -124,7 +126,7 @@ class _SDUIProfileHeaderComponentState extends State<SDUIProfileHeaderComponent>
   }
 }
 
-/// ⭐ Profil: Keshbek & Bonuslar (Loyalty Card)
+/// ⭐ Profil: Keshbek & Bonuslar (Loyalty Card) - Keshbek tizimi mavjud emas
 class SDUILoyaltyComponent extends StatelessWidget {
   final SDUISectionModel section;
   final SDUIActionHandler onAction;
@@ -137,82 +139,7 @@ class SDUILoyaltyComponent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final props = section.properties;
-    final title = props['title']?.toString() ?? 'Strada Keshbek';
-    final subtitle = props['subtitle']?.toString() ?? 'Ballar to\'plang va buyurtmaning 100% gacha to\'lang';
-    final badge = props['badge']?.toString() ?? '5%';
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 6, 16, 8),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFE53935), Color(0xFFFF5722), Color(0xFFFF9800)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.35),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title.toUpperCase(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.1,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  badge,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            '25 000 ball',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 26,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.85),
-              fontSize: 11.5,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 }
 
@@ -367,7 +294,7 @@ class SDUIAppSettingsComponent extends StatelessWidget {
   }
 }
 
-/// 📞 Profil: Call-center va Telegram yordam
+/// 📞 Profil: Qo'llab-quvvatlash telefon raqami (Faqat raqam, Telegram emas)
 class SDUISupportContactsComponent extends StatelessWidget {
   final SDUISectionModel section;
   final SDUIActionHandler onAction;
@@ -378,8 +305,9 @@ class SDUISupportContactsComponent extends StatelessWidget {
     required this.onAction,
   });
 
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
+  Future<void> _callPhone(String phone) async {
+    final cleaned = phone.replaceAll(RegExp(r'[\s\(\)\-]'), '');
+    final uri = Uri.parse('tel:$cleaned');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     }
@@ -389,12 +317,13 @@ class SDUISupportContactsComponent extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final props = section.properties;
-    final phone = props['phone']?.toString() ?? '+998662211177';
-    final tgBot = props['telegram_bot']?.toString() ?? 'https://t.me/stradapizzabot';
+    final rawPhone = props['phone']?.toString() ?? '+998662211177';
+    final formattedPhone = NumberFormatter.formatPhone(rawPhone);
+    final title = props['title']?.toString() ?? 'Qo\'llab-quvvatlash va aloqa';
+    final phoneLabel = props['phone_label']?.toString() ?? 'Call-markazga qo\'ng\'iroq qilish';
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCard : Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -403,44 +332,92 @@ class SDUISupportContactsComponent extends StatelessWidget {
         ),
         boxShadow: AppColors.softShadow(isDark),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Qo\'llab-quvvatlash va aloqa',
-            style: AppTextStyles.labelSmall.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _launchUrl('tel:$phone'),
-                  icon: const Icon(Icons.phone_in_talk_rounded, size: 16),
-                  label: const Text('Call-markaz', style: TextStyle(fontSize: 12)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            _callPhone(rawPhone);
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: isDark ? 0.2 : 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.phone_in_talk_rounded,
+                      color: AppColors.success,
+                      size: 22,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _launchUrl(tgBot),
-                  icon: const Icon(Icons.send_rounded, size: 16),
-                  label: const Text('Telegram bot', style: TextStyle(fontSize: 12)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0088CC),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.neutral500,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        formattedPhone,
+                        style: AppTextStyles.h4.copyWith(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? Colors.white : AppColors.neutral900,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        phoneLabel,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.neutral400,
+                          fontSize: 11.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.success,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.call_rounded, size: 14, color: Colors.white),
+                      SizedBox(width: 5),
+                      Text(
+                        'Qo\'ng\'iroq',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }

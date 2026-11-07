@@ -406,15 +406,6 @@ class SDUIScreenBuilder {
           properties: {'show_avatar': true, 'show_phone': true},
         ),
         SDUISectionModel(
-          id: 'loyalty_card_section',
-          type: 'loyalty_card',
-          properties: {
-            'title': 'Strada Keshbek',
-            'subtitle': 'Ballar to\'plang va 100% gacha to\'lang',
-            'badge': '5% Keshbek',
-          },
-        ),
-        SDUISectionModel(
           id: 'profile_menu_group_section',
           type: 'profile_menu_group',
           properties: {'title': 'Asosiy'},

@@ -276,12 +276,8 @@ class SDUIComponentRegistry {
     });
 
     registerSliver('loyalty_card', (context, section, onAction, _) {
-      return SliverToBoxAdapter(
-        child: SDUISafeErrorBoundary(
-          type: 'loyalty_card',
-          child: SDUILoyaltyComponent(section: section, onAction: onAction),
-        ),
-      );
+      // Loyalty / Keshbek feature disabled
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
     });
 
     registerSliver('profile_menu_group', (context, section, onAction, _) {

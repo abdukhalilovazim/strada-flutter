@@ -1,9 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
-import 'package:pizza_strada/core/theme/app_text_styles.dart';
 
-/// Header Location Pill widget matching pizzastrada.uz location selector.
+/// Header Location widget displaying address/branch text with a chevron icon,
+/// matching Yandex Eats clean typography without button capsule styling.
 class HeaderLocationPill extends StatelessWidget {
   final int orderType; // 0 = Delivery, 1 = Pickup
   final String? addressName;
@@ -23,10 +23,6 @@ class HeaderLocationPill extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final String modeLabel = orderType == 0
-        ? 'checkout.delivery'.tr()
-        : 'checkout.pickup'.tr();
-
     final String displayTitle = orderType == 0
         ? (addressName != null && addressName!.isNotEmpty
             ? addressName!
@@ -35,62 +31,32 @@ class HeaderLocationPill extends StatelessWidget {
             ? branchTitle!
             : 'checkout.select_branch'.tr());
 
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : AppColors.neutral100,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isDark ? AppColors.neutral800 : AppColors.neutral200,
-            width: 1,
-          ),
-        ),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.location_on_rounded,
-              color: AppColors.primary,
-              size: 19,
-            ),
-            const SizedBox(width: 8),
             Flexible(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    modeLabel,
-                    style: AppTextStyles.bodyExtraSmall.copyWith(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: isDark ? AppColors.neutral400 : AppColors.neutral600,
-                      height: 1.1,
-                    ),
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    displayTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.labelSmall.copyWith(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : AppColors.neutral900,
-                      height: 1.15,
-                    ),
-                  ),
-                ],
+              child: Text(
+                displayTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : AppColors.neutral900,
+                  letterSpacing: -0.2,
+                ),
               ),
             ),
             const SizedBox(width: 4),
             Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 19,
-              color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: isDark ? AppColors.neutral300 : AppColors.neutral700,
             ),
           ],
         ),

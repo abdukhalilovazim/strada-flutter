@@ -378,13 +378,13 @@ class HomeCubit extends Cubit<HomeState> {
     return const [];
   }
 
-  Future<void> selectCategory(String slug) async {
+  Future<void> selectCategory(String? slug) async {
     final currentState = state;
     if (currentState is HomeLoaded) {
       String? nextCategorySlug = slug;
       List<ProductEntity> filteredProducts;
 
-      if (currentState.selectedCategory == slug) {
+      if (slug == null || slug.isEmpty || slug == 'all' || currentState.selectedCategory == slug) {
         // Toggle unselect -> show all products
         nextCategorySlug = null;
         filteredProducts = currentState.fullProducts;
