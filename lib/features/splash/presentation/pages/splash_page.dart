@@ -21,6 +21,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
   late final SplashCubit _splashCubit;
   late final AnimationController _animController;
   late final Animation<double> _fadeAnim;
+  late final Animation<double> _scaleAnim;
   bool _minDurationPassed = false;
   bool _navigated = false;
 
@@ -28,12 +29,18 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _splashCubit = getIt<SplashCubit>()..init();
-    _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeIn);
+    _scaleAnim = Tween<double>(begin: 0.92, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+    );
     _animController.forward();
 
-    // Kamida 1600ms animatsiya davomiyligi (pitsaning to'liq bir sikli) o'tgach tekshirish
-    Future.delayed(const Duration(milliseconds: 1600), () {
+    // Pitsaning chiqib-kirish animatsiyasi to'liq zavq bilan ko'rinishi uchun (1.8s)
+    Future.delayed(const Duration(milliseconds: 1800), () {
       if (mounted) {
         _minDurationPassed = true;
         _checkAndNavigate();
@@ -79,7 +86,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
           ),
         ],
         child: Scaffold(
-          backgroundColor: Colors.white, // Splash har doim oq (tema mustaqil)
+          backgroundColor: Colors.white,
           body: BlocBuilder<HomeCubit, HomeState>(
             builder: (context, homeState) {
               return BlocBuilder<SplashCubit, SplashState>(
@@ -92,51 +99,157 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
 
                   return FadeTransition(
                     opacity: _fadeAnim,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                    child: ScaleTransition(
+                      scale: _scaleAnim,
+                      child: Stack(
                         children: [
-                          _buildLogo(),
-                          const SizedBox(height: 60),
-                          if (hasError && errorMessage != null) ...[
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 32),
-                              child: Text(
-                                errorMessage.tr(),
-                                textAlign: TextAlign.center,
-                                style: AppTextStyles.bodyMedium
-                                    .copyWith(color: AppColors.error),
+                          // 🌟 Markazdagi nafis orqa nur (ambient glow)
+                          Center(
+                            child: Container(
+                              width: 240,
+                              height: 240,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    AppColors.primary.withValues(alpha: 0.08),
+                                    const Color(0xFFFFA000).withValues(alpha: 0.04),
+                                    Colors.transparent,
+                                  ],
+                                  stops: const [0.0, 0.55, 1.0],
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 24),
-                            ElevatedButton(
-                              onPressed: () {
-                                if (splashState is SplashFailure) {
-                                  _splashCubit.init();
-                                }
-                                if (homeState is HomeFailure) {
-                                  context.read<HomeCubit>().init();
-                                }
-                              },
-                              child: Text('common.retry'.tr()),
-                            ),
-                          ] else ...[
-                            // 🍕 Bo'laklari navbat bilan chiqib-kiradigan animatsion pitsa
-                            const PizzaSliceLoader(
-                              size: 150,
-                              sliceCount: 6,
-                              duration: Duration(milliseconds: 1800),
-                            ),
-                            const SizedBox(height: 24),
-                            Text(
-                              'common.loading'.tr(),
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.neutral500,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.2,
+                          ),
+
+                          // 🍕 Asosiy mazmun: Pitsa va Brend nomi
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  // 🍕 1 dona maxsus realistik animatsion pitsa
+                                  const PizzaSliceLoader(
+                                    size: 176,
+                                    sliceCount: 6,
+                                    duration: Duration(milliseconds: 1900),
+                                  ),
+                                  const SizedBox(height: 32),
+
+                                  // Brend nomi
+                                  Text(
+                                    'STRADA PIZZA',
+                                    textAlign: TextAlign.center,
+                                    style: AppTextStyles.h2.copyWith(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 24,
+                                      letterSpacing: 3.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+
+                                  // Nafis shior
+                                  Text(
+                                    'Har bir bo\'lagida haqiqiy lazzat',
+                                    textAlign: TextAlign.center,
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: AppColors.neutral500,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      letterSpacing: 0.4,
+                                    ),
+                                  ),
+
+                                  // Xatolik bo'lsa
+                                  if (hasError && errorMessage != null) ...[
+                                    const SizedBox(height: 28),
+                                    Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.error.withValues(alpha: 0.08),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: AppColors.error.withValues(alpha: 0.2),
+                                        ),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            errorMessage.tr(),
+                                            textAlign: TextAlign.center,
+                                            style: AppTextStyles.bodySmall.copyWith(
+                                              color: AppColors.error,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          ElevatedButton(
+                                            onPressed: () {
+                                              if (splashState is SplashFailure) {
+                                                _splashCubit.init();
+                                              }
+                                              if (homeState is HomeFailure) {
+                                                context.read<HomeCubit>().init();
+                                              }
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppColors.primary,
+                                              foregroundColor: Colors.white,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 20,
+                                                vertical: 8,
+                                              ),
+                                            ),
+                                            child: Text('common.retry'.tr()),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ),
-                          ],
+                          ),
+
+                          // ⏳ Pastki qismdagi nafis yuklanish matni
+                          if (!hasError)
+                            Positioned(
+                              bottom: 40,
+                              left: 0,
+                              right: 0,
+                              child: Center(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      width: 12,
+                                      height: 12,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          AppColors.primary.withValues(alpha: 0.6),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'common.loading'.tr(),
+                                      style: AppTextStyles.bodyExtraSmall.copyWith(
+                                        color: AppColors.neutral400,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -149,32 +262,4 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
       ),
     );
   }
-
-  Widget _buildLogo() {
-    // Logo asset mavjud bo'lsa ishlatiladi, aks holda icon
-    return Image.asset(
-      'assets/icons/logo.png',
-      width: 200,
-      height: 200,
-      errorBuilder: (_, __, ___) => Column(
-        children: [
-          Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(28),
-            ),
-            child: const Icon(Icons.local_pizza, color: Colors.white, size: 52),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Pizza strada',
-            style: AppTextStyles.h1.copyWith(color: AppColors.primary, letterSpacing: -0.5),
-          ),
-        ],
-      ),
-    );
-  }
 }
-

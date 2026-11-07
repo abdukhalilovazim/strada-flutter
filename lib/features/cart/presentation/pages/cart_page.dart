@@ -12,7 +12,6 @@ import 'package:pizza_strada/core/utils/variant_localization_helper.dart';
 import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
-import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 
 /// 🛒 CartPage powered 100% by Native Flutter UI & BLoC
@@ -191,7 +190,6 @@ class CartPage extends StatelessWidget {
       children: [
         _buildCartItemsList(context, cartState, isDark),
         _buildUpsellSlider(context, cartState, isDark),
-        const _CartPromoCodeWidget(),
         _buildSummaryCard(context, cartState, isDark),
       ],
     );
@@ -457,75 +455,34 @@ class CartPage extends StatelessWidget {
   }
 
   Widget _buildSummaryCard(BuildContext context, CartState cartState, bool isDark) {
-    return BlocBuilder<CheckoutCubit, CheckoutState>(
-      builder: (context, checkoutState) {
-        final subtotal = cartState.subtotal;
-        final deliveryPrice = checkoutState.isDelivery ? checkoutState.deliveryPrice : 0;
-        final discount = checkoutState.calculateDiscount(subtotal);
-        final total = (subtotal + deliveryPrice - discount).clamp(0, double.infinity).toInt();
+    final subtotal = cartState.subtotal;
 
-        return Container(
-          margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard : Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
-            ),
-            boxShadow: AppColors.softShadow(isDark),
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
+        ),
+        boxShadow: AppColors.softShadow(isDark),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Hisob-kitob',
+            style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w800),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Hisob-kitob',
-                style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 12),
-              _buildSummaryRow('cart.subtotal'.tr(), '${NumberFormatter.formatSum(subtotal)} ${'common.currency'.tr()}', isDark),
-              const SizedBox(height: 8),
-              _buildSummaryRow(
-                'cart.delivery'.tr(),
-                deliveryPrice > 0 ? '${NumberFormatter.formatSum(deliveryPrice)} ${'common.currency'.tr()}' : 'Bepul',
-                isDark,
-                valueColor: deliveryPrice > 0 ? null : AppColors.success,
-              ),
-              if (discount > 0) ...[
-                const SizedBox(height: 8),
-                _buildSummaryRow(
-                  checkoutState.isPercentagePromo
-                      ? '${'cart.discount'.tr()} (${checkoutState.promoValue?.toInt()}%)'
-                      : 'cart.discount'.tr(),
-                  '-${NumberFormatter.formatSum(discount)} ${'common.currency'.tr()}',
-                  isDark,
-                  valueColor: AppColors.success,
-                ),
-              ],
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 10),
-                child: Divider(height: 1),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'cart.total'.tr(),
-                    style: AppTextStyles.h4.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                  Text(
-                    '${NumberFormatter.formatSum(total)} ${'common.currency'.tr()}',
-                    style: AppTextStyles.h4.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          const SizedBox(height: 12),
+          _buildSummaryRow(
+            'cart.subtotal'.tr(),
+            '${NumberFormatter.formatSum(subtotal)} ${'common.currency'.tr()}',
+            isDark,
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -551,306 +508,60 @@ class CartPage extends StatelessWidget {
   }
 
   Widget _buildCheckoutBottomBar(BuildContext context, CartState cartState, bool isDark) {
-    return BlocBuilder<CheckoutCubit, CheckoutState>(
-      builder: (context, checkoutState) {
-        final subtotal = cartState.subtotal;
-        final deliveryPrice = checkoutState.isDelivery ? checkoutState.deliveryPrice : 0;
-        final discount = checkoutState.calculateDiscount(subtotal);
-        final total = (subtotal + deliveryPrice - discount).clamp(0, double.infinity).toInt();
+    final total = cartState.subtotal.toInt();
 
-        return Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkSurface : Colors.white,
-            border: Border(
-              top: BorderSide(
-                color: isDark ? AppColors.neutral800 : AppColors.neutral200,
-                width: 1,
-              ),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, -3),
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        border: Border(
+          top: BorderSide(
+            color: isDark ? AppColors.neutral800 : AppColors.neutral200,
+            width: 1,
           ),
-          child: SafeArea(
-            top: false,
-            child: SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: ElevatedButton(
-                onPressed: () {
-                  HapticFeedback.mediumImpact();
-                  context.push('/checkout');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          width: double.infinity,
+          height: 54,
+          child: ElevatedButton(
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              context.push('/checkout');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'cart.checkout'.tr(),
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'cart.checkout'.tr(),
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                    ),
-                    Text(
-                      '${NumberFormatter.formatSum(total)} ${'common.currency'.tr()}',
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
-                    ),
-                  ],
+                Text(
+                  '${NumberFormatter.formatSum(total)} ${'common.currency'.tr()}',
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
                 ),
-              ),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
 
-/// 🎟 Native Promo Code Widget
-class _CartPromoCodeWidget extends StatefulWidget {
-  const _CartPromoCodeWidget();
-
-  @override
-  State<_CartPromoCodeWidget> createState() => _CartPromoCodeWidgetState();
-}
-
-class _CartPromoCodeWidgetState extends State<_CartPromoCodeWidget> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return BlocConsumer<CheckoutCubit, CheckoutState>(
-      listenWhen: (prev, curr) =>
-          prev.promoError != curr.promoError ||
-          prev.appliedPromoCode != curr.appliedPromoCode,
-      listener: (context, checkoutState) {
-        if (checkoutState.promoError != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(checkoutState.promoError!),
-              backgroundColor: AppColors.error,
-            ),
-          );
-          context.read<CheckoutCubit>().clearPromo();
-        } else if (checkoutState.appliedPromoCode != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${'cart.promo_activated'.tr()}: ${checkoutState.appliedPromoCode}'),
-              backgroundColor: AppColors.success,
-            ),
-          );
-        }
-      },
-      builder: (context, checkoutState) {
-        final isApplied = checkoutState.appliedPromoCode != null;
-        final isLoading = checkoutState.loadingPromo;
-        final cartSubtotal = context.watch<CartCubit>().state.subtotal;
-
-        return Container(
-          margin: const EdgeInsets.fromLTRB(16, 6, 16, 8),
-          child: isApplied
-              ? Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppColors.success.withValues(alpha: 0.4),
-                      width: 1.2,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.success.withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.check_circle_rounded,
-                          color: AppColors.success,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'cart.promo_activated'.tr(),
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.success,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 11.5,
-                              ),
-                            ),
-                            const SizedBox(height: 1),
-                            Text(
-                              checkoutState.appliedPromoCode!,
-                              style: AppTextStyles.labelLarge.copyWith(
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.8,
-                                color: isDark ? Colors.white : AppColors.neutral900,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          _controller.clear();
-                          context.read<CheckoutCubit>().clearPromo();
-                        },
-                        icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.error),
-                        label: Text(
-                          'common.cancel'.tr(),
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.error,
-                          ),
-                        ),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          minimumSize: Size.zero,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 50,
-                        child: TextField(
-                          controller: _controller,
-                          textCapitalization: TextCapitalization.characters,
-                          textInputAction: TextInputAction.done,
-                          style: AppTextStyles.labelMedium.copyWith(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.8,
-                            fontSize: 14,
-                            color: isDark ? Colors.white : AppColors.neutral900,
-                          ),
-                          onChanged: (_) => setState(() {}),
-                          onSubmitted: (code) {
-                            if (code.trim().isNotEmpty) {
-                              context.read<CheckoutCubit>().applyPromo(code.trim(), cartSubtotal);
-                            }
-                          },
-                          decoration: InputDecoration(
-                            labelText: 'Promokod',
-                            labelStyle: AppTextStyles.bodySmall.copyWith(
-                              color: isDark ? AppColors.neutral400 : AppColors.neutral500,
-                              fontSize: 13,
-                            ),
-                            hintText: 'Promokodni kiriting',
-                            hintStyle: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.neutral400,
-                              fontSize: 13,
-                            ),
-                            prefixIcon: const Icon(
-                              Icons.confirmation_number_outlined,
-                              color: AppColors.primary,
-                              size: 20,
-                            ),
-                            suffixIcon: _controller.text.isNotEmpty
-                                ? IconButton(
-                                    icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.neutral400),
-                                    onPressed: () {
-                                      HapticFeedback.lightImpact();
-                                      _controller.clear();
-                                      setState(() {});
-                                    },
-                                  )
-                                : null,
-                            filled: true,
-                            fillColor: isDark ? AppColors.darkCard : Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(
-                                color: isDark ? AppColors.darkBorder : AppColors.neutral200,
-                                width: 1.2,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(
-                                color: isDark ? AppColors.darkBorder : AppColors.neutral200,
-                                width: 1.2,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(
-                                color: AppColors.primary,
-                                width: 1.5,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _controller.text.trim().isEmpty || isLoading
-                            ? null
-                            : () {
-                                HapticFeedback.mediumImpact();
-                                FocusScope.of(context).unfocus();
-                                context.read<CheckoutCubit>().applyPromo(_controller.text.trim(), cartSubtotal);
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          minimumSize: Size.zero,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 18),
-                        ),
-                        child: isLoading
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                              )
-                            : Text(
-                                'cart.apply'.tr(),
-                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
-        );
-      },
-    );
-  }
-}
