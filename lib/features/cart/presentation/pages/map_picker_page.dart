@@ -23,12 +23,16 @@ class MapPickerPage extends StatefulWidget {
   final double? initialLat;
   final double? initialLng;
   final bool useMyLocation;
+  final bool isReadOnly;
+  final String? initialAddress;
 
   const MapPickerPage({
     super.key,
     this.initialLat,
     this.initialLng,
     this.useMyLocation = false,
+    this.isReadOnly = false,
+    this.initialAddress,
   });
 
   @override
@@ -57,8 +61,12 @@ class _MapPickerPageState extends State<MapPickerPage> {
       _currentLat = widget.initialLat!;
       _currentLng = widget.initialLng!;
     }
+    if (widget.initialAddress != null && widget.initialAddress!.trim().isNotEmpty) {
+      _address = widget.initialAddress!.trim();
+      _isGeocoding = false;
+    }
     _loadBranches();
-    if (widget.useMyLocation || (widget.initialLat == null && widget.initialLng == null)) {
+    if (!widget.isReadOnly && (widget.useMyLocation || (widget.initialLat == null && widget.initialLng == null))) {
       _checkInitialLocation();
     }
   }
@@ -244,6 +252,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
       'lng': _currentLng.toString(),
       'lang': lang,
       'theme': themeMode,
+      if (widget.isReadOnly) 'readonly': '1',
       'app_version_code': DeviceInfoHelper.appVersionCode,
       'device_id': DeviceInfoHelper.deviceId,
       'device_name': DeviceInfoHelper.deviceName,
@@ -315,7 +324,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('map.title'.tr()),
+        title: Text(widget.isReadOnly ? 'orders.view_on_map'.tr() : 'map.title'.tr()),
         centerTitle: true,
         backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
@@ -402,32 +411,35 @@ class _MapPickerPageState extends State<MapPickerPage> {
           // Zoom Out (-)
           InkWell(
             onTap: () => _safeRunJavaScript('if (typeof window.zoomOut === "function") { window.zoomOut(); }'),
+            borderRadius: widget.isReadOnly ? const BorderRadius.vertical(bottom: Radius.circular(14)) : null,
             child: SizedBox(
               width: 44,
               height: 42,
               child: Icon(Icons.remove_rounded, color: iconColor, size: 22),
             ),
           ),
-          Divider(height: 1, thickness: 1, color: dividerColor),
+          if (!widget.isReadOnly) ...[
+            Divider(height: 1, thickness: 1, color: dividerColor),
 
-          // Mening joylashuvim (GPS)
-          InkWell(
-            onTap: _goToMyLocation,
-            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
-            child: SizedBox(
-              width: 44,
-              height: 42,
-              child: Center(
-                child: _isLocating
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
-                      )
-                    : const Icon(Icons.my_location_rounded, color: AppColors.primary, size: 20),
+            // Mening joylashuvim (GPS)
+            InkWell(
+              onTap: _goToMyLocation,
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
+              child: SizedBox(
+                width: 44,
+                height: 42,
+                child: Center(
+                  child: _isLocating
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                        )
+                      : const Icon(Icons.my_location_rounded, color: AppColors.primary, size: 20),
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -497,7 +509,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
                         ),
                       ),
                       // 10 km yetkazib berish zonasi statusi
-                      if (!_isGeocoding && _address.isNotEmpty && _nearestDistanceKm != null)
+                      if (!widget.isReadOnly && !_isGeocoding && _address.isNotEmpty && _nearestDistanceKm != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 4),
                           child: Row(
@@ -535,17 +547,21 @@ class _MapPickerPageState extends State<MapPickerPage> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: (_isGeocoding || _address.isEmpty || _isOutOfRange)
-                    ? null
-                    : () {
-                        context.pop({
-                          'lat': _currentLat,
-                          'lng': _currentLng,
-                          'address': _address,
-                        });
-                      },
+                onPressed: widget.isReadOnly
+                    ? () => context.pop()
+                    : ((_isGeocoding || _address.isEmpty || _isOutOfRange)
+                        ? null
+                        : () {
+                            context.pop({
+                              'lat': _currentLat,
+                              'lng': _currentLng,
+                              'address': _address,
+                            });
+                          }),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _isOutOfRange ? AppColors.neutral400 : AppColors.primary,
+                  backgroundColor: widget.isReadOnly
+                      ? AppColors.primary
+                      : (_isOutOfRange ? AppColors.neutral400 : AppColors.primary),
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: isDark ? AppColors.neutral800 : AppColors.neutral300,
                   disabledForegroundColor: AppColors.neutral500,
@@ -553,13 +569,15 @@ class _MapPickerPageState extends State<MapPickerPage> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 child: Text(
-                  _isGeocoding
-                      ? _tr('map.determining_address', 'Aniqlanmoqda...')
-                      : (_isOutOfRange
-                          ? _tr('map.out_of_range_btn', 'Hududdan tashqarida (max 10 km)')
-                          : (_address.isEmpty
-                              ? _tr('map.no_address_selected', 'Manzil tanlanmagan')
-                              : _tr('map.confirm', 'Manzilni tasdiqlash'))),
+                  widget.isReadOnly
+                      ? _tr('common.close', 'Yopish')
+                      : (_isGeocoding
+                          ? _tr('map.determining_address', 'Aniqlanmoqda...')
+                          : (_isOutOfRange
+                              ? _tr('map.out_of_range_btn', 'Hududdan tashqarida (max 10 km)')
+                              : (_address.isEmpty
+                                  ? _tr('map.no_address_selected', 'Manzil tanlanmagan')
+                                  : _tr('map.confirm', 'Manzilni tasdiqlash')))),
                   style: AppTextStyles.labelLarge.copyWith(fontSize: 16, color: Colors.white),
                 ),
               ),

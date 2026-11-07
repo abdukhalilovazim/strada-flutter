@@ -266,13 +266,15 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     }
   }
 
-  void _openMap({double? lat, double? lng}) {
+  void _openMap({double? lat, double? lng, String? address}) {
     HapticFeedback.lightImpact();
     context.push(
       '/map-picker',
       extra: {
         if (lat != null && lat != 0) 'lat': lat,
         if (lng != null && lng != 0) 'lng': lng,
+        if (address != null && address.isNotEmpty) 'address': address,
+        'isReadOnly': true,
       },
     );
   }
@@ -282,41 +284,171 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     final isRejected = o.status == 1;
 
     if (isRejected) {
+      final supportPhone = o.phone != null && o.phone!.trim().isNotEmpty
+          ? o.phone!.trim()
+          : '+998662211177';
+
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppColors.error.withValues(alpha: 0.1),
+          color: isDark ? const Color(0xFF231818) : const Color(0xFFFFF8F8),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                color: AppColors.error,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+          border: Border.all(
+            color: isDark ? const Color(0xFF4A2525) : const Color(0xFFFFD7D7),
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'orders.status_rejected'.tr(),
-                    style: AppTextStyles.h3.copyWith(color: AppColors.error),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF4C1D1D) : const Color(0xFFFEE2E2),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    o.comment != null && o.comment!.isNotEmpty
-                        ? o.comment!
-                        : 'Buyurtmangiz bekor qilindi',
-                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral600),
+                  child: const Center(
+                    child: Icon(
+                      Icons.cancel_outlined,
+                      color: Color(0xFFDC2626),
+                      size: 24,
+                    ),
                   ),
-                ],
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'orders.status_rejected_title'.tr(),
+                        style: AppTextStyles.h3.copyWith(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFB91C1C),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'orders.status_rejected_subtitle'.tr(),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (o.comment != null && o.comment!.trim().isNotEmpty) ...[
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkSurface : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? AppColors.neutral800 : const Color(0xFFF1F3F5),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.info_outline_rounded,
+                      size: 16,
+                      color: Color(0xFFDC2626),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        o.comment!.trim(),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.neutral300 : AppColors.neutral800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+            ],
+            const SizedBox(height: 16),
+            Divider(
+              height: 1,
+              color: isDark ? AppColors.neutral800 : const Color(0xFFF1F3F5),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      HapticFeedback.lightImpact();
+                      final uri = Uri.tryParse('tel:$supportPhone');
+                      if (uri != null && await canLaunchUrl(uri)) {
+                        await launchUrl(uri);
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      side: BorderSide(
+                        color: isDark ? AppColors.neutral700 : AppColors.neutral300,
+                      ),
+                    ),
+                    icon: Icon(
+                      Icons.headset_mic_outlined,
+                      size: 18,
+                      color: isDark ? Colors.white : AppColors.neutral800,
+                    ),
+                    label: Text(
+                      'orders.contact_support'.tr(),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : AppColors.neutral800,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      context.go('/');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text(
+                      'orders.back_to_menu'.tr(),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

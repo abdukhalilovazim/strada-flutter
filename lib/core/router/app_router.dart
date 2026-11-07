@@ -561,6 +561,8 @@ final appRouter = GoRouter(
           initialLat: (extra?['lat'] as num?)?.toDouble(),
           initialLng: (extra?['lng'] as num?)?.toDouble(),
           useMyLocation: (extra?['useMyLocation'] as bool?) ?? false,
+          isReadOnly: (extra?['isReadOnly'] as bool?) ?? false,
+          initialAddress: extra?['address'] as String?,
         );
       },
     ),
