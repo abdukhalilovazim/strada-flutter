@@ -315,6 +315,8 @@ class _CheckoutOtpSheetState extends State<CheckoutOtpSheet> {
                     controller: _controllers[index],
                     focusNode: _focusNodes[index],
                     autofocus: index == 0,
+                    autocorrect: false,
+                    enableSuggestions: false,
                     textAlign: TextAlign.center,
                     keyboardType: TextInputType.number,
                     autofillHints: const [AutofillHints.oneTimeCode],

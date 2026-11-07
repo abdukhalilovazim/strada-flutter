@@ -169,6 +169,8 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
         height: 52,
         child: TextField(
           controller: controller,
+          autocorrect: false,
+          enableSuggestions: false,
           onChanged: (_) => _syncDetailsToCubit(),
           textInputAction: TextInputAction.next,
           style: AppTextStyles.bodyMedium.copyWith(

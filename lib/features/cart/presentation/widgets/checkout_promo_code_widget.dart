@@ -165,6 +165,9 @@ class _CheckoutPromoCodeWidgetState extends State<CheckoutPromoCodeWidget> {
                         height: 50,
                         child: TextField(
                           controller: _controller,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
                           textCapitalization: TextCapitalization.characters,
                           textInputAction: TextInputAction.done,
                           style: AppTextStyles.labelMedium.copyWith(
