@@ -825,20 +825,19 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     _DetailRow(
                       label: 'checkout.address'.tr(),
                       value: o.address!,
-                      actionLabel: 'orders.view_on_map'.tr(),
-                      onAction: () => _openMap(lat: o.latitude, lng: o.longitude),
                     ),
+                    if (o.latitude != null && o.latitude != 0 && o.longitude != null && o.longitude != 0) ...[
+                      const SizedBox(height: 10),
+                      _MapLinkRow(
+                        onTap: () => _openMap(lat: o.latitude, lng: o.longitude),
+                      ),
+                    ],
                     const Divider(height: 24),
                   ],
                   if (o.branch != null && o.branch!.isNotEmpty) ...[
                     _DetailRow(
                       label: 'orders.branch'.tr(),
                       value: o.branch!,
-                      actionLabel: 'orders.view_on_map'.tr(),
-                      onAction: () => _openMap(
-                        lat: (o.address == null || o.address!.isEmpty) ? o.latitude : null,
-                        lng: (o.address == null || o.address!.isEmpty) ? o.longitude : null,
-                      ),
                     ),
                     const Divider(height: 24),
                   ],
@@ -1142,14 +1141,10 @@ class _PriceRow extends StatelessWidget {
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
-  final String? actionLabel;
-  final VoidCallback? onAction;
 
   const _DetailRow({
     required this.label,
     required this.value,
-    this.actionLabel,
-    this.onAction,
   });
 
   @override
@@ -1164,56 +1159,47 @@ class _DetailRow extends StatelessWidget {
         ),
         const SizedBox(width: 16),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                value,
-                textAlign: TextAlign.end,
-                style: AppTextStyles.labelSmall.copyWith(
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                ),
-              ),
-              if (onAction != null) ...[
-                const SizedBox(height: 6),
-                GestureDetector(
-                  onTap: onAction,
-                  behavior: HitTestBehavior.opaque,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          size: 14,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          actionLabel ?? 'orders.view_on_map'.tr(),
-                          style: AppTextStyles.bodyExtraSmall.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ],
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+            ),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _MapLinkRow extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _MapLinkRow({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        children: [
+          const Icon(Icons.map_outlined, size: 15, color: AppColors.primary),
+          const SizedBox(width: 6),
+          Text(
+            'orders.view_on_map'.tr(),
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 4),
+          const Icon(Icons.arrow_forward_ios_rounded, size: 11, color: AppColors.primary),
+        ],
+      ),
     );
   }
 }

@@ -94,7 +94,7 @@
   "orders.pay_now": "Pay Now",
   "orders.empty": "No orders yet",
   "orders.type": "Order type",
-  "orders.branch": "Branch / Restaurant",
+  "orders.branch": "Branch",
   "orders.order_info": "Order Details",
   "orders.view_on_map": "View on map",
   "orders.payment_method": "Payment method",

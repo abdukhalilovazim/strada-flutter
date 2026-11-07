@@ -120,10 +120,12 @@ class _MapPickerPageState extends State<MapPickerPage> {
 
     double minDistanceMeters = double.infinity;
     for (final b in _branches) {
-      final bLat = (b['latitude'] ?? b['lat']) as num?;
-      final bLng = (b['longitude'] ?? b['lng']) as num?;
+      final rawLat = b['latitude'] ?? b['lat'];
+      final rawLng = b['longitude'] ?? b['lng'];
+      final bLat = rawLat is num ? rawLat.toDouble() : double.tryParse(rawLat?.toString() ?? '');
+      final bLng = rawLng is num ? rawLng.toDouble() : double.tryParse(rawLng?.toString() ?? '');
       if (bLat != null && bLng != null && bLat != 0 && bLng != 0) {
-        final dist = Geolocator.distanceBetween(lat, lng, bLat.toDouble(), bLng.toDouble());
+        final dist = Geolocator.distanceBetween(lat, lng, bLat, bLng);
         if (dist < minDistanceMeters) {
           minDistanceMeters = dist;
         }
@@ -200,9 +202,13 @@ class _MapPickerPageState extends State<MapPickerPage> {
               if (mounted) setState(() => _isGeocoding = true);
             } else if (type == 'location_changed') {
               if (mounted) {
-                final newLat = (data['lat'] as num?)?.toDouble() ?? _currentLat;
-                final newLng = (data['lng'] as num?)?.toDouble() ?? _currentLng;
-                final inRange = data['in_range'] as bool?;
+                final newLat = data['lat'] is num
+                    ? (data['lat'] as num).toDouble()
+                    : double.tryParse(data['lat']?.toString() ?? '') ?? _currentLat;
+                final newLng = data['lng'] is num
+                    ? (data['lng'] as num).toDouble()
+                    : double.tryParse(data['lng']?.toString() ?? '') ?? _currentLng;
+                final inRange = data['in_range'] is bool ? data['in_range'] as bool : null;
                 setState(() {
                   _currentLat = newLat;
                   _currentLng = newLng;

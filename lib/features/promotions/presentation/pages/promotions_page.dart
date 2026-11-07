@@ -165,57 +165,6 @@ class _PromotionsView extends StatelessWidget {
                 onRefresh: () => context.read<PromotionsCubit>().loadPromotions(forceRefresh: true),
               ),
 
-              // ── Announcement Banner ──
-              SliverToBoxAdapter(
-                child: Container(
-                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.08),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.25),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.local_offer_rounded, color: AppColors.primary, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'promotions.banner_title'.tr(),
-                              style: AppTextStyles.labelLarge.copyWith(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14,
-                                color: isDark ? Colors.white : AppColors.neutral900,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'promotions.banner_subtitle'.tr(),
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: isDark ? AppColors.neutral300 : AppColors.neutral600,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
 
               // ── Coupons & Deals Section Header ──
               if (deals.isNotEmpty) ...[

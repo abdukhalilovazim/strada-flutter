@@ -94,7 +94,7 @@
   "orders.pay_now": "To'lovni amalga oshirish",
   "orders.empty": "Sizda hali buyurtmalar yo'q",
   "orders.type": "Buyurtma turi",
-  "orders.branch": "Filial / Restoran",
+  "orders.branch": "Filial",
   "orders.order_info": "Buyurtma ma'lumotlari",
   "orders.view_on_map": "Xaritadan ko'rish",
   "orders.payment_method": "To'lov turi",
