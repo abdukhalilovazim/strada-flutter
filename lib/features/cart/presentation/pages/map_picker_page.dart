@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/constants/api_constants.dart';
@@ -37,7 +36,6 @@ class MapPickerPage extends StatefulWidget {
 
 class _MapPickerPageState extends State<MapPickerPage> {
   WebViewController? _controller;
-  final TextEditingController _searchController = TextEditingController();
 
   double _currentLat = 39.6542; // Samarqand default
   double _currentLng = 66.9597;
@@ -75,7 +73,6 @@ class _MapPickerPageState extends State<MapPickerPage> {
 
   @override
   void dispose() {
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -169,7 +166,10 @@ class _MapPickerPageState extends State<MapPickerPage> {
       }
       if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
         final pos = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.medium,
+            timeLimit: Duration(seconds: 4),
+          ),
         );
         if (mounted) {
           _currentLat = pos.latitude;
@@ -229,16 +229,6 @@ class _MapPickerPageState extends State<MapPickerPage> {
                   _safeRunJavaScript('if (typeof window.moveToCoords === "function") { window.moveToCoords($_currentLat, $_currentLng); }');
                 }
               }
-            } else if (type == 'search_not_found') {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('error.not_found'.tr()),
-                    backgroundColor: AppColors.error,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              }
             }
           } catch (e) {
             debugPrint('Map message parse error: $e');
@@ -284,6 +274,13 @@ class _MapPickerPageState extends State<MapPickerPage> {
 
     controller.loadRequest(uri, headers: headers);
     _controller = controller;
+
+    // Maksimal 3.5 soniyadan keyin xarita overlayini yopish (muzlab qolmasligi uchun)
+    Future.delayed(const Duration(milliseconds: 3500), () {
+      if (mounted && _isMapLoading) {
+        setState(() => _isMapLoading = false);
+      }
+    });
   }
 
   Future<void> _goToMyLocation() async {
@@ -320,15 +317,6 @@ class _MapPickerPageState extends State<MapPickerPage> {
     }
   }
 
-  void _onSearch() {
-    final query = _searchController.text.trim();
-    if (query.isNotEmpty) {
-      FocusScope.of(context).unfocus();
-      final escaped = jsonEncode(query);
-      _safeRunJavaScript('if (typeof window.searchAddress === "function") { window.searchAddress($escaped); }');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -350,80 +338,6 @@ class _MapPickerPageState extends State<MapPickerPage> {
         children: [
           // Yandex Maps WebView
           if (_controller != null) WebViewWidget(controller: _controller!),
-
-          // Top Search Bar (Strada Design System standartida)
-          Positioned(
-            top: 12,
-            left: 16,
-            right: 16,
-            child: Container(
-              height: 50,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: TextField(
-                controller: _searchController,
-                textInputAction: TextInputAction.search,
-                onSubmitted: (_) => _onSearch(),
-                onChanged: (_) => setState(() {}),
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: isDark ? Colors.white : AppColors.neutral900,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'map.search_hint'.tr(),
-                  hintStyle: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.neutral400,
-                    fontSize: 13.5,
-                  ),
-                  prefixIcon: const Icon(
-                    Icons.search_rounded,
-                    size: 22,
-                    color: AppColors.primary,
-                  ),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.neutral500),
-                          onPressed: () {
-                            HapticFeedback.lightImpact();
-                            _searchController.clear();
-                            setState(() {});
-                          },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: isDark ? AppColors.darkCard : Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(
-                      color: isDark ? AppColors.darkBorder : AppColors.neutral200,
-                      width: 1,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(
-                      color: isDark ? AppColors.darkBorder : AppColors.neutral200,
-                      width: 1,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-                  ),
-                ),
-              ),
-            ),
-          ),
 
           // Loading overlay
           if (_isMapLoading)

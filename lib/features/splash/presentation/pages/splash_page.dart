@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/di/injection.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
+import 'package:pizza_strada/core/widgets/pizza_slice_loader.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/splash/presentation/bloc/splash_cubit.dart';
 import 'package:pizza_strada/features/splash/presentation/bloc/splash_state.dart';
@@ -31,8 +32,8 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeIn);
     _animController.forward();
 
-    // Kamida 800ms animatsiya davomiyligi o'tgach tekshirish
-    Future.delayed(const Duration(milliseconds: 800), () {
+    // Kamida 1600ms animatsiya davomiyligi (pitsaning to'liq bir sikli) o'tgach tekshirish
+    Future.delayed(const Duration(milliseconds: 1600), () {
       if (mounted) {
         _minDurationPassed = true;
         _checkAndNavigate();
@@ -120,14 +121,19 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                               child: Text('common.retry'.tr()),
                             ),
                           ] else ...[
-                            SizedBox(
-                              width: 32,
-                              height: 32,
-                              child: CircularProgressIndicator(
-                                color: AppColors.primary,
-                                strokeWidth: 3,
-                                backgroundColor:
-                                    AppColors.primary.withValues(alpha: 0.1),
+                            // 🍕 Bo'laklari navbat bilan chiqib-kiradigan animatsion pitsa
+                            const PizzaSliceLoader(
+                              size: 150,
+                              sliceCount: 6,
+                              duration: Duration(milliseconds: 1800),
+                            ),
+                            const SizedBox(height: 24),
+                            Text(
+                              'common.loading'.tr(),
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.neutral500,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.2,
                               ),
                             ),
                           ],
