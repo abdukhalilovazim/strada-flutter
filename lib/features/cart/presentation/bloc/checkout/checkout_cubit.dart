@@ -19,11 +19,12 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   /// Pickup ga o'tganda delivery narxi avtomatik sifirlanadi.
   void setDeliveryType(bool isDelivery) {
     if (isDelivery) {
-      emit(state.copyWith(isDelivery: true));
+      emit(state.copyWith(isDelivery: true, showLocationError: false));
     } else {
       // Pickup rejimida delivery narxini sifirlaymiz
       emit(CheckoutState(
         isDelivery: false,
+        showLocationError: false,
         branchId: state.branchId,
         branchTitle: state.branchTitle,
         lat: state.lat,
@@ -36,6 +37,8 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         selectedPaymentMethodKey: state.selectedPaymentMethodKey,
         changeAmount: state.changeAmount,
         comment: state.comment,
+        recipientName: state.recipientName,
+        recipientPhone: state.recipientPhone,
       ));
     }
   }
@@ -43,11 +46,25 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   void setOrderType(bool isDelivery) => setDeliveryType(isDelivery);
 
   void setBranch(String branchId, {String? branchTitle}) {
-    emit(state.copyWith(branchId: branchId, branchTitle: branchTitle));
+    emit(state.copyWith(
+      branchId: branchId,
+      branchTitle: branchTitle,
+      showLocationError: false,
+    ));
+  }
+
+  void setLocationError(bool hasError) {
+    emit(state.copyWith(showLocationError: hasError));
   }
 
   Future<void> setAddressAndCalculateDelivery(double lat, double lng, String address) async {
-    emit(state.copyWith(lat: lat, lng: lng, address: address, loadingDelivery: true));
+    emit(state.copyWith(
+      lat: lat,
+      lng: lng,
+      address: address,
+      showLocationError: false,
+      loadingDelivery: true,
+    ));
     try {
       final response = await _apiClient.post(
         'delivery-price',

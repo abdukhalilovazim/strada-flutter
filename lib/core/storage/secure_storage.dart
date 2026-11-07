@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/saved_address_model.dart';
+import '../network/api_client.dart';
 
 class SecureStorage {
   static const _storage = FlutterSecureStorage();
@@ -8,6 +9,8 @@ class SecureStorage {
   static const _userNameKey = 'user_name';
   static const _userPhoneKey = 'user_phone';
   static const _savedAddressesKey = 'saved_addresses_v1';
+  static const _branchesKey = 'cached_branches_v1';
+  static const _branchesTimestampKey = 'cached_branches_ts_v1';
 
   static Future<void> saveToken(String token) =>
       _storage.write(key: _tokenKey, value: token);
@@ -75,6 +78,65 @@ class SecureStorage {
       current.removeWhere((a) => a.id == id);
       await saveAllAddresses(current);
     } catch (_) {}
+  }
+
+  /// 🏢 Filiallarni mobil qurilmada bir necha soatga keshlab saqlash
+  static Future<List<Map<String, dynamic>>?> getCachedBranches({
+    Duration ttl = const Duration(hours: 12),
+  }) async {
+    try {
+      final tsStr = await _storage.read(key: _branchesTimestampKey);
+      if (tsStr == null) return null;
+      final savedTime = DateTime.tryParse(tsStr);
+      if (savedTime == null || DateTime.now().difference(savedTime) > ttl) {
+        return null; // Muddati tugagan
+      }
+      final jsonStr = await _storage.read(key: _branchesKey);
+      if (jsonStr == null || jsonStr.isEmpty) return null;
+      final list = jsonDecode(jsonStr) as List;
+      return list.map((e) => e as Map<String, dynamic>).toList();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> cacheBranches(List<dynamic> branches) async {
+    try {
+      await _storage.write(
+        key: _branchesKey,
+        value: jsonEncode(branches),
+      );
+      await _storage.write(
+        key: _branchesTimestampKey,
+        value: DateTime.now().toIso8601String(),
+      );
+    } catch (_) {}
+  }
+
+  /// Filiallarni keshdan olish yoki kerak bo'lsa serverdan yuklash
+  static Future<List<Map<String, dynamic>>> getOrFetchBranches() async {
+    final cached = await getCachedBranches();
+    if (cached != null && cached.isNotEmpty) {
+      return cached;
+    }
+    try {
+      final response = await ApiClient().get('branches');
+      List? rawList;
+      if (response is List) {
+        rawList = response;
+      } else if (response is Map && response['data'] is List) {
+        rawList = response['data'] as List;
+      }
+      if (rawList != null && rawList.isNotEmpty) {
+        final list = rawList.map((e) => e as Map<String, dynamic>).toList();
+        await cacheBranches(list);
+        return list;
+      }
+    } catch (_) {}
+
+    // Tarmoq xatosi bo'lsa, eskirgan bo'lsa ham keshdagini qaytarish
+    final stale = await getCachedBranches(ttl: const Duration(days: 30));
+    return stale ?? [];
   }
 
   static Future<void> clearAll() async {

@@ -44,48 +44,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
           checkoutState.address!.trim().isEmpty ||
           checkoutState.lat == null ||
           checkoutState.lng == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('checkout.select_address_error'.tr()),
-            backgroundColor: AppColors.error,
-          ),
-        );
-        final result = await context.push<Map<String, dynamic>>(
-          '/map-picker',
-          extra: {
-            'lat': checkoutState.lat,
-            'lng': checkoutState.lng,
-            'useMyLocation': true,
-          },
-        );
-        if (result != null && mounted) {
-          final lat = (result['lat'] as num?)?.toDouble();
-          final lng = (result['lng'] as num?)?.toDouble();
-          final address = result['address'] as String?;
-          if (lat != null && lng != null && address != null && address.trim().isNotEmpty) {
-            context.read<CheckoutCubit>().setAddressAndCalculateDelivery(
-                  lat,
-                  lng,
-                  address.trim(),
-                );
-          }
-        }
+        HapticFeedback.heavyImpact();
+        context.read<CheckoutCubit>().setLocationError(true);
         return;
       }
     } else {
       if (checkoutState.branchId == null || checkoutState.branchId!.trim().isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('checkout.select_branch_error'.tr()),
-            backgroundColor: AppColors.error,
-          ),
-        );
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (_) => const OrderTypeBottomSheet(),
-        );
+        HapticFeedback.heavyImpact();
+        context.read<CheckoutCubit>().setLocationError(true);
         return;
       }
     }
@@ -339,6 +305,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           SDUIAddressSelectorComponent(section: dummySection, onAction: (_) {})
         else
           SDUIPickupBranchComponent(section: dummySection, onAction: (_) {}),
+        SDUICustomerInfoComponent(section: dummySection, onAction: (_) {}),
       ],
     );
   }

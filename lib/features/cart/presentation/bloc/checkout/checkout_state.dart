@@ -31,6 +31,7 @@ class CheckoutState extends Equatable {
   final String? courierNote;
   final String? recipientName;
   final String? recipientPhone;
+  final bool showLocationError;
 
   final bool isSubmitting;
   final String? submitError;
@@ -62,6 +63,7 @@ class CheckoutState extends Equatable {
     this.courierNote,
     this.recipientName,
     this.recipientPhone,
+    this.showLocationError = false,
     this.isSubmitting = false,
     this.submitError,
     this.successData,
@@ -148,6 +150,7 @@ class CheckoutState extends Equatable {
     String? courierNote,
     String? recipientName,
     String? recipientPhone,
+    bool? showLocationError,
     bool? isSubmitting,
     String? submitError,
     Map<String, dynamic>? successData,
@@ -178,6 +181,7 @@ class CheckoutState extends Equatable {
       courierNote: courierNote ?? this.courierNote,
       recipientName: recipientName ?? this.recipientName,
       recipientPhone: recipientPhone ?? this.recipientPhone,
+      showLocationError: showLocationError ?? this.showLocationError,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       submitError: submitError,
       successData: successData ?? this.successData,
@@ -215,6 +219,7 @@ class CheckoutState extends Equatable {
         courierNote,
         recipientName,
         recipientPhone,
+        showLocationError,
         isSubmitting,
         submitError,
         successData,

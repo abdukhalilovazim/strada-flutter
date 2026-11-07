@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/models/saved_address_model.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../../features/cart/presentation/bloc/cart_cubit.dart';
 import '../../../../features/cart/presentation/bloc/checkout/checkout_cubit.dart';
@@ -129,6 +131,9 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
   final _apartmentController = TextEditingController();
   final _doorPhoneController = TextEditingController();
 
+  List<SavedAddressModel> _savedAddresses = [];
+  int _branchCount = 3;
+
   @override
   void initState() {
     super.initState();
@@ -137,6 +142,70 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
     _floorController.text = cubitState.floor ?? '';
     _apartmentController.text = cubitState.apartment ?? '';
     _doorPhoneController.text = cubitState.doorPhone ?? '';
+    _loadSavedAddressesAndBranches();
+  }
+
+  Future<void> _loadSavedAddressesAndBranches() async {
+    // 1. Filiallar sonini olish
+    try {
+      final branchResp = await ApiClient().get('branches');
+      if (branchResp is List && branchResp.isNotEmpty) {
+        _branchCount = branchResp.length;
+      } else if (branchResp is Map && branchResp['data'] is List && (branchResp['data'] as List).isNotEmpty) {
+        _branchCount = (branchResp['data'] as List).length;
+      }
+    } catch (_) {}
+
+    // 2. Mahalliy saqlangan manzillarni yuklash
+    final localList = await SecureStorage.getSavedAddresses();
+    final addressMap = <String, SavedAddressModel>{};
+    for (final a in localList) {
+      final key = a.address.trim().toLowerCase();
+      if (key.isNotEmpty) addressMap[key] = a;
+    }
+
+    // 3. Agar bo'sh bo'lsa, foydalanuvchining avvalgi buyurtmalaridan manzillarni yuklash
+    if (addressMap.isEmpty) {
+      try {
+        final token = await SecureStorage.getToken();
+        if (token != null && token.isNotEmpty) {
+          final response = await ApiClient().get('orders');
+          final dynamic rawOrders = (response is Map && response['data'] != null)
+              ? response['data']
+              : response;
+
+          if (rawOrders is List) {
+            for (final order in rawOrders) {
+              if (order is Map<String, dynamic>) {
+                final addressStr = (order['address'] as String?)?.trim();
+                if (addressStr != null && addressStr.isNotEmpty) {
+                  final key = addressStr.toLowerCase();
+                  if (!addressMap.containsKey(key)) {
+                    final lat = double.tryParse(order['latitude']?.toString() ?? '') ?? 39.6542;
+                    final lng = double.tryParse(order['longitude']?.toString() ?? '') ?? 66.9597;
+                    final fromOrder = SavedAddressModel(
+                      id: 'order_${order['id'] ?? DateTime.now().millisecondsSinceEpoch}',
+                      label: addressStr,
+                      address: addressStr,
+                      lat: lat,
+                      lng: lng,
+                    );
+                    addressMap[key] = fromOrder;
+                    await SecureStorage.saveAddress(fromOrder);
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (mounted) {
+      setState(() {
+        _savedAddresses = addressMap.values.toList();
+      });
+    }
   }
 
   void _syncDetailsToCubit() {
@@ -233,11 +302,22 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
       final lng = (result['lng'] as num?)?.toDouble();
       final address = result['address'] as String?;
       if (lat != null && lng != null && address != null && address.trim().isNotEmpty) {
+        final trimmed = address.trim();
         context.read<CheckoutCubit>().setAddressAndCalculateDelivery(
               lat,
               lng,
-              address.trim(),
+              trimmed,
             );
+        await SecureStorage.saveAddress(
+          SavedAddressModel(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            label: trimmed,
+            address: trimmed,
+            lat: lat,
+            lng: lng,
+          ),
+        );
+        _loadSavedAddressesAndBranches();
       }
     }
   }
@@ -247,14 +327,12 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final props = widget.section.properties;
     final title = props['title']?.toString() ?? 'checkout.delivery_location'.tr();
-    final mapBtn = props['map_button_text']?.toString() ?? 'checkout.pick_on_map'.tr();
 
     return BlocBuilder<CheckoutCubit, CheckoutState>(
       builder: (context, state) {
         if (!state.isDelivery) return const SizedBox.shrink();
 
-        final hasAddress = state.address != null && state.address!.trim().isNotEmpty;
-        final addressText = hasAddress ? state.address! : 'checkout.select_address'.tr();
+        final displayedSaved = _savedAddresses.take(_branchCount).toList();
 
         return Container(
           margin: const EdgeInsets.fromLTRB(16, 6, 16, 6),
@@ -263,10 +341,7 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
             color: isDark ? AppColors.darkCard : Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: hasAddress
-                  ? (isDark ? AppColors.darkBorder : AppColors.neutral200)
-                  : AppColors.primary.withValues(alpha: 0.6),
-              width: hasAddress ? 1 : 1.5,
+              color: isDark ? AppColors.darkBorder : AppColors.neutral200,
             ),
             boxShadow: [
               BoxShadow(
@@ -279,61 +354,29 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: AppTextStyles.h4.copyWith(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                        color: isDark ? Colors.white : AppColors.neutral900,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () => _pickOnMap(context, useMyLocation: false),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.map_outlined, size: 14, color: AppColors.primary),
-                          const SizedBox(width: 4),
-                          Text(
-                            mapBtn,
-                            style: AppTextStyles.labelSmall.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+              // Sarlavha
+              Text(
+                title,
+                style: AppTextStyles.h4.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  color: isDark ? Colors.white : AppColors.neutral900,
+                ),
               ),
               const SizedBox(height: 12),
 
-              // Address Bar with Pin Icon
-              GestureDetector(
+              // 1. Xaritadan tanlang
+              InkWell(
                 onTap: () => _pickOnMap(context),
+                borderRadius: BorderRadius.circular(16),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
-                    borderRadius: BorderRadius.circular(14),
+                    color: AppColors.primary.withValues(alpha: isDark ? 0.12 : 0.06),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isDark ? AppColors.darkBorder : const Color(0xFFEDF2F7),
+                      color: AppColors.primary.withValues(alpha: 0.35),
+                      width: 1.2,
                     ),
                   ),
                   child: Row(
@@ -342,38 +385,144 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.12),
+                          color: AppColors.primary.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(
-                          Icons.location_on_rounded,
-                          color: hasAddress ? AppColors.primary : AppColors.neutral400,
+                        child: const Icon(
+                          Icons.map_outlined,
+                          color: AppColors.primary,
                           size: 20,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          addressText,
-                          style: AppTextStyles.labelMedium.copyWith(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                            color: hasAddress
-                                ? (isDark ? Colors.white : AppColors.neutral900)
-                                : AppColors.neutral500,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '1. ${'checkout.pick_on_map'.tr()}',
+                              style: AppTextStyles.labelMedium.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? Colors.white : AppColors.neutral900,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Xaritada belgilash yoki GPS orqali',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right_rounded, color: AppColors.neutral400),
+                      const Icon(Icons.chevron_right_rounded, color: AppColors.primary, size: 22),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
+
+              // 2, 3, ... Eski locationlar (max: branch sonigacha)
+              if (displayedSaved.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                ...displayedSaved.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
+                  final isSelected = state.address == item.address ||
+                      (state.lat != null &&
+                          state.lng != null &&
+                          (state.lat! - item.lat).abs() < 0.0001 &&
+                          (state.lng! - item.lng).abs() < 0.0001);
+
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: InkWell(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        context.read<CheckoutCubit>().setAddressAndCalculateDelivery(
+                              item.lat,
+                              item.lng,
+                              item.address,
+                            );
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.08)
+                              : (isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA)),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.primary
+                                : (isDark ? AppColors.darkBorder : const Color(0xFFEDF2F7)),
+                            width: isSelected ? 1.5 : 1.2,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.primary.withValues(alpha: 0.15)
+                                    : (isDark ? AppColors.neutral700 : AppColors.neutral200.withValues(alpha: 0.6)),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.location_on_rounded,
+                                color: isSelected ? AppColors.primary : AppColors.neutral500,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${index + 2}. ${item.label.isNotEmpty && item.label != item.address ? item.label : item.address}',
+                                    style: AppTextStyles.labelMedium.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: isDark ? Colors.white : AppColors.neutral900,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  if (item.label.isNotEmpty && item.label != item.address) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      item.address,
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                                        fontSize: 12,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                              color: isSelected ? AppColors.primary : AppColors.neutral400,
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
 
               // ── 2x2 Grid (Podyezd, Qavat, Xonadon, Domofon - ixtiyoriy) ──
+              const SizedBox(height: 14),
               Row(
                 children: [
                   _buildMiniInput(
@@ -568,7 +717,7 @@ class SDUIDeliveryTimeSlotComponent extends StatelessWidget {
   }
 }
 
-/// 👤 Checkout: Qabul qiluvchi ma'lumotlari (Haqiqiy foydalanuvchi ma'lumotlari)
+/// 👤 Checkout: Qabul qiluvchi ma'lumotlari (Haqiqiy foydalanuvchi ma'lumotlari va tahrirlash)
 class SDUICustomerInfoComponent extends StatefulWidget {
   final SDUISectionModel section;
   final SDUIActionHandler onAction;
@@ -584,13 +733,12 @@ class SDUICustomerInfoComponent extends StatefulWidget {
 }
 
 class _SDUICustomerInfoComponentState extends State<SDUICustomerInfoComponent> {
-  late String _userName;
-  String _userPhone = '+998 -- --- -- --';
+  String _profileName = 'checkout.guest_customer'.tr();
+  String _profilePhone = '+998 -- --- -- --';
 
   @override
   void initState() {
     super.initState();
-    _userName = 'checkout.guest_customer'.tr();
     _loadUser();
   }
 
@@ -600,13 +748,180 @@ class _SDUICustomerInfoComponentState extends State<SDUICustomerInfoComponent> {
     if (mounted) {
       setState(() {
         if (name != null && name.trim().isNotEmpty) {
-          _userName = name.trim();
+          _profileName = name.trim();
         }
         if (phone != null && phone.trim().isNotEmpty) {
-          _userPhone = NumberFormatter.formatPhone(phone.trim());
+          _profilePhone = NumberFormatter.formatPhone(phone.trim());
         }
       });
     }
+  }
+
+  void _openEditModal(BuildContext context, String currentName, String currentPhone, bool isCustomized) {
+    HapticFeedback.mediumImpact();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final nameController = TextEditingController(
+      text: currentName == 'checkout.guest_customer'.tr() ? '' : currentName,
+    );
+    final phoneController = TextEditingController(
+      text: currentPhone.contains('--') ? '+998 ' : currentPhone,
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalCtx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(modalCtx).viewInsets.bottom,
+          ),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkCard : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.neutral700 : AppColors.neutral300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'checkout.edit_recipient'.tr(),
+                        style: AppTextStyles.h4.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(modalCtx),
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Buyurtmani qabul qilib oluvchi shaxs ma\'lumotlarini kiriting',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.neutral500,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: nameController,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    textCapitalization: TextCapitalization.words,
+                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                    decoration: InputDecoration(
+                      labelText: 'checkout.recipient_name'.tr(),
+                      prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.primary, size: 20),
+                      filled: true,
+                      fillColor: isDark ? AppColors.darkSurface : AppColors.neutral100,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.neutral200, width: 1.2),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: phoneController,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    keyboardType: TextInputType.phone,
+                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                    decoration: InputDecoration(
+                      labelText: 'checkout.recipient_phone'.tr(),
+                      prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primary, size: 20),
+                      filled: true,
+                      fillColor: isDark ? AppColors.darkSurface : AppColors.neutral100,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.neutral200, width: 1.2),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        final newName = nameController.text.trim();
+                        final newPhone = phoneController.text.trim();
+                        context.read<CheckoutCubit>().setRecipient(
+                          name: newName.isNotEmpty ? newName : null,
+                          phone: newPhone.isNotEmpty ? newPhone : null,
+                        );
+                        Navigator.pop(modalCtx);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: Text(
+                        'common.save'.tr(),
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                      ),
+                    ),
+                  ),
+                  if (isCustomized) ...[
+                    const SizedBox(height: 8),
+                    Center(
+                      child: TextButton(
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          context.read<CheckoutCubit>().setRecipient(name: null, phone: null);
+                          Navigator.pop(modalCtx);
+                        },
+                        child: Text(
+                          'checkout.reset_to_my_info'.tr(),
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -615,68 +930,138 @@ class _SDUICustomerInfoComponentState extends State<SDUICustomerInfoComponent> {
     final props = widget.section.properties;
     final title = props['title']?.toString() ?? 'checkout.recipient_title'.tr();
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isDark ? AppColors.darkBorder : AppColors.neutral200,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: AppTextStyles.labelSmall.copyWith(
-              color: AppColors.neutral500,
-              fontWeight: FontWeight.w600,
+    return BlocBuilder<CheckoutCubit, CheckoutState>(
+      builder: (context, checkoutState) {
+        final customName = checkoutState.recipientName;
+        final customPhone = checkoutState.recipientPhone;
+        final isCustomized = (customName != null && customName.trim().isNotEmpty) ||
+            (customPhone != null && customPhone.trim().isNotEmpty);
+
+        final displayName = (customName != null && customName.trim().isNotEmpty)
+            ? customName.trim()
+            : _profileName;
+        final displayPhone = (customPhone != null && customPhone.trim().isNotEmpty)
+            ? customPhone.trim()
+            : _profilePhone;
+
+        return Container(
+          margin: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkCard : Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isCustomized
+                  ? AppColors.primary.withValues(alpha: 0.35)
+                  : (isDark ? AppColors.darkBorder : AppColors.neutral200),
             ),
+            boxShadow: isCustomized
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.person_outline_rounded, size: 18, color: AppColors.neutral500),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    _userName,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.neutral500,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (isCustomized) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'Boshqa shaxs',
+                            style: AppTextStyles.bodyExtraSmall.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 10.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.phone_outlined, size: 18, color: AppColors.neutral500),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    _userPhone,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  TextButton.icon(
+                    onPressed: () => _openEditModal(context, displayName, displayPhone, isCustomized),
+                    icon: const Icon(Icons.edit_outlined, size: 14, color: AppColors.primary),
+                    label: Text(
+                      'common.change'.tr(),
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
-            ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.person_outline_rounded, size: 18, color: AppColors.neutral500),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        displayName,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.phone_outlined, size: 18, color: AppColors.neutral500),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        displayPhone,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
