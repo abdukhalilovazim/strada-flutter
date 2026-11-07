@@ -72,4 +72,6 @@ class CartCubit extends Cubit<CartState> {
   void clear() {
     emit(const CartState(items: []));
   }
+
+  void clearCart() => clear();
 }

@@ -1,37 +1,46 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pizza_strada/core/sdui/sdui.dart';
+import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 
 void main() {
-  group('SDUI Version Sync & Updating UI States Tests', () {
-    test('HomeUpdatingUI state holds loading and success values correctly', () {
-      const updatingState = HomeUpdatingUI(isSuccess: false);
-      expect(updatingState.isSuccess, false);
-      expect(updatingState.title, 'UI yangilanmoqda...');
+  group('Native Home State Tests', () {
+    test('HomeLoaded state holds products, categories, sliders correctly', () {
+      const sampleProduct = ProductEntity(
+        slug: 'pepperoni',
+        title: 'Pepperoni',
+        price: 65000,
+        thumbnail: '',
+        photo: '',
+        variants: [],
+        values: [],
+      );
+      const state = HomeLoaded(
+        sliders: [SliderEntity(id: 1, imageUrl: 'https://strada.uz/s1.jpg')],
+        categories: [CategoryEntity(id: 1, title: 'Pizza', slug: 'pizza')],
+        fullProducts: [sampleProduct],
+        products: [sampleProduct],
+        selectedCategory: 'pizza',
+      );
 
-      const successState = HomeUpdatingUI(isSuccess: true);
-      expect(successState.isSuccess, true);
-
-      expect(updatingState, isNot(equals(successState)));
+      expect(state.sliders.length, 1);
+      expect(state.categories.length, 1);
+      expect(state.products.length, 1);
+      expect(state.selectedCategory, 'pizza');
+      expect(state.searchQuery, '');
     });
 
-    test('SDUIPageUpdating state holds loading and success values correctly', () {
-      const pageUpdating = SDUIPageUpdating(isSuccess: false);
-      expect(pageUpdating.isSuccess, false);
+    test('HomeLoaded copyWith updates filters cleanly', () {
+      const state = HomeLoaded(
+        sliders: [],
+        categories: [],
+        fullProducts: [],
+        products: [],
+        selectedCategory: null,
+      );
 
-      const pageSuccess = SDUIPageUpdating(isSuccess: true);
-      expect(pageSuccess.isSuccess, true);
-
-      expect(pageUpdating, isNot(equals(pageSuccess)));
-    });
-
-    test('SDUICacheManager hasVersionMismatch logic works as expected', () async {
-      final cacheManager = SDUICacheManager();
-
-      // Non-existent page has mismatch
-      final isMismatch = await cacheManager.hasVersionMismatch('non_existent', 'uuid-123');
-      expect(isMismatch, true);
+      final updated = state.copyWith(selectedCategory: 'drinks', searchQuery: 'cola');
+      expect(updated.selectedCategory, 'drinks');
+      expect(updated.searchQuery, 'cola');
     });
   });
 }
-

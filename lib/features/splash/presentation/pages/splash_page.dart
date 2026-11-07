@@ -55,7 +55,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     final homeState = context.read<HomeCubit>().state;
 
     final isAuthChecked = splashState is SplashAuthenticated || splashState is SplashUnauthenticated;
-    final isHomeReady = homeState is HomeLoaded || homeState is HomeUpdatingUI;
+    final isHomeReady = homeState is HomeLoaded;
 
     if (isAuthChecked && isHomeReady) {
       _navigated = true;

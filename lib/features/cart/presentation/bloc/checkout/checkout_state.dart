@@ -61,6 +61,8 @@ class CheckoutState extends Equatable {
     this.successData,
   });
 
+  double get discountAmount => promoValue ?? 0.0;
+
   /// Combined comments for order payload (Podyezd, Qavat, Xonadon, Domofon, Salfetka, Izoh)
   String get fullComment {
     final parts = <String>[];

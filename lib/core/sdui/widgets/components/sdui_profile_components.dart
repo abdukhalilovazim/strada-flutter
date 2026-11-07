@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../features/home/presentation/bloc/home_cubit.dart';
-import '../../bloc/sdui_page_cubit.dart';
 import '../../../storage/secure_storage.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_text_styles.dart';
@@ -351,7 +350,6 @@ class SDUIAppSettingsComponent extends StatelessWidget {
                       }
                       if (context.mounted) {
                         context.read<HomeCubit>().init(forceRefresh: true);
-                        context.read<SDUIPageCubit>().load(forceRefresh: true);
                       }
                     },
                     borderRadius: BorderRadius.circular(16),

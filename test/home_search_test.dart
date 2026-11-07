@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pizza_strada/core/sdui/sdui.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/domain/usecases/home_usecases.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
@@ -15,16 +14,6 @@ class FakeSlidersUseCase implements GetSlidersUseCase {
 }
 
 class FakeProductsUseCase implements GetProductsUseCase {
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-class FakeSDUIPageUseCase implements GetSDUIPageUseCase {
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-class FakeSDUIManifestUseCase implements GetSDUIManifestUseCase {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
@@ -70,8 +59,6 @@ void main() {
       FakeCategoriesUseCase(),
       FakeSlidersUseCase(),
       FakeProductsUseCase(),
-      FakeSDUIPageUseCase(),
-      FakeSDUIManifestUseCase(),
     );
   });
 
@@ -80,18 +67,11 @@ void main() {
   });
 
   test('Search filters products accurately and case-insensitively', () {
-    final sduiPage = SDUIScreenBuilder.buildHomeScreen(
-      sliders: const [],
-      categories: const [],
-      products: sampleProducts,
-    );
-
     cubit.emit(HomeLoaded(
       sliders: const [],
       categories: const [],
       fullProducts: sampleProducts,
       products: sampleProducts,
-      sduiPage: sduiPage,
     ));
 
     // 1. Search "burger"

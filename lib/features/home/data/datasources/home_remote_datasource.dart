@@ -1,6 +1,5 @@
 import 'package:injectable/injectable.dart';
 import 'package:pizza_strada/core/network/api_client.dart';
-import 'package:pizza_strada/core/sdui/models/sdui_page_model.dart';
 import 'package:pizza_strada/features/home/data/models/home_models.dart';
 
 abstract class HomeRemoteDataSource {
@@ -8,8 +7,6 @@ abstract class HomeRemoteDataSource {
   Future<List<ProductModel>> getProducts({int? categoryId, String? categorySlug});
   Future<SettingsModel> getSettings();
   Future<List<SliderModel>> getSliders();
-  Future<SDUIPageModel> getSDUIPage({String slug = 'home', String? categorySlug, int? branchId});
-  Future<Map<String, dynamic>> getSDUIManifest();
 }
 
 @LazySingleton(as: HomeRemoteDataSource)
@@ -67,39 +64,6 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
           .toList();
     } catch (_) {
       return const [];
-    }
-  }
-
-  @override
-  Future<SDUIPageModel> getSDUIPage({String slug = 'home', String? categorySlug, int? branchId}) async {
-    final Map<String, dynamic> params = {};
-    if (categorySlug != null && categorySlug.isNotEmpty) {
-      params['category'] = categorySlug;
-    }
-    if (branchId != null) {
-      params['branch_id'] = branchId;
-    }
-
-    final response = await _client.get(
-      'sdui/pages/$slug',
-      queryParameters: params.isNotEmpty ? params : null,
-    );
-    return SDUIPageModel.fromJson(response as Map<String, dynamic>);
-  }
-
-  @override
-  Future<Map<String, dynamic>> getSDUIManifest() async {
-    try {
-      final response = await _client.get('sdui/manifest');
-      if (response is Map<String, dynamic>) {
-        if (response['data'] is Map<String, dynamic>) {
-          return response['data'] as Map<String, dynamic>;
-        }
-        return response;
-      }
-      return const {};
-    } catch (_) {
-      return const {};
     }
   }
 }

@@ -31,179 +31,210 @@ import 'package:pizza_strada/features/profile/presentation/pages/branches_page.d
 import 'package:pizza_strada/features/profile/presentation/pages/saved_addresses_page.dart';
 import 'package:pizza_strada/features/promotions/presentation/pages/promotions_page.dart';
 import 'package:pizza_strada/features/splash/presentation/pages/splash_page.dart';
-import 'package:pizza_strada/core/sdui/bloc/sdui_navigation_cubit.dart';
-import 'package:pizza_strada/core/sdui/models/sdui_navigation_model.dart';
+
+class _BottomNavItemDef {
+  final String route;
+  final IconData icon;
+  final IconData activeIcon;
+  final String labelKey;
+  final bool isCart;
+
+  const _BottomNavItemDef({
+    required this.route,
+    required this.icon,
+    required this.activeIcon,
+    required this.labelKey,
+    this.isCart = false,
+  });
+}
 
 /// Main scaffold with bottom navigation bar.
-/// Style: Laravel mobile-bottom-appbar — flat white/dark bg, icon+label, active=primary red.
+/// Style: Clean Native Flutter mobile appbar — flat white/dark bg, icon+label, active=primary red.
 class MainScaffold extends StatelessWidget {
   final Widget child;
   const MainScaffold({super.key, required this.child});
+
+  static const _navItems = [
+    _BottomNavItemDef(
+      route: '/home',
+      icon: Icons.local_pizza_outlined,
+      activeIcon: Icons.local_pizza_rounded,
+      labelKey: 'nav.home',
+    ),
+    _BottomNavItemDef(
+      route: '/promotions',
+      icon: Icons.discount_outlined,
+      activeIcon: Icons.discount_rounded,
+      labelKey: 'nav.promotions',
+    ),
+    _BottomNavItemDef(
+      route: '/cart',
+      icon: Icons.shopping_bag_outlined,
+      activeIcon: Icons.shopping_bag_rounded,
+      labelKey: 'nav.cart',
+      isCart: true,
+    ),
+    _BottomNavItemDef(
+      route: '/profile',
+      icon: Icons.person_outline_rounded,
+      activeIcon: Icons.person_rounded,
+      labelKey: 'nav.profile',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final String location = GoRouterState.of(context).matchedLocation;
     final bool isCartPage = location.startsWith('/cart');
+    final currentIndex = _calculateSelectedIndex(context);
 
-    return BlocBuilder<SDUINavigationCubit, SDUINavigationState>(
-      builder: (context, navState) {
-        final items = navState.items;
-        final currentIndex = _calculateSelectedIndex(context, items);
+    return Scaffold(
+      body: SafeArea(bottom: false, child: child),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ── Luxury Floating Sticky Cart Bar ──
+          if (!isCartPage)
+            BlocBuilder<CartCubit, CartState>(
+              builder: (context, cartState) {
+                if (cartState.items.isEmpty) return const SizedBox.shrink();
 
-        return Scaffold(
-          body: SafeArea(bottom: false, child: child),
-          bottomNavigationBar: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // ── Luxury Floating Sticky Cart Bar ──
-              if (!isCartPage)
-                BlocBuilder<CartCubit, CartState>(
-                  builder: (context, cartState) {
-                    if (cartState.items.isEmpty) return const SizedBox.shrink();
-
-                    return Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(18),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.38),
-                              blurRadius: 14,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              GoRouter.of(context).go('/cart');
-                            },
-                            borderRadius: BorderRadius.circular(18),
-                            child: Container(
-                              height: 52,
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.22),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.shopping_bag_outlined,
-                                      color: Colors.white,
-                                      size: 18,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      '${'cart.items_suffix'.tr(namedArgs: {'count': cartState.totalQuantity.toString()})} • ${NumberFormatter.formatSum(cartState.subtotal)} ${'common.currency'.tr()}',
-                                      style: AppTextStyles.labelMedium.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 14,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  Text(
-                                    'cart.floating_cart'.tr(),
-                                    style: AppTextStyles.labelMedium.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Icon(
-                                    Icons.arrow_forward_ios_rounded,
-                                    color: Colors.white,
-                                    size: 13,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-
-              // ── Frosted Glassmorphism Dynamic Bottom Nav Bar (Backend Driven) ──
-              ClipRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: (isDark ? AppColors.darkSurface : Colors.white).withValues(alpha: 0.92),
-                      border: Border(
-                        top: BorderSide(
-                          color: isDark ? AppColors.neutral800 : const Color(0xFFE9ECEF),
-                          width: 1,
-                        ),
-                      ),
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(18),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
-                          blurRadius: 16,
-                          offset: const Offset(0, -4),
+                          color: AppColors.primary.withValues(alpha: 0.38),
+                          blurRadius: 14,
+                          offset: const Offset(0, 5),
                         ),
                       ],
                     ),
-                    child: SafeArea(
-                      top: false,
-                      child: SizedBox(
-                        height: 62,
-                        child: Row(
-                          children: [
-                            for (int i = 0; i < items.length; i++)
-                              _buildNavItem(
-                                context: context,
-                                item: items[i],
-                                index: i,
-                                currentIndex: currentIndex,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          GoRouter.of(context).go('/cart');
+                        },
+                        borderRadius: BorderRadius.circular(18),
+                        child: Container(
+                          height: 52,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.22),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.shopping_bag_outlined,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                               ),
-                          ],
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  '${'cart.items_suffix'.tr(namedArgs: {'count': cartState.totalQuantity.toString()})} • ${NumberFormatter.formatSum(cartState.subtotal)} ${'common.currency'.tr()}',
+                                  style: AppTextStyles.labelMedium.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Text(
+                                'cart.floating_cart'.tr(),
+                                style: AppTextStyles.labelMedium.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                color: Colors.white,
+                                size: 13,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
+                );
+              },
+            ),
+
+          // ── Frosted Glassmorphism Native Bottom Nav Bar ──
+          ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: (isDark ? AppColors.darkSurface : Colors.white).withValues(alpha: 0.92),
+                  border: Border(
+                    top: BorderSide(
+                      color: isDark ? AppColors.neutral800 : const Color(0xFFE9ECEF),
+                      width: 1,
+                    ),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
+                      blurRadius: 16,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: SizedBox(
+                    height: 62,
+                    child: Row(
+                      children: [
+                        for (int i = 0; i < _navItems.length; i++)
+                          _buildNavItem(
+                            context: context,
+                            item: _navItems[i],
+                            index: i,
+                            currentIndex: currentIndex,
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
   Widget _buildNavItem({
     required BuildContext context,
-    required SDUIBottomNavItem item,
+    required _BottomNavItemDef item,
     required int index,
     required int currentIndex,
   }) {
-    final icon = _resolveIcon(item.icon, false);
-    final activeIcon = _resolveIcon(item.icon, true);
-
-    final localizedLabel = item.getLocalizedLabel(context);
-
-    if (item.showBadge) {
+    if (item.isCart) {
       return _NavItemWithBadge(
         index: index,
         currentIndex: currentIndex,
-        icon: icon,
-        activeIcon: activeIcon,
-        label: localizedLabel,
+        icon: item.icon,
+        activeIcon: item.activeIcon,
+        label: item.labelKey.tr(),
         onTap: () {
           HapticFeedback.selectionClick();
           GoRouter.of(context).go(item.route);
@@ -214,10 +245,9 @@ class MainScaffold extends StatelessWidget {
     return _NavItem(
       index: index,
       currentIndex: currentIndex,
-      icon: icon,
-      activeIcon: activeIcon,
-      badgeText: item.badge,
-      label: localizedLabel,
+      icon: item.icon,
+      activeIcon: item.activeIcon,
+      label: item.labelKey.tr(),
       onTap: () {
         HapticFeedback.selectionClick();
         GoRouter.of(context).go(item.route);
@@ -225,35 +255,10 @@ class MainScaffold extends StatelessWidget {
     );
   }
 
-  static IconData _resolveIcon(String iconName, bool active) {
-    switch (iconName.toLowerCase()) {
-      case 'home':
-      case 'pizza':
-        return active ? Icons.local_pizza_rounded : Icons.local_pizza_outlined;
-      case 'percent':
-      case 'promotions':
-      case 'promos':
-      case 'discount':
-        return active ? Icons.discount_rounded : Icons.discount_outlined;
-      case 'cart':
-      case 'bag':
-        return active ? Icons.shopping_bag_rounded : Icons.shopping_bag_outlined;
-      case 'receipt':
-      case 'orders':
-        return active ? Icons.receipt_long_rounded : Icons.receipt_long_outlined;
-      case 'profile':
-      case 'person':
-      case 'user':
-        return active ? Icons.person_rounded : Icons.person_outline_rounded;
-      default:
-        return active ? Icons.circle : Icons.circle_outlined;
-    }
-  }
-
-  static int _calculateSelectedIndex(BuildContext context, List<SDUIBottomNavItem> items) {
+  static int _calculateSelectedIndex(BuildContext context) {
     final String location = GoRouterState.of(context).matchedLocation;
-    for (int i = 0; i < items.length; i++) {
-      if (location.startsWith(items[i].route)) return i;
+    for (int i = 0; i < _navItems.length; i++) {
+      if (location.startsWith(_navItems[i].route)) return i;
     }
     return 0;
   }
@@ -266,7 +271,6 @@ class _NavItem extends StatelessWidget {
   final IconData icon;
   final IconData activeIcon;
   final String label;
-  final String? badgeText;
   final VoidCallback onTap;
 
   const _NavItem({
@@ -275,7 +279,6 @@ class _NavItem extends StatelessWidget {
     required this.icon,
     required this.activeIcon,
     required this.label,
-    this.badgeText,
     required this.onTap,
   });
 
@@ -321,26 +324,6 @@ class _NavItem extends StatelessWidget {
                       color: isActive ? activeColor : inactiveColor,
                     ),
                   ),
-                  if (badgeText != null)
-                    Positioned(
-                      top: -2,
-                      right: isActive ? 6 : -4,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: AppColors.error,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          badgeText!,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                    ),
                 ],
               ),
               const SizedBox(height: 3),
