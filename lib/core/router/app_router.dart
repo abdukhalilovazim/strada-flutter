@@ -52,7 +52,8 @@ class _BottomNavItemDef {
 /// Style: Clean Native Flutter mobile appbar — flat white/dark bg, icon+label, active=primary red.
 class MainScaffold extends StatelessWidget {
   final Widget child;
-  const MainScaffold({super.key, required this.child});
+  final String location;
+  const MainScaffold({super.key, required this.child, required this.location});
 
   static const _navItems = [
     _BottomNavItemDef(
@@ -85,17 +86,16 @@ class MainScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final String location = GoRouterState.of(context).matchedLocation;
-    final bool isCartPage = location.startsWith('/cart');
-    final currentIndex = _calculateSelectedIndex(context);
+    final bool isHomePage = location == '/home' || location == '/';
+    final currentIndex = _calculateSelectedIndex(location);
 
     return Scaffold(
       body: SafeArea(bottom: false, child: child),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ── Luxury Floating Sticky Cart Bar ──
-          if (!isCartPage)
+          // ── Luxury Floating Sticky Cart Bar (ONLY on HomePage) ──
+          if (isHomePage)
             BlocBuilder<CartCubit, CartState>(
               builder: (context, cartState) {
                 if (cartState.items.isEmpty) return const SizedBox.shrink();
@@ -255,8 +255,7 @@ class MainScaffold extends StatelessWidget {
     );
   }
 
-  static int _calculateSelectedIndex(BuildContext context) {
-    final String location = GoRouterState.of(context).matchedLocation;
+  static int _calculateSelectedIndex(String location) {
     for (int i = 0; i < _navItems.length; i++) {
       if (location.startsWith(_navItems[i].route)) return i;
     }
@@ -487,7 +486,10 @@ final appRouter = GoRouter(
       },
     ),
     ShellRoute(
-      builder: (_, __, child) => MainScaffold(child: child),
+      builder: (_, state, child) => MainScaffold(
+        location: state.matchedLocation,
+        child: child,
+      ),
       routes: [
         GoRoute(path: '/home',       builder: (_, __) => const HomePage()),
         GoRoute(path: '/promotions', builder: (_, __) => const PromotionsPage()),

@@ -1,34 +1,61 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pizza_strada/core/extensions/string_extensions.dart';
 import 'package:pizza_strada/core/theme/app_theme.dart';
 import 'package:pizza_strada/features/notifications/domain/entities/notification_entity.dart';
 import 'package:pizza_strada/features/notifications/domain/repositories/notification_repository.dart';
 import 'package:pizza_strada/features/notifications/domain/usecases/notification_usecases.dart';
 import 'package:pizza_strada/features/notifications/presentation/bloc/notifications_cubit.dart';
 import 'package:pizza_strada/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class InMemoryAssetLoader extends AssetLoader {
+  const InMemoryAssetLoader();
+
+  @override
+  Future<Map<String, dynamic>> load(String path, Locale locale) async {
+    return const {
+      "notifications.title": "Bildirishnomalar",
+      "notifications.mark_all_read": "Hammasini o'qish",
+      "notifications.all_read": "Barchasi o'qilgan",
+      "notifications.read_status": "O'qilgan",
+      "notifications.all_read_success": "Barcha bildirishnomalar o'qilgan deb belgilandi",
+      "notifications.filter_all": "Barchasi",
+      "notifications.filter_promos": "Aksiyalar",
+      "notifications.filter_orders": "Buyurtmalar",
+      "notifications.type_promo": "Aksiya",
+      "notifications.type_order": "Buyurtma",
+      "notifications.type_system": "Tizim xabari",
+      "notifications.empty_title": "Hozircha bildirishnomalar yo'q",
+      "notifications.empty_desc": "Yangi aksiyalar, maxsus takliflar va buyurtmangiz holati shu yerda aks etadi.",
+      "notifications.go_to_menu": "Menyuga qaytish",
+      "common.close": "Yopish",
+      "common.view": "Ko'rish",
+    };
+  }
+}
 
 class MockNotificationRepository implements NotificationRepository {
   List<NotificationEntity> notifications = [
     NotificationEntity(
       id: '1',
-      title: 'notifications.item_welcome_title'.trOr('Xush kelibsiz!'),
-      body: 'notifications.item_welcome_body'.trOr('Strada Pizza ilovasiga xush kelibsiz!'),
+      title: 'Xush kelibsiz! 🍕',
+      body: 'Strada Pizza ilovasiga xush kelibsiz!',
       type: NotificationType.system,
       icon: 'pizza',
       route: '/home',
-      actionLabel: 'notifications.item_welcome_action'.trOr('Pitsalarni ko\'rish'),
+      actionLabel: 'Pitsalarni ko\'rish',
       createdAt: DateTime.now().subtract(const Duration(minutes: 10)),
       isRead: false,
     ),
     NotificationEntity(
       id: '2',
-      title: 'notifications.item_promo_2plus1_title'.trOr('Aksiya: 2+1 pitsa bepul!'),
-      body: 'notifications.item_promo_2plus1_body'.trOr('Har 2 ta katta pitsa buyurtma qilganingizda...'),
+      title: 'Aksiya: 2+1 pitsa bepul! 🎁',
+      body: 'Har 2 ta katta pitsa buyurtma qilganingizda...',
       type: NotificationType.promo,
       icon: 'promo',
       route: '/promotions',
-      actionLabel: 'notifications.item_promo_2plus1_action'.trOr('Aksiyaga o\'tish'),
+      actionLabel: 'Aksiyaga o\'tish',
       createdAt: DateTime.now().subtract(const Duration(hours: 1)),
       isRead: false,
     ),
@@ -55,6 +82,12 @@ void main() {
   late MockNotificationRepository mockRepo;
   late NotificationsCubit cubit;
 
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    SharedPreferences.setMockInitialValues({});
+    await EasyLocalization.ensureInitialized();
+  });
+
   setUp(() {
     mockRepo = MockNotificationRepository();
     cubit = NotificationsCubit(
@@ -65,50 +98,61 @@ void main() {
     );
   });
 
-  testWidgets('Tapping notification card opens detail bottom sheet with full details',
-      (WidgetTester tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light,
-        home: NotificationsPage(cubit: cubit),
+  Widget buildTestableWidget() {
+    return EasyLocalization(
+      supportedLocales: const [Locale('uz'), Locale('ru'), Locale('en')],
+      path: 'lib/l10n',
+      assetLoader: const InMemoryAssetLoader(),
+      fallbackLocale: const Locale('uz'),
+      startLocale: const Locale('uz'),
+      saveLocale: false,
+      useOnlyLangCode: true,
+      child: Builder(
+        builder: (context) {
+          return MaterialApp(
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            locale: context.locale,
+            theme: AppTheme.light,
+            home: NotificationsPage(cubit: cubit),
+          );
+        },
       ),
     );
+  }
 
+  testWidgets('Tapping notification card opens detail bottom sheet with full details',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(buildTestableWidget());
     await tester.pumpAndSettle();
 
-    // Verify notification card is present via localized title or fallback
-    final cardFinder = find.text('notifications.item_welcome_title'.trOr('Xush kelibsiz!'));
+    // Verify notification card is present
+    final cardFinder = find.text('Xush kelibsiz! 🍕');
     expect(cardFinder, findsOneWidget);
 
     // Tap on the first notification card
     await tester.tap(cardFinder);
     await tester.pumpAndSettle();
 
-    // Verify detail sheet is displayed with action button and close button
-    expect(find.text('notifications.item_welcome_action'.trOr('Pitsalarni ko\'rish')), findsOneWidget);
-    expect(find.text('common.close'.trOr('Yopish')), findsOneWidget);
+    // Verify detail sheet is displayed with action button and close button (using pure .tr())
+    expect(find.text('Pitsalarni ko\'rish'), findsOneWidget);
+    expect(find.text('common.close'.tr()), findsOneWidget);
 
     // Tap close button
-    await tester.tap(find.text('common.close'.trOr('Yopish')));
+    await tester.tap(find.text('common.close'.tr()));
     await tester.pumpAndSettle();
 
     // Verify sheet is closed
-    expect(find.text('common.close'.trOr('Yopish')), findsNothing);
+    expect(find.text('common.close'.tr()), findsNothing);
   });
 
   testWidgets('Mark all as read updates all notifications to read status',
       (WidgetTester tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light,
-        home: NotificationsPage(cubit: cubit),
-      ),
-    );
-
+    await tester.pumpWidget(buildTestableWidget());
     await tester.pumpAndSettle();
 
-    // Unread count should initially be 2, so the mark all read icon is visible
-    final markAllBtnFinder = find.byTooltip('notifications.mark_all_read'.trOr('Hammasini o\'qish'));
+    // Unread count should initially be 2, so the mark all read icon is visible (using pure .tr())
+    final markAllBtnFinder = find.byTooltip('notifications.mark_all_read'.tr());
     expect(markAllBtnFinder, findsOneWidget);
 
     // Tap mark all read
@@ -116,9 +160,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // After marking all as read, unread count becomes 0 and mark all read button disappears
-    expect(find.byTooltip('notifications.mark_all_read'.trOr('Hammasini o\'qish')), findsNothing);
+    expect(find.byTooltip('notifications.mark_all_read'.tr()), findsNothing);
 
-    // Verify read status badges are displayed on the cards
-    expect(find.text('notifications.read_status'.trOr('O\'qilgan')), findsNWidgets(2));
+    // Verify read status badges are displayed on the cards (using pure .tr())
+    expect(find.text('notifications.read_status'.tr()), findsNWidgets(2));
   });
 }

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection.dart';
-import '../../../../core/extensions/string_extensions.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../data/datasources/notification_remote_datasource.dart';
@@ -106,10 +106,10 @@ class _NotificationsView extends StatelessWidget {
             : AppColors.primary;
 
     final badgeTitle = item.type.isPromo
-        ? 'notifications.type_promo'.trOr('Aksiya')
+        ? 'notifications.type_promo'.tr()
         : item.type.isOrder
-            ? 'notifications.type_order'.trOr('Buyurtma')
-            : 'notifications.type_system'.trOr('Tizim xabari');
+            ? 'notifications.type_order'.tr()
+            : 'notifications.type_system'.tr();
 
     final icon = _resolveIcon(item.icon, item.type);
     final formattedTime = _formatTime(item.createdAt);
@@ -263,7 +263,7 @@ class _NotificationsView extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      item.actionLabel ?? 'common.view'.trOr('Ko\'rish'),
+                      item.actionLabel ?? 'common.view'.tr(),
                       style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                     ),
                   ),
@@ -286,7 +286,7 @@ class _NotificationsView extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: Text('common.close'.trOr('Yopish'), style: const TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text('common.close'.tr(), style: const TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),
             ],
@@ -315,7 +315,7 @@ class _NotificationsView extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'notifications.title'.trOr('Bildirishnomalar'),
+                  'notifications.title'.tr(),
                   style: AppTextStyles.h3.copyWith(
                     fontWeight: FontWeight.w800,
                     color: isDark ? Colors.white : AppColors.neutral900,
@@ -358,14 +358,14 @@ class _NotificationsView extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: IconButton(
-                    tooltip: 'notifications.mark_all_read'.trOr('Hammasini o\'qish'),
+                    tooltip: 'notifications.mark_all_read'.tr(),
                     icon: const Icon(Icons.done_all_rounded, color: AppColors.primary, size: 22),
                     onPressed: () {
                       HapticFeedback.lightImpact();
                       context.read<NotificationsCubit>().markAllAsRead();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('notifications.all_read_success'.trOr('Barcha bildirishnomalar o\'qilgan deb belgilandi')),
+                          content: Text('notifications.all_read_success'.tr()),
                           duration: const Duration(seconds: 2),
                         ),
                       );
@@ -406,7 +406,7 @@ class _NotificationsView extends StatelessWidget {
                         _buildFilterChip(
                           context: context,
                           id: 'all',
-                          label: 'notifications.filter_all'.trOr('Barchasi'),
+                          label: 'notifications.filter_all'.tr(),
                           count: state is NotificationsLoaded ? state.countForFilter('all') : notifications.length,
                           isSelected: selectedFilter == 'all',
                           isDark: isDark,
@@ -415,7 +415,7 @@ class _NotificationsView extends StatelessWidget {
                         _buildFilterChip(
                           context: context,
                           id: 'promo',
-                          label: 'notifications.filter_promos'.trOr('Aksiyalar'),
+                          label: 'notifications.filter_promos'.tr(),
                           count: state is NotificationsLoaded ? state.countForFilter('promo') : null,
                           icon: Icons.local_offer_outlined,
                           isSelected: selectedFilter == 'promo',
@@ -425,7 +425,7 @@ class _NotificationsView extends StatelessWidget {
                         _buildFilterChip(
                           context: context,
                           id: 'order',
-                          label: 'notifications.filter_orders'.trOr('Buyurtmalar'),
+                          label: 'notifications.filter_orders'.tr(),
                           count: state is NotificationsLoaded ? state.countForFilter('order') : null,
                           icon: Icons.delivery_dining_outlined,
                           isSelected: selectedFilter == 'order',
@@ -653,7 +653,7 @@ class _NotificationsView extends StatelessWidget {
                         ),
                         const SizedBox(width: 3),
                         Text(
-                          'notifications.read_status'.trOr('O\'qilgan'),
+                          'notifications.read_status'.tr(),
                           style: const TextStyle(
                             color: AppColors.neutral400,
                             fontSize: 10.5,
@@ -705,7 +705,7 @@ class _NotificationsView extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             Text(
-              'notifications.empty_title'.trOr('Hozircha bildirishnomalar yo\'q'),
+              'notifications.empty_title'.tr(),
               style: AppTextStyles.h4.copyWith(
                 fontWeight: FontWeight.w800,
                 color: isDark ? Colors.white : AppColors.neutral900,
@@ -714,7 +714,7 @@ class _NotificationsView extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'notifications.empty_desc'.trOr('Yangi aksiyalar, maxsus takliflar va buyurtmangiz holati shu yerda aks etadi.'),
+              'notifications.empty_desc'.tr(),
               style: AppTextStyles.bodyMedium.copyWith(
                 color: isDark ? AppColors.neutral400 : AppColors.neutral500,
               ),
@@ -726,7 +726,7 @@ class _NotificationsView extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: () => context.go('/home'),
                 icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                label: Text('notifications.go_to_menu'.trOr('Menyuga qaytish'), style: const TextStyle(fontWeight: FontWeight.w700)),
+                label: Text('notifications.go_to_menu'.tr(), style: const TextStyle(fontWeight: FontWeight.w700)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
