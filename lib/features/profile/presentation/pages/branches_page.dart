@@ -109,14 +109,6 @@ class _BranchesPageState extends State<BranchesPage> {
     }
   }
 
-  Future<void> _callPhone(String phone) async {
-    final cleaned = phone.replaceAll(RegExp(r'[\s\(\)\-]'), '');
-    final uri = Uri.parse('tel:$cleaned');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
-  }
-
   Future<void> _openMap(BranchItem branch) async {
     // Open in Yandex Maps or fallback to browser
     final yandexUri = Uri.parse('yandexmaps://maps.yandex.ru/?pt=${branch.lng},${branch.lat}&z=16&l=map');
@@ -279,38 +271,22 @@ class _BranchesPageState extends State<BranchesPage> {
           ),
           const SizedBox(height: 16),
 
-          // Action Buttons
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _callPhone(branch.phone),
-                  icon: const Icon(Icons.phone_outlined, size: 16),
-                  label: const Text('Qo\'ng\'iroq'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: const BorderSide(color: AppColors.primary, width: 1.2),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    padding: const EdgeInsets.symmetric(vertical: 11),
-                  ),
-                ),
+          // Action Button: Xaritada ko'rish
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: () => _openMap(branch),
+              icon: const Icon(Icons.map_rounded, size: 18),
+              label: Text('orders.view_on_map'.tr()),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _openMap(branch),
-                  icon: const Icon(Icons.map_rounded, size: 16),
-                  label: const Text('Xaritada'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    padding: const EdgeInsets.symmetric(vertical: 11),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
