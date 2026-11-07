@@ -19,7 +19,7 @@ import '../../../widgets/pizza_image_placeholder.dart';
 import '../../models/section_model.dart';
 import '../../registry/action_dispatcher.dart';
 
-/// 📍 Savat: Yetkazish filiali va vaqti (Delivery Info Card)
+/// 📍 Savat: Yetkazish filiali va vaqti (Delivery Info Card) - Yashirilgan (Savatchada location ko'rsatilmaydi)
 class SDUICartDeliveryInfoComponent extends StatelessWidget {
   final SDUISectionModel section;
   final SDUIActionHandler onAction;
@@ -32,90 +32,7 @@ class SDUICartDeliveryInfoComponent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final props = section.properties;
-    final title = props['title']?.toString() ?? 'Yetkazib berish';
-
-    return BlocBuilder<CheckoutCubit, CheckoutState>(
-      builder: (context, checkoutState) {
-        final address = checkoutState.address ?? 'Toshkent sh., Yunusobod';
-        final branch = checkoutState.branchTitle ?? 'Pizza Strada';
-
-        return Container(
-          margin: const EdgeInsets.fromLTRB(16, 8, 16, 6),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard : Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
-            ),
-            boxShadow: AppColors.softShadow(isDark),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(9),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.neutral500,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      checkoutState.isDelivery ? address : branch,
-                      style: AppTextStyles.labelMedium.copyWith(
-                        color: isDark ? Colors.white : AppColors.neutral900,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (_) => const OrderTypeBottomSheet(),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'common.change'.tr(),
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    return const SizedBox.shrink();
   }
 }
 
