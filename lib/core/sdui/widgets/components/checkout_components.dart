@@ -12,8 +12,8 @@ import '../../../../features/home/presentation/bloc/home_cubit.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_text_styles.dart';
 import '../../../utils/number_formatter.dart';
-import '../../models/sdui_section_model.dart';
-import '../../registry/sdui_action_dispatcher.dart';
+import '../../models/section_model.dart';
+import '../../registry/action_dispatcher.dart';
 
 /// 🛵 Checkout: Yetkazish / Olib ketish Switcher
 class SDUIOrderTypeComponent extends StatelessWidget {

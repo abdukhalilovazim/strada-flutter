@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import '../models/sdui_section_model.dart';
-import '../registry/sdui_action_dispatcher.dart';
-import '../registry/sdui_error_boundary.dart';
-import '../widgets/components/sdui_announcement_component.dart';
-import '../widgets/components/sdui_cart_components.dart';
-import '../widgets/components/sdui_category_bar_component.dart';
-import '../widgets/components/sdui_checkout_components.dart';
-import '../widgets/components/sdui_coupon_components.dart';
-import '../widgets/components/sdui_delivery_bar_component.dart';
-import '../widgets/components/sdui_product_grid_component.dart';
-import '../widgets/components/sdui_profile_components.dart';
-import '../widgets/components/sdui_section_header_component.dart';
-import '../widgets/components/sdui_slider_component.dart';
+import '../models/section_model.dart';
+import '../registry/action_dispatcher.dart';
+import '../registry/error_boundary.dart';
+import '../widgets/components/announcement_component.dart';
+import '../widgets/components/cart_components.dart';
+import '../widgets/components/category_bar_component.dart';
+import '../widgets/components/checkout_components.dart';
+import '../widgets/components/coupon_components.dart';
+import '../widgets/components/delivery_bar_component.dart';
+import '../widgets/components/product_grid_component.dart';
+import '../widgets/components/profile_components.dart';
+import '../widgets/components/section_header_component.dart';
+import '../widgets/components/slider_component.dart';
 
 typedef SDUISliverBuilder = Widget Function(
   BuildContext context,

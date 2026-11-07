@@ -170,7 +170,7 @@ class _HomePageState extends State<HomePage> {
               fontWeight: FontWeight.w600,
             ),
             decoration: InputDecoration(
-              hintText: 'Pitsa, kombo, ichimlik qidirish...',
+              hintText: 'home.search_hint'.tr(),
               hintStyle: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.neutral400,
                 fontSize: 13.5,
@@ -305,7 +305,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Boshqa so\'z yoki mahsulot nomini kiritib ko\'ring',
+                  'home.search_empty_desc'.tr(),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.neutral500,
                   ),
@@ -605,52 +605,57 @@ class _HomeCategoryBar extends StatelessWidget {
         ),
       ),
       height: 52,
-      alignment: Alignment.centerLeft,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: categories.length,
         itemBuilder: (ctx, i) {
           final cat = categories[i];
           final isSelected = selectedSlug == cat.slug;
 
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  onSelect(cat.slug);
-                },
-                borderRadius: BorderRadius.circular(20),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primary
-                        : (isDark ? AppColors.darkCard : const Color(0xFFF1F3F5)),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Text(
-                    cat.title,
-                    style: AppTextStyles.labelMedium.copyWith(
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.only(right: i == categories.length - 1 ? 0 : 8),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    onSelect(cat.slug);
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    height: 38,
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
                       color: isSelected
-                          ? Colors.white
-                          : (isDark ? AppColors.neutral300 : AppColors.neutral800),
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                      fontSize: 13,
+                          ? AppColors.primary
+                          : (isDark ? AppColors.darkCard : const Color(0xFFF1F3F5)),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Text(
+                      cat.title,
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: isSelected
+                            ? Colors.white
+                            : (isDark ? AppColors.neutral300 : AppColors.neutral800),
+                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                        fontSize: 13,
+                        height: 1.2,
+                      ),
                     ),
                   ),
                 ),

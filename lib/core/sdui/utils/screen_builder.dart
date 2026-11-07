@@ -1,9 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import '../../../../features/home/domain/entities/home_entities.dart';
-import '../models/sdui_action_model.dart';
-import '../models/sdui_component_model.dart';
-import '../models/sdui_page_model.dart';
-import '../models/sdui_section_model.dart';
+import '../models/action_model.dart';
+import '../models/component_model.dart';
+import '../models/page_model.dart';
+import '../models/section_model.dart';
 
 /// 🏗 SDUI Screen Builder
 /// Compiles declarative JSON screen models strictly conforming to Apple 2.5.2 & Google Play.

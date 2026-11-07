@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_text_styles.dart';
-import '../../models/sdui_section_model.dart';
-import '../../registry/sdui_action_dispatcher.dart';
+import '../../models/section_model.dart';
+import '../../registry/action_dispatcher.dart';
 
 /// 📍 Delivery & Branch Location Status Bar
 /// Clean Bento-style card displaying active branch, ETA, and resolved delivery zone.

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../theme/app_colors.dart';
-import '../models/sdui_action_model.dart';
+import '../models/action_model.dart';
 
 typedef SDUIActionHandler = void Function(SDUIAction action);
 

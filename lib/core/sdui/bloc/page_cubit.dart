@@ -3,9 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pizza_strada/core/di/injection.dart';
 import 'package:pizza_strada/core/network/api_client.dart';
-import '../models/sdui_page_model.dart';
-import '../storage/sdui_cache_manager.dart';
-import '../utils/sdui_screen_builder.dart';
+import '../models/page_model.dart';
+import '../storage/cache_manager.dart';
+import '../utils/screen_builder.dart';
 
 abstract class SDUIPageState extends Equatable {
   const SDUIPageState();

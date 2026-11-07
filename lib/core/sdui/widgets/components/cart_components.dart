@@ -16,8 +16,8 @@ import '../../../theme/app_text_styles.dart';
 import '../../../utils/number_formatter.dart';
 import '../../../utils/variant_localization_helper.dart';
 import '../../../widgets/pizza_image_placeholder.dart';
-import '../../models/sdui_section_model.dart';
-import '../../registry/sdui_action_dispatcher.dart';
+import '../../models/section_model.dart';
+import '../../registry/action_dispatcher.dart';
 
 /// 📍 Savat: Yetkazish filiali va vaqti (Delivery Info Card)
 class SDUICartDeliveryInfoComponent extends StatelessWidget {

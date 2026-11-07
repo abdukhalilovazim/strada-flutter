@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:pizza_strada/core/sdui/models/sdui_section_model.dart';
-import 'package:pizza_strada/core/sdui/widgets/components/sdui_profile_components.dart';
+import 'package:pizza_strada/core/sdui/models/section_model.dart';
+import 'package:pizza_strada/core/sdui/widgets/components/profile_components.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 

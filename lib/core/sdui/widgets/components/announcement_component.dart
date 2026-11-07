@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_text_styles.dart';
-import '../../models/sdui_section_model.dart';
-import '../../registry/sdui_action_dispatcher.dart';
+import '../../models/section_model.dart';
+import '../../registry/action_dispatcher.dart';
 
 class SDUIAnnouncementComponent extends StatelessWidget {
   final SDUISectionModel section;

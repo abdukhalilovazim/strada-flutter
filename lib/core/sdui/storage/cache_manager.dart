@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/sdui_page_model.dart';
+import '../models/page_model.dart';
 
 /// 💾 SWR Offline Cache & UI Version Synchronization Manager
 class SDUICacheManager {

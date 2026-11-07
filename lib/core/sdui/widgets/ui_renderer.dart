@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:pizza_strada/core/widgets/strada_refresh_control.dart';
-import '../models/sdui_action_model.dart';
-import '../models/sdui_page_model.dart';
-import '../registry/sdui_action_dispatcher.dart';
-import '../registry/sdui_component_registry.dart';
+import '../models/action_model.dart';
+import '../models/page_model.dart';
+import '../registry/action_dispatcher.dart';
+import '../registry/component_registry.dart';
 
 /// ⚡ High-Performance Declarative SDUI Renderer
 /// Virtualizes declarative JSON layout sections into Flutter Slivers.

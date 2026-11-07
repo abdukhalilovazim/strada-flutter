@@ -8,9 +8,9 @@ import '../../../../features/cart/presentation/bloc/cart_cubit.dart';
 import '../../../../features/home/domain/entities/home_entities.dart';
 import '../../../../features/home/presentation/widgets/product_card.dart';
 import '../../../../features/home/presentation/widgets/product_detail_modal.dart';
-import '../../models/sdui_component_model.dart';
-import '../../models/sdui_section_model.dart';
-import '../../registry/sdui_action_dispatcher.dart';
+import '../../models/component_model.dart';
+import '../../models/section_model.dart';
+import '../../registry/action_dispatcher.dart';
 
 class SDUIProductGridComponent extends StatelessWidget {
   final SDUISectionModel section;
@@ -123,7 +123,7 @@ class SDUIProductGridComponent extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Boshqa so\'z yoki mahsulot nomini kiritib ko\'ring',
+                  'home.search_empty_desc'.tr(),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.neutral500,
                   ),

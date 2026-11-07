@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:pizza_strada/core/storage/shared_prefs.dart';
-import '../models/sdui_navigation_model.dart';
+import '../models/navigation_model.dart';
 
 class SDUINavigationState {
   final List<SDUIBottomNavItem> items;

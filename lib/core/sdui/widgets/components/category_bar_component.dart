@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_text_styles.dart';
-import '../../models/sdui_action_model.dart';
-import '../../models/sdui_section_model.dart';
-import '../../registry/sdui_action_dispatcher.dart';
+import '../../models/action_model.dart';
+import '../../models/section_model.dart';
+import '../../registry/action_dispatcher.dart';
 
 /// 🏷 Modern Category Scrollable Pill Bar
 /// Supports smooth horizontal scrolling, high-contrast active tabs with soft glow,

@@ -10,8 +10,8 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_text_styles.dart';
 import '../../../theme/theme_cubit.dart';
 import '../../../utils/number_formatter.dart';
-import '../../models/sdui_section_model.dart';
-import '../../registry/sdui_action_dispatcher.dart';
+import '../../models/section_model.dart';
+import '../../registry/action_dispatcher.dart';
 
 /// 👤 Profil: Foydalanuvchi ma'lumotlari kartasi (Profile Header Card)
 class SDUIProfileHeaderComponent extends StatefulWidget {

@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'sdui_section_model.dart';
+import 'section_model.dart';
 
 /// 📄 Declarative SDUI Screen / Page Model
 class SDUIPageModel extends Equatable {

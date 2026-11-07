@@ -8,8 +8,8 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/number_formatter.dart';
 import '../../../../core/widgets/pizza_image_placeholder.dart';
 import '../../../../features/cart/presentation/bloc/checkout/checkout_cubit.dart';
-import '../../models/sdui_section_model.dart';
-import '../../registry/sdui_action_dispatcher.dart';
+import '../../models/section_model.dart';
+import '../../registry/action_dispatcher.dart';
 
 /// 🏷️ SDUI Coupon & Combo Grid Component
 class SDUICouponGridComponent extends StatelessWidget {
