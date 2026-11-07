@@ -269,7 +269,7 @@
   "cart.promo_activated": "Промокод применен",
   "cart.promo_active_label": "Активен",
   "checkout.selected_branch": "Выбранный филиал",
-  "checkout.no_branch_selected": "Филиал не выбран (Нажмите для выбора)",
+  "checkout.no_branch_selected": "Филиал не выбран",
   "checkout.working_hours": "Режим работы: 10:00 - 03:00",
   "checkout.guest_customer": "Клиент",
   "checkout.online_payment": "Онлайн оплата",

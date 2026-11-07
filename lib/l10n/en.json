@@ -269,7 +269,7 @@
   "cart.promo_activated": "Promo code activated",
   "cart.promo_active_label": "Active",
   "checkout.selected_branch": "Selected branch",
-  "checkout.no_branch_selected": "No branch selected (Tap to select)",
+  "checkout.no_branch_selected": "No branch selected",
   "checkout.working_hours": "Working hours: 10:00 - 03:00",
   "checkout.guest_customer": "Customer",
   "checkout.online_payment": "Online payment",

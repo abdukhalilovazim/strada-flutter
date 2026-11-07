@@ -269,7 +269,7 @@
   "cart.promo_activated": "Promokod faollashtirildi",
   "cart.promo_active_label": "Faol",
   "checkout.selected_branch": "Tanlangan filial",
-  "checkout.no_branch_selected": "Filial tanlanmagan (Tanlash uchun bosing)",
+  "checkout.no_branch_selected": "Filial tanlanmagan",
   "checkout.working_hours": "Ish vaqti: 10:00 - 03:00",
   "checkout.guest_customer": "Mijoz",
   "checkout.online_payment": "Onlayn to'lov",

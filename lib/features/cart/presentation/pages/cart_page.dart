@@ -190,7 +190,6 @@ class CartPage extends StatelessWidget {
       children: [
         _buildCartItemsList(context, cartState, isDark),
         _buildUpsellSlider(context, cartState, isDark),
-        _buildSummaryCard(context, cartState, isDark),
       ],
     );
   }
@@ -451,59 +450,6 @@ class CartPage extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSummaryCard(BuildContext context, CartState cartState, bool isDark) {
-    final subtotal = cartState.subtotal;
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
-        ),
-        boxShadow: AppColors.softShadow(isDark),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Hisob-kitob',
-            style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 12),
-          _buildSummaryRow(
-            'cart.subtotal'.tr(),
-            '${NumberFormatter.formatSum(subtotal)} ${'common.currency'.tr()}',
-            isDark,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryRow(String label, String value, bool isDark, {Color? valueColor}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: isDark ? AppColors.neutral400 : AppColors.neutral600,
-          ),
-        ),
-        Text(
-          value,
-          style: AppTextStyles.labelMedium.copyWith(
-            fontWeight: FontWeight.w700,
-            color: valueColor ?? (isDark ? Colors.white : AppColors.neutral900),
-          ),
-        ),
-      ],
     );
   }
 
