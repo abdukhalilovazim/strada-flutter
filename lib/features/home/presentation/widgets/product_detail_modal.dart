@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
@@ -83,6 +84,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
   }
 
   void _onBuyNow(BuildContext context) {
+    HapticFeedback.mediumImpact();
     context.read<CartCubit>().addMultipleToCart([
       CartItemEntity(
         product: widget.product,
@@ -91,7 +93,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
       ),
     ]);
     Navigator.of(context).pop();
-    context.push('/cart');
+    context.push('/checkout');
   }
 
   @override

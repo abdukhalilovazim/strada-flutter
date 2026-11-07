@@ -90,15 +90,14 @@ class MainScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    String effectiveLocation = location ?? '';
+    String effectiveLocation = '';
+    try {
+      effectiveLocation = GoRouterState.of(context).uri.path;
+    } catch (_) {}
     if (effectiveLocation.isEmpty) {
-      try {
-        effectiveLocation = GoRouterState.of(context).matchedLocation;
-      } catch (_) {
-        effectiveLocation = '/home';
-      }
+      effectiveLocation = location ?? '/home';
     }
-    final bool isHomePage = effectiveLocation == '/home' || effectiveLocation == '/';
+    final bool isHomePage = (effectiveLocation == '/home' || effectiveLocation == '/') && !effectiveLocation.startsWith('/cart');
     final currentIndex = _calculateSelectedIndex(effectiveLocation);
 
     return Scaffold(
