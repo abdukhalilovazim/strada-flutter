@@ -30,6 +30,8 @@ import 'package:pizza_strada/features/profile/presentation/pages/profile_page.da
 import 'package:pizza_strada/features/profile/presentation/pages/branches_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/saved_addresses_page.dart';
+import 'package:pizza_strada/features/promotions/domain/entities/promotion_deal_entity.dart';
+import 'package:pizza_strada/features/promotions/presentation/pages/coupon_detail_page.dart';
 import 'package:pizza_strada/features/promotions/presentation/pages/promotions_page.dart';
 import 'package:pizza_strada/features/splash/presentation/pages/splash_page.dart';
 
@@ -131,6 +133,7 @@ class MainScaffold extends StatelessWidget {
                       child: InkWell(
                         onTap: () {
                           HapticFeedback.lightImpact();
+                          ScaffoldMessenger.of(context).clearSnackBars();
                           GoRouter.of(context).go('/cart');
                         },
                         borderRadius: BorderRadius.circular(18),
@@ -249,6 +252,7 @@ class MainScaffold extends StatelessWidget {
         label: item.labelKey.tr(),
         onTap: () {
           HapticFeedback.selectionClick();
+          ScaffoldMessenger.of(context).clearSnackBars();
           GoRouter.of(context).go(item.route);
         },
       );
@@ -262,6 +266,7 @@ class MainScaffold extends StatelessWidget {
       label: item.labelKey.tr(),
       onTap: () {
         HapticFeedback.selectionClick();
+        ScaffoldMessenger.of(context).clearSnackBars();
         GoRouter.of(context).go(item.route);
       },
     );
@@ -513,6 +518,13 @@ final appRouter = GoRouter(
         GoRoute(path: '/orders',     builder: (_, __) => const OrdersPage()),
         GoRoute(path: '/profile',    builder: (_, __) => const ProfilePage()),
       ],
+    ),
+    GoRoute(
+      path: '/coupon-detail',
+      builder: (_, s) {
+        final deal = s.extra as PromotionDealEntity;
+        return CouponDetailPage(deal: deal);
+      },
     ),
     GoRoute(
       path: '/product/:slug',
