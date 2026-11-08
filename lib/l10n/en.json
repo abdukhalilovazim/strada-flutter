@@ -216,7 +216,7 @@
   "checkout.resend_via_sms": "Send via SMS",
   "checkout.confirm_order_title": "Confirm Order",
   "checkout.confirm_order_btn": "Confirm Order",
-  "checkout.ordering_suspended": "Ordering is temporarily suspended",
+  "checkout.ordering_suspended": "Sorry, our restaurants are currently closed. Our working hours: 10:00 to 23:00",
   "checkout.inactive": "Inactive",
   "checkout.delivery_method": "Delivery method",
   "checkout.order_items_title": "Order items",

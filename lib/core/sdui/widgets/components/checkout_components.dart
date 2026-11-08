@@ -1709,6 +1709,17 @@ class SDUISubmitOrderCtaComponent extends StatelessWidget {
   Future<void> _handleSubmit(BuildContext context, CheckoutState checkoutState, CartState cartState) async {
     HapticFeedback.heavyImpact();
 
+    // 0. Restoran ochiq/yopiqligi (canOrder) tekshiruvi
+    if (!checkoutState.canOrder) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(checkoutState.canOrderMessage ?? 'checkout.ordering_suspended'.tr()),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     // 1. Savatcha tekshiruvi
     if (cartState.items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(

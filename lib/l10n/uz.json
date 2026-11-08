@@ -216,7 +216,7 @@
   "checkout.resend_via_sms": "SMS orqali yuborish",
   "checkout.confirm_order_title": "Buyurtmani tasdiqlash",
   "checkout.confirm_order_btn": "Buyurtmani tasdiqlash",
-  "checkout.ordering_suspended": "Hozirda buyurtma olish vaqtincha to'xtatilgan",
+  "checkout.ordering_suspended": "Kechirasiz, hozirda restoranlarimiz yopiq. Ish vaqtimiz: 10:00 dan 23:00 gacha",
   "checkout.inactive": "Faol emas",
   "checkout.delivery_method": "Yetkazib berish usuli",
   "checkout.order_items_title": "Buyurtma tarkibi",

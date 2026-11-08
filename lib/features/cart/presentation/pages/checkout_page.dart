@@ -59,6 +59,17 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Future<void> _proceedToStep2(CheckoutState checkoutState, CartState cartState) async {
     HapticFeedback.mediumImpact();
 
+    if (!checkoutState.canOrder) {
+      HapticFeedback.heavyImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(checkoutState.canOrderMessage ?? 'checkout.ordering_suspended'.tr()),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     if (cartState.items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

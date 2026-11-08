@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:pizza_strada/core/services/analytics_service.dart';
@@ -206,7 +207,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     if (!state.canOrder) {
       emit(state.copyWith(
         isSubmitting: false,
-        submitError: state.canOrderMessage ?? 'Hozirda buyurtma olish vaqtincha to\'xtatilgan',
+        submitError: state.canOrderMessage ?? 'checkout.ordering_suspended'.tr(),
       ));
       return;
     }
