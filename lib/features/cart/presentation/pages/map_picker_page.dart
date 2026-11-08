@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
@@ -162,6 +164,17 @@ class _MapPickerPageState extends State<MapPickerPage> {
         permission = await Geolocator.requestPermission();
       }
       if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+        // Fast path: Oxirgi ma'lum joylashuvni tezkor olish (0 ms latency)
+        final lastKnown = await Geolocator.getLastKnownPosition();
+        if (lastKnown != null && mounted) {
+          _currentLat = lastKnown.latitude;
+          _currentLng = lastKnown.longitude;
+          _checkDeliveryDistance(lastKnown.latitude, lastKnown.longitude);
+          if (!_isMapLoading) {
+            _safeRunJavaScript('if (typeof window.moveToCoords === "function") { window.moveToCoords(${lastKnown.latitude}, ${lastKnown.longitude}); }');
+          }
+        }
+
         final pos = await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(
             accuracy: LocationAccuracy.medium,
@@ -182,12 +195,10 @@ class _MapPickerPageState extends State<MapPickerPage> {
 
   void _initController() {
     final lang = EasyLocalization.of(context)?.locale.languageCode ?? 'uz';
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final themeMode = isDark ? 'dark' : 'light';
 
     final controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(isDark ? const Color(0xFF121217) : const Color(0xFFF3F4F6))
+      ..setBackgroundColor(const Color(0xFFF3F4F6))
       ..addJavaScriptChannel(
         'FlutterMap',
         onMessageReceived: (JavaScriptMessage message) {
@@ -235,12 +246,10 @@ class _MapPickerPageState extends State<MapPickerPage> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (_) {
-            _safeRunJavaScript('''
-              var style = document.createElement('style');
-              style.innerHTML = '* { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; } input, textarea { -webkit-user-select: auto !important; user-select: auto !important; }';
-              document.head.appendChild(style);
-              document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
-            ''');
+            if (mounted) setState(() => _isMapLoading = false);
+          },
+          onWebResourceError: (error) {
+            debugPrint('Map WebView error: ${error.description}');
             if (mounted) setState(() => _isMapLoading = false);
           },
         ),
@@ -250,7 +259,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
       'lat': _currentLat.toString(),
       'lng': _currentLng.toString(),
       'lang': lang,
-      'theme': themeMode,
+      'theme': 'light',
       if (widget.isReadOnly) 'readonly': '1',
       'app_version_code': DeviceInfoHelper.appVersionCode,
       'device_id': DeviceInfoHelper.deviceId,
@@ -266,15 +275,15 @@ class _MapPickerPageState extends State<MapPickerPage> {
       'device-id': DeviceInfoHelper.deviceId,
       'device-name': DeviceInfoHelper.deviceName,
       'language': lang,
-      'theme': themeMode,
+      'theme': 'light',
       'source': DeviceInfoHelper.appSource,
     };
 
     controller.loadRequest(uri, headers: headers);
     _controller = controller;
 
-    // Maksimal 3.5 soniyadan keyin xarita overlayini yopish (muzlab qolmasligi uchun)
-    Future.delayed(const Duration(milliseconds: 3500), () {
+    // Maksimal 2.5 soniyadan keyin xarita overlayini yopish (muzlab qolmasligi uchun)
+    Future.delayed(const Duration(milliseconds: 2500), () {
       if (mounted && _isMapLoading) {
         setState(() => _isMapLoading = false);
       }
@@ -299,11 +308,37 @@ class _MapPickerPageState extends State<MapPickerPage> {
         }
       }
 
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('error.location_permission_denied'.tr())),
+          );
+        }
+        return;
+      }
+
+      // Fast path: Oxirgi ma'lum bo'lgan koordinatani birinchi bo'lib qo'llash (0 ms)
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null && mounted) {
+        _currentLat = lastKnown.latitude;
+        _currentLng = lastKnown.longitude;
+        _checkDeliveryDistance(lastKnown.latitude, lastKnown.longitude);
+        _safeRunJavaScript('if (typeof window.moveToCoords === "function") { window.moveToCoords(${lastKnown.latitude}, ${lastKnown.longitude}); }');
+      }
+
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 4),
+        ),
       );
 
-      _safeRunJavaScript('if (typeof window.moveToCoords === "function") { window.moveToCoords(${position.latitude}, ${position.longitude}); }');
+      if (mounted) {
+        _currentLat = position.latitude;
+        _currentLng = position.longitude;
+        _checkDeliveryDistance(position.latitude, position.longitude);
+        _safeRunJavaScript('if (typeof window.moveToCoords === "function") { window.moveToCoords(${position.latitude}, ${position.longitude}); }');
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -334,15 +369,26 @@ class _MapPickerPageState extends State<MapPickerPage> {
       ),
       body: Stack(
         children: [
-          // Yandex Maps WebView
-          if (_controller != null) WebViewWidget(controller: _controller!),
+          // Yandex Maps WebView (Eager touch recognition for butter-smooth iOS gesture handling)
+          if (_controller != null)
+            WebViewWidget(
+              controller: _controller!,
+              gestureRecognizers: {
+                Factory<OneSequenceGestureRecognizer>(
+                  () => EagerGestureRecognizer(),
+                ),
+              },
+            ),
 
-          // Loading overlay
+          // Loading overlay (clean native light background)
           if (_isMapLoading)
-            Container(
-              color: isDark ? AppColors.darkBackground : Colors.white,
-              child: const Center(
-                child: CircularProgressIndicator(color: AppColors.primary),
+            IgnorePointer(
+              ignoring: false,
+              child: Container(
+                color: const Color(0xFFF3F4F6),
+                child: const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                ),
               ),
             ),
 
