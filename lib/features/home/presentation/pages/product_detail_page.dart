@@ -65,7 +65,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       return Scaffold(body: Center(child: Text('error.not_found'.tr())));
     }
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final hasVariants = product.variants.length > 1;
+    final displayVariants = product.variants
+        .where((v) => VariantLocalizationHelper.localize(v.title).isNotEmpty)
+        .toList();
+    final hasVariants = displayVariants.length > 1;
     final displayPrice = _selectedVariant?.price ?? product.price;
     final totalPrice = displayPrice * _quantity;
 
@@ -194,7 +197,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: product.variants.map((v) {
+                      children: displayVariants.map((v) {
                         final isSelected = _selectedVariant?.id == v.id;
                         return InkWell(
                           onTap: () =>

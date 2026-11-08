@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_icons.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
+import 'package:pizza_strada/core/utils/variant_localization_helper.dart';
 import 'package:pizza_strada/core/widgets/strada_refresh_control.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
@@ -344,14 +345,16 @@ class _HomePageState extends State<HomePage> {
                     product: product,
                     quantityInCart: quantity,
                     onTap: () {
-                      if (product.variants.length > 1) {
+                      final hasMultiple = product.variants.where((v) => VariantLocalizationHelper.localize(v.title).isNotEmpty).length > 1;
+                      if (hasMultiple) {
                         ProductDetailModal.show(context, product);
                       } else {
                         context.push('/product/${product.slug}', extra: product);
                       }
                     },
                     onAdd: () {
-                      if (product.variants.length > 1) {
+                      final hasMultiple = product.variants.where((v) => VariantLocalizationHelper.localize(v.title).isNotEmpty).length > 1;
+                      if (hasMultiple) {
                         ProductDetailModal.show(context, product);
                       } else {
                         context.read<CartCubit>().addToCart(

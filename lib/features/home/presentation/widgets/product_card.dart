@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
+import 'package:pizza_strada/core/utils/variant_localization_helper.dart';
 import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:shimmer/shimmer.dart';
@@ -35,7 +36,7 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final hasVariants = product.variants.length > 1;
+    final hasVariants = product.variants.where((v) => VariantLocalizationHelper.localize(v.title).isNotEmpty).length > 1;
     final discountVal = product.discountAmount;
     final hasDiscount = discountVal != null;
 

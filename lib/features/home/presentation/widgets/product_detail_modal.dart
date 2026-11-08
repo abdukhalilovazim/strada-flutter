@@ -99,7 +99,10 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final hasVariants = widget.product.variants.length > 1;
+    final displayVariants = widget.product.variants
+        .where((v) => VariantLocalizationHelper.localize(v.title).isNotEmpty)
+        .toList();
+    final hasVariants = displayVariants.length > 1;
     final categoryName = widget.product.category?.title ?? 'PITSA';
 
     final selectedSubtitle = _selectedVariant != null
@@ -259,7 +262,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                             ),
                           ),
                           child: Row(
-                            children: widget.product.variants.map((v) {
+                            children: displayVariants.map((v) {
                               final isSelected = _selectedVariant?.id == v.id;
                               final title = _getVariantTitle(v.title);
                               final subtitle = _getVariantSubtitle(v);

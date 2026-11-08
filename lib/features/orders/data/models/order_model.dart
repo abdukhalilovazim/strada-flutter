@@ -129,15 +129,23 @@ class OrderItemModel extends OrderItemEntity {
     required super.totalAmount,
   });
 
-  factory OrderItemModel.fromJson(Map<String, dynamic> json) => OrderItemModel(
+  factory OrderItemModel.fromJson(Map<String, dynamic> json) {
+    final rawVariant = json['variant'] as String?;
+    final isSize = rawVariant != null &&
+        (rawVariant.trim().toLowerCase() == 'size' ||
+            rawVariant.trim().toLowerCase() == "o'lcham" ||
+            rawVariant.trim().toLowerCase() == 'размер');
+
+    return OrderItemModel(
         productId: (json['product_id'] as num?)?.toInt() ?? 0,
         slug: json['slug'] as String? ?? '',
         title: json['title'] as String? ?? '',
         image: json['image'] as String? ?? '',
         variantId: (json['variant_id'] as num?)?.toInt(),
-        variantName: json['variant'] as String?,
+        variantName: isSize ? null : rawVariant,
         quantity: int.tryParse(json['quantity']?.toString() ?? '1') ?? 1,
         price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
         totalAmount: double.tryParse(json['total_amount']?.toString() ?? '0') ?? 0.0,
       );
+  }
 }

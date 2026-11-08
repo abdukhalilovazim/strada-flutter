@@ -121,9 +121,13 @@ class CartCubit extends Cubit<CartState> {
 
       VariantEntity? variant;
       if (raw['variant_id'] != null) {
+        final vTitle = raw['variant_title'] as String? ?? '';
+        final isSize = vTitle.trim().toLowerCase() == 'size' ||
+            vTitle.trim().toLowerCase() == "o'lcham" ||
+            vTitle.trim().toLowerCase() == 'размер';
         variant = VariantEntity(
           id: (raw['variant_id'] as num).toInt(),
-          title: raw['variant_title'] as String? ?? '',
+          title: isSize ? '' : vTitle,
           price: (raw['price'] as num?)?.toDouble() ?? 0.0,
         );
       }
