@@ -496,3 +496,4 @@ class CouponDetailPage extends StatelessWidget {
     );
   }
 }
+

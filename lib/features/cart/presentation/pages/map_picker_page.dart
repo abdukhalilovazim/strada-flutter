@@ -101,6 +101,15 @@ class _MapPickerPageState extends State<MapPickerPage> {
   }
 
   void _checkDeliveryDistance(double lat, double lng) {
+    if (widget.isReadOnly) {
+      if (mounted) {
+        setState(() {
+          _isOutOfRange = false;
+        });
+      }
+      return;
+    }
+
     if (_branches.isEmpty) {
       // Samarqand markaziga nisbatan standart 10 km tekshiruv
       final distMeters = Geolocator.distanceBetween(lat, lng, 39.6542, 66.9597);
@@ -517,12 +526,19 @@ class _MapPickerPageState extends State<MapPickerPage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: (_isOutOfRange ? AppColors.error : AppColors.success).withValues(alpha: 0.12),
+                    color: (widget.isReadOnly
+                            ? AppColors.primary
+                            : (_isOutOfRange ? AppColors.error : AppColors.success))
+                        .withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    _isOutOfRange ? Icons.location_off_rounded : Icons.location_on_rounded,
-                    color: _isOutOfRange ? AppColors.error : AppColors.success,
+                    widget.isReadOnly
+                        ? Icons.location_on_rounded
+                        : (_isOutOfRange ? Icons.location_off_rounded : Icons.location_on_rounded),
+                    color: widget.isReadOnly
+                        ? AppColors.primary
+                        : (_isOutOfRange ? AppColors.error : AppColors.success),
                     size: 22,
                   ),
                 ),
