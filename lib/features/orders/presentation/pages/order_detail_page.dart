@@ -284,10 +284,6 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     final isRejected = o.status == 1;
 
     if (isRejected) {
-      final supportPhone = o.phone != null && o.phone!.trim().isNotEmpty
-          ? o.phone!.trim()
-          : '+998662211177';
-
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -392,63 +388,29 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
               color: isDark ? AppColors.neutral800 : const Color(0xFFF1F3F5),
             ),
             const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      HapticFeedback.lightImpact();
-                      final uri = Uri.tryParse('tel:$supportPhone');
-                      if (uri != null && await canLaunchUrl(uri)) {
-                        await launchUrl(uri);
-                      }
-                    },
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      side: BorderSide(
-                        color: isDark ? AppColors.neutral700 : AppColors.neutral300,
-                      ),
-                    ),
-                    icon: Icon(
-                      Icons.headset_mic_outlined,
-                      size: 18,
-                      color: isDark ? Colors.white : AppColors.neutral800,
-                    ),
-                    label: Text(
-                      'orders.contact_support'.tr(),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white : AppColors.neutral800,
-                      ),
-                    ),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  context.go('/home');
+                },
+                icon: const Icon(Icons.restaurant_menu_rounded, size: 18),
+                label: Text(
+                  'orders.back_to_menu'.tr(),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      context.go('/');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: Text(
-                      'orders.back_to_menu'.tr(),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-              ],
+              ),
             ),
           ],
         ),

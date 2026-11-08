@@ -37,10 +37,14 @@ class CheckoutState extends Equatable {
   final String? submitError;
   final Map<String, dynamic>? successData;
 
-  // Settings & Ordering Permissions
-  final bool canOrder;
+  // Settings & Ordering Permissions (Defensive null-safe against hot-reload state cache)
+  final bool? _canOrder;
+  bool get canOrder => _canOrder ?? true;
+
   final String? canOrderMessage;
-  final bool isSettingsLoading;
+
+  final bool? _isSettingsLoading;
+  bool get isSettingsLoading => _isSettingsLoading ?? false;
 
   const CheckoutState({
     this.isDelivery = true,
@@ -72,10 +76,11 @@ class CheckoutState extends Equatable {
     this.isSubmitting = false,
     this.submitError,
     this.successData,
-    this.canOrder = true,
+    bool? canOrder = true,
     this.canOrderMessage,
-    this.isSettingsLoading = false,
-  });
+    bool? isSettingsLoading = false,
+  })  : _canOrder = canOrder ?? true,
+        _isSettingsLoading = isSettingsLoading ?? false;
 
   /// Chegirma turi foizda ekanligini tekshirish
   /// Backend PromoTypeEnum: PERCENT = 1, FIXED = 0

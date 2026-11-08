@@ -181,18 +181,19 @@ class SliderEntity extends Equatable {
 
 class SettingsEntity extends Equatable {
   final int discount;
-  final bool canOrder;
+  final bool? _canOrder;
+  bool get canOrder => _canOrder ?? true;
   final String? canOrderMessage;
   final String supportPhone;
   final List<PaymentMethodEntity> paymentMethods;
 
   const SettingsEntity({
     required this.discount,
-    required this.canOrder,
+    bool? canOrder = true,
     this.canOrderMessage,
     required this.supportPhone,
     required this.paymentMethods,
-  });
+  }) : _canOrder = canOrder ?? true;
 
   @override
   List<Object?> get props => [discount, canOrder, canOrderMessage, supportPhone, paymentMethods];
