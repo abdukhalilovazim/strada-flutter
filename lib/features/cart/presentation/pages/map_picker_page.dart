@@ -517,12 +517,12 @@ class _MapPickerPageState extends State<MapPickerPage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: (_isOutOfRange ? AppColors.error : AppColors.primary).withValues(alpha: 0.12),
+                    color: (_isOutOfRange ? AppColors.error : AppColors.success).withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     _isOutOfRange ? Icons.location_off_rounded : Icons.location_on_rounded,
-                    color: _isOutOfRange ? AppColors.error : AppColors.primary,
+                    color: _isOutOfRange ? AppColors.error : AppColors.success,
                     size: 22,
                   ),
                 ),
@@ -558,7 +558,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
                               Icon(
                                 _isOutOfRange ? Icons.cancel_rounded : Icons.check_circle_rounded,
                                 size: 14,
-                                color: _isOutOfRange ? AppColors.error : AppColors.secondary,
+                                color: _isOutOfRange ? AppColors.error : AppColors.success,
                               ),
                               const SizedBox(width: 4),
                               Expanded(
@@ -567,7 +567,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
                                       ? '${_tr('map.out_of_delivery_range', 'Yetkazib berish hududidan tashqarida')} (${_nearestDistanceKm!.toStringAsFixed(1)} km)'
                                       : '${_tr('map.in_delivery_range', 'Yetkazib berish hududida')} (${_nearestDistanceKm!.toStringAsFixed(1)} km)',
                                   style: AppTextStyles.bodySmall.copyWith(
-                                    color: _isOutOfRange ? AppColors.error : AppColors.secondary,
+                                    color: _isOutOfRange ? AppColors.error : AppColors.success,
                                     fontWeight: FontWeight.w600,
                                     fontSize: 12,
                                   ),
