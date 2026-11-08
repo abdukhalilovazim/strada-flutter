@@ -51,7 +51,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     _order = widget.order;
     _checkRatedStatus();
 
-    if (_order == null) {
+    if (_order == null || _order!.products.isEmpty) {
       _fetchOrder();
     } else {
       _startPolling();
@@ -266,7 +266,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     }
   }
 
-  void _openMap({double? lat, double? lng, String? address}) {
+  void _openMap({double? lat, double? lng, String? address, String? mapUrl}) {
     HapticFeedback.lightImpact();
     context.push(
       '/map-picker',
@@ -274,6 +274,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         if (lat != null && lat != 0) 'lat': lat,
         if (lng != null && lng != 0) 'lng': lng,
         if (address != null && address.isNotEmpty) 'address': address,
+        if (mapUrl != null && mapUrl.isNotEmpty) 'mapUrl': mapUrl,
         'isReadOnly': true,
       },
     );
@@ -901,7 +902,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
             ),
             const SizedBox(height: 16),
 
-            // 4. Order Details Card
+            // 4. Order Details Card (Backend boshqaruvidagi Key-Value ro'yxati)
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -918,45 +919,78 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (o.address != null && o.address!.isNotEmpty) ...[
-                    _DetailRow(
-                      label: 'checkout.address'.tr(),
-                      value: o.address!,
-                    ),
-                    if (o.latitude != null && o.latitude != 0 && o.longitude != null && o.longitude != 0) ...[
-                      const SizedBox(height: 10),
-                      _MapLinkRow(
-                        onTap: () => _openMap(lat: o.latitude, lng: o.longitude, address: o.address),
+                  if (o.details.isNotEmpty) ...[
+                    ...o.details.asMap().entries.map((entry) {
+                      final i = entry.key;
+                      final item = entry.value;
+                      final isLast = i == o.details.length - 1;
+                      final hasMap = (item.mapUrl != null && item.mapUrl!.isNotEmpty) ||
+                          (item.latitude != null && item.latitude != 0 && item.longitude != null && item.longitude != 0);
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _DetailRow(
+                            label: item.key,
+                            value: item.value,
+                            isBold: item.bold,
+                          ),
+                          if (hasMap) ...[
+                            const SizedBox(height: 10),
+                            _MapLinkRow(
+                              onTap: () => _openMap(
+                                lat: item.latitude ?? o.latitude,
+                                lng: item.longitude ?? o.longitude,
+                                address: item.value,
+                                mapUrl: item.mapUrl,
+                              ),
+                            ),
+                          ],
+                          if (!isLast) const Divider(height: 24),
+                        ],
+                      );
+                    }),
+                  ] else ...[
+                    if (o.address != null && o.address!.isNotEmpty) ...[
+                      _DetailRow(
+                        label: 'checkout.address'.tr(),
+                        value: o.address!,
                       ),
+                      if (o.latitude != null && o.latitude != 0 && o.longitude != null && o.longitude != 0) ...[
+                        const SizedBox(height: 10),
+                        _MapLinkRow(
+                          onTap: () => _openMap(lat: o.latitude, lng: o.longitude, address: o.address),
+                        ),
+                      ],
+                      const Divider(height: 24),
                     ],
-                    const Divider(height: 24),
+                    if (o.branch != null && o.branch!.isNotEmpty) ...[
+                      _DetailRow(
+                        label: 'orders.branch'.tr(),
+                        value: o.branch!,
+                      ),
+                      const Divider(height: 24),
+                    ],
+                    if (o.phone != null && o.phone!.isNotEmpty) ...[
+                      _DetailRow(
+                        label: 'checkout.recipient_phone'.tr(),
+                        value: NumberFormatter.formatPhone(o.phone!),
+                      ),
+                      const Divider(height: 24),
+                    ],
+                    if (o.paymentMethodText != null && o.paymentMethodText!.isNotEmpty) ...[
+                      _DetailRow(label: 'checkout.payment'.tr(), value: o.paymentMethodText!),
+                      if (o.comment != null && o.comment!.isNotEmpty) const Divider(height: 24),
+                    ],
+                    if (o.comment != null && o.comment!.isNotEmpty)
+                      _DetailRow(label: 'checkout.comment'.tr(), value: o.comment!),
                   ],
-                  if (o.branch != null && o.branch!.isNotEmpty) ...[
-                    _DetailRow(
-                      label: 'orders.branch'.tr(),
-                      value: o.branch!,
-                    ),
-                    const Divider(height: 24),
-                  ],
-                  if (o.phone != null && o.phone!.isNotEmpty) ...[
-                    _DetailRow(
-                      label: 'checkout.recipient_phone'.tr(),
-                      value: NumberFormatter.formatPhone(o.phone!),
-                    ),
-                    const Divider(height: 24),
-                  ],
-                  if (o.paymentMethodText != null && o.paymentMethodText!.isNotEmpty) ...[
-                    _DetailRow(label: 'checkout.payment'.tr(), value: o.paymentMethodText!),
-                    if (o.comment != null && o.comment!.isNotEmpty) const Divider(height: 24),
-                  ],
-                  if (o.comment != null && o.comment!.isNotEmpty)
-                    _DetailRow(label: 'checkout.comment'.tr(), value: o.comment!),
                 ],
               ),
             ),
             const SizedBox(height: 16),
 
-            // 5. Totals Card
+            // 5. Totals Card (Backend boshqaruvidagi hisob-kitoblar)
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -965,19 +999,78 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
               ),
               child: Column(
                 children: [
-                  _PriceRow(label: 'cart.subtotal'.tr(), price: o.subtotalPrice),
-                  if (o.deliveryPrice > 0)
-                     Padding(
-                       padding: const EdgeInsets.only(top: 12),
-                       child: _PriceRow(label: 'cart.delivery'.tr(), price: o.deliveryPrice),
-                     ),
-                  if (o.discountAmount > 0)
-                     Padding(
-                       padding: const EdgeInsets.only(top: 12),
-                       child: _PriceRow(label: 'cart.discount'.tr(), price: o.discountAmount, isNegative: true),
-                     ),
-                  const Divider(height: 32),
-                  _PriceRow(label: 'cart.total'.tr(), price: o.totalPrice, isTotal: true),
+                  if (o.priceDetails.isNotEmpty) ...[
+                    ...o.priceDetails.asMap().entries.map((entry) {
+                      final i = entry.key;
+                      final item = entry.value;
+                      final isLast = i == o.priceDetails.length - 1;
+
+                      if (item.bold) {
+                        return Column(
+                          children: [
+                            const Divider(height: 32),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  item.key,
+                                  style: AppTextStyles.labelLarge.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 16,
+                                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                                  ),
+                                ),
+                                Text(
+                                  item.value,
+                                  style: AppTextStyles.h3.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      }
+
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              item.key,
+                              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500),
+                            ),
+                            Text(
+                              item.value,
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: item.isDiscount
+                                    ? AppColors.success
+                                    : Theme.of(context).textTheme.bodySmall?.color,
+                                fontWeight: item.isDiscount ? FontWeight.w700 : FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ] else ...[
+                    _PriceRow(label: 'cart.subtotal'.tr(), price: o.subtotalPrice),
+                    if (o.deliveryPrice > 0)
+                       Padding(
+                         padding: const EdgeInsets.only(top: 12),
+                         child: _PriceRow(label: 'cart.delivery'.tr(), price: o.deliveryPrice),
+                       ),
+                    if (o.discountAmount > 0)
+                       Padding(
+                         padding: const EdgeInsets.only(top: 12),
+                         child: _PriceRow(label: 'cart.discount'.tr(), price: o.discountAmount, isNegative: true),
+                       ),
+                    const Divider(height: 32),
+                    _PriceRow(label: 'cart.total'.tr(), price: o.totalPrice, isTotal: true),
+                  ],
                 ],
               ),
             ),
@@ -1245,10 +1338,12 @@ class _PriceRow extends StatelessWidget {
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
+  final bool isBold;
 
   const _DetailRow({
     required this.label,
     required this.value,
+    this.isBold = false,
   });
 
   @override
@@ -1259,16 +1354,25 @@ class _DetailRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.neutral500,
+            fontWeight: isBold ? FontWeight.w700 : FontWeight.normal,
+          ),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: Text(
             value,
             textAlign: TextAlign.end,
-            style: AppTextStyles.labelSmall.copyWith(
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-            ),
+            style: isBold
+                ? AppTextStyles.labelMedium.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  )
+                : AppTextStyles.labelSmall.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
           ),
         ),
       ],

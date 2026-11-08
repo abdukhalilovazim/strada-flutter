@@ -16,15 +16,21 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _phoneController = TextEditingController(
-    text: PhoneNumberFormatter.format('997775443'),
-  );
-  final _nameController = TextEditingController(text: 'Azim');
+  late final AuthCubit _authCubit;
+  final _phoneController = TextEditingController();
+  final _nameController = TextEditingController();
   final _phoneFocus = FocusNode();
   final _nameFocus = FocusNode();
 
   @override
+  void initState() {
+    super.initState();
+    _authCubit = getIt<AuthCubit>();
+  }
+
+  @override
   void dispose() {
+    _authCubit.close();
     _phoneController.dispose();
     _nameController.dispose();
     _phoneFocus.dispose();
@@ -44,7 +50,7 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
     final phone = '+998$digits';
-    ctx.read<AuthCubit>().login(
+    _authCubit.login(
       fullName: _nameController.text.trim(),
       phone: phone,
     );
@@ -54,8 +60,8 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return BlocProvider(
-      create: (_) => getIt<AuthCubit>(),
+    return BlocProvider.value(
+      value: _authCubit,
       child: Scaffold(
         backgroundColor: isDark ? AppColors.darkBackground : Colors.white,
         body: BlocConsumer<AuthCubit, AuthState>(
@@ -89,13 +95,13 @@ class _LoginPageState extends State<LoginPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _langButton(context, 'UZ',
-                            context.locale.languageCode == 'uz'),
+                            context.locale.languageCode == 'uz', isDark),
                         const SizedBox(width: 8),
                         _langButton(context, 'RU',
-                            context.locale.languageCode == 'ru'),
+                            context.locale.languageCode == 'ru', isDark),
                         const SizedBox(width: 8),
                         _langButton(context, 'EN',
-                            context.locale.languageCode == 'en'),
+                            context.locale.languageCode == 'en', isDark),
                       ],
                     ),
 
@@ -159,6 +165,7 @@ class _LoginPageState extends State<LoginPage> {
                       decoration: _inputDecoration(
                         'auth.name_hint'.tr(),
                         Icons.person_outline_rounded,
+                        isDark,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -181,10 +188,12 @@ class _LoginPageState extends State<LoginPage> {
                       decoration: _inputDecoration(
                         '(90) 123-45-67',
                         Icons.phone_outlined,
+                        isDark,
                       ).copyWith(
                         prefixText: '+998 ',
                         prefixStyle: AppTextStyles.bodyLarge.copyWith(
                           color: isDark ? Colors.white : AppColors.neutral900,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -218,26 +227,33 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _langButton(BuildContext context, String lang, bool active) {
+  Widget _langButton(BuildContext context, String lang, bool active, bool isDark) {
     return GestureDetector(
       onTap: () {
+        HapticFeedback.selectionClick();
         context.setLocale(Locale(lang.toLowerCase()));
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? AppColors.primary : Colors.transparent,
+          color: active
+              ? AppColors.primary
+              : (isDark ? AppColors.darkCard : const Color(0xFFF3F4F6)),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: active ? AppColors.primary : AppColors.neutral300,
+            color: active
+                ? AppColors.primary
+                : (isDark ? AppColors.darkBorder : AppColors.neutral200),
             width: 1.5,
           ),
         ),
         child: Text(
           lang,
           style: AppTextStyles.labelSmall.copyWith(
-            color: active ? Colors.white : AppColors.neutral500,
+            color: active
+                ? Colors.white
+                : (isDark ? AppColors.neutral300 : AppColors.neutral700),
             fontWeight: FontWeight.w700,
             fontSize: 13,
           ),
@@ -246,9 +262,36 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  InputDecoration _inputDecoration(String hint, IconData icon) =>
+  InputDecoration _inputDecoration(String hint, IconData icon, bool isDark) =>
       InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon, color: AppColors.neutral400, size: 20),
+        hintStyle: AppTextStyles.bodyMedium.copyWith(
+          color: isDark ? AppColors.neutral500 : AppColors.neutral400,
+        ),
+        filled: true,
+        fillColor: isDark ? AppColors.darkCard : const Color(0xFFF9FAFB),
+        prefixIcon: Icon(icon, color: isDark ? AppColors.neutral400 : AppColors.neutral500, size: 20),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+            width: 1.2,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+            width: 1.2,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(
+            color: AppColors.primary,
+            width: 1.8,
+          ),
+        ),
       );
 }

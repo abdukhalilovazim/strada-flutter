@@ -94,6 +94,7 @@
   "checkout.not_selected": "Не выбрано",
   "checkout.order_summary": "Детали заказа",
   "orders.title": "Мои заказы",
+  "orders.order_time": "Время заказа",
   "orders.items": "Продукты",
   "orders.items_count": "{count} товаров",
   "orders.pay_now": "Оплатить",

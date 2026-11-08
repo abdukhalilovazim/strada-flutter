@@ -57,19 +57,19 @@ void main() async {
   await DeepLinkService.instance.init();
 
   runApp(
-    EasyLocalization(
-      supportedLocales: const [Locale('uz'), Locale('ru'), Locale('en')],
-      path: 'lib/l10n',
-      fallbackLocale: const Locale('uz'),
-      startLocale: const Locale('uz'),
-      child: MultiBlocProvider(
-        providers: [
-          BlocProvider(create: (context) => getIt<CartCubit>()),
-          BlocProvider(create: (context) => getIt<HomeCubit>()..init()),
-          BlocProvider(create: (context) => getIt<ThemeCubit>()),
-          BlocProvider(create: (context) => CheckoutCubit()),
-          BlocProvider(create: (context) => getIt<NotificationsCubit>()..loadNotifications()),
-        ],
+    MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => getIt<CartCubit>()),
+        BlocProvider(create: (context) => getIt<HomeCubit>()..init()),
+        BlocProvider(create: (context) => getIt<ThemeCubit>()),
+        BlocProvider(create: (context) => CheckoutCubit()),
+        BlocProvider(create: (context) => getIt<NotificationsCubit>()..loadNotifications()),
+      ],
+      child: EasyLocalization(
+        supportedLocales: const [Locale('uz'), Locale('ru'), Locale('en')],
+        path: 'lib/l10n',
+        fallbackLocale: const Locale('uz'),
+        startLocale: const Locale('uz'),
         child: BlocBuilder<ThemeCubit, ThemeMode>(
           builder: (context, themeMode) => MyApp(themeMode: themeMode),
         ),

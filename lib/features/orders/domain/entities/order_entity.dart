@@ -18,6 +18,10 @@ class OrderEntity {
   final double deliveryPrice;
   final double totalPrice;
   final List<OrderItemEntity> products;
+  final List<OrderDetailItemEntity> details;
+  final List<OrderDetailItemEntity> priceDetails;
+  final int? itemsCount;
+  final String? createdAt;
 
   const OrderEntity({
     required this.id,
@@ -39,7 +43,49 @@ class OrderEntity {
     required this.deliveryPrice,
     required this.totalPrice,
     required this.products,
+    this.details = const [],
+    this.priceDetails = const [],
+    this.itemsCount,
+    this.createdAt,
   });
+}
+
+/// 📋 Backend tomonidan to'liq boshqariladigan Key-Value qatori
+class OrderDetailItemEntity {
+  final String key;
+  final String value;
+  final bool bold;
+  final String? mapUrl;
+  final double? latitude;
+  final double? longitude;
+  final String? phone;
+  final bool isDiscount;
+
+  const OrderDetailItemEntity({
+    required this.key,
+    required this.value,
+    this.bold = false,
+    this.mapUrl,
+    this.latitude,
+    this.longitude,
+    this.phone,
+    this.isDiscount = false,
+  });
+
+  factory OrderDetailItemEntity.fromJson(Map<String, dynamic> json) {
+    return OrderDetailItemEntity(
+      key: json['key']?.toString() ?? '',
+      value: json['value']?.toString() ?? '',
+      bold: json['bold'] == true || json['bold'] == 1 || json['bold'] == 'true',
+      mapUrl: json['map_url']?.toString(),
+      latitude: (json['latitude'] as num?)?.toDouble() ??
+          double.tryParse(json['latitude']?.toString() ?? ''),
+      longitude: (json['longitude'] as num?)?.toDouble() ??
+          double.tryParse(json['longitude']?.toString() ?? ''),
+      phone: json['phone']?.toString(),
+      isDiscount: json['is_discount'] == true,
+    );
+  }
 }
 
 class OrderItemEntity {

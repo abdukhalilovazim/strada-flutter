@@ -130,13 +130,14 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  // 🍕 1 dona maxsus realistik animatsion pitsa
+                                  // 🍕 1 dona maxsus realistik 3D animatsion pitsa
                                   const PizzaSliceLoader(
-                                    size: 176,
+                                    size: 184,
                                     sliceCount: 6,
                                     duration: Duration(milliseconds: 1900),
+                                    is3D: true,
                                   ),
-                                  const SizedBox(height: 32),
+                                  const SizedBox(height: 24),
 
                                   // Brend nomi
                                   Text(

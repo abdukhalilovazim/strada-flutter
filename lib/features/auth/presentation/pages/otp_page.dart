@@ -21,6 +21,7 @@ class OtpPage extends StatefulWidget {
 }
 
 class _OtpPageState extends State<OtpPage> {
+  late final AuthCubit _authCubit;
   final List<TextEditingController> _controllers =
       List.generate(4, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
@@ -32,7 +33,14 @@ class _OtpPageState extends State<OtpPage> {
   @override
   void initState() {
     super.initState();
+    _authCubit = getIt<AuthCubit>();
     _startTimer();
+    // OTP sahifasi ochilishi bilan avtomatik klaviaturani ochish
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNodes[0].requestFocus();
+      }
+    });
   }
 
   void _startTimer() {
@@ -58,6 +66,7 @@ class _OtpPageState extends State<OtpPage> {
   @override
   void dispose() {
     _timer?.cancel();
+    _authCubit.close();
     for (final c in _controllers) {
       c.dispose();
     }
@@ -70,15 +79,48 @@ class _OtpPageState extends State<OtpPage> {
   void _onConfirm(BuildContext ctx) {
     final codeStr = _controllers.map((c) => c.text).join();
     if (codeStr.length == 4) {
-      ctx.read<AuthCubit>().confirmOtp(phone: widget.phone, code: codeStr);
+      _authCubit.confirmOtp(phone: widget.phone, code: codeStr);
     }
   }
 
   void _onResend(BuildContext ctx) {
     if (_canResend) {
       final name = widget.fullName.trim().isNotEmpty ? widget.fullName.trim() : 'Mijoz';
-      ctx.read<AuthCubit>().login(phone: widget.phone, fullName: name);
+      _authCubit.login(phone: widget.phone, fullName: name);
       _startTimer();
+    }
+  }
+
+  void _onOtpChanged(BuildContext ctx, int index, String val) {
+    // 1. Agar SMS orqali kelgan to'liq kod (masalan "1234") yoki paste qilingan bo'lsa
+    if (val.length > 1) {
+      final digits = val.replaceAll(RegExp(r'\D'), '');
+      for (int i = 0; i < 4 && i < digits.length; i++) {
+        _controllers[i].text = digits[i];
+      }
+      if (digits.length >= 4) {
+        _focusNodes[3].requestFocus();
+        _onConfirm(ctx);
+      } else {
+        _focusNodes[digits.length.clamp(0, 3)].requestFocus();
+      }
+      return;
+    }
+
+    // 2. Oddiy bitta raqam kiritilganda
+    if (val.isNotEmpty) {
+      if (index < 3) {
+        _focusNodes[index + 1].requestFocus();
+      } else {
+        _focusNodes[index].unfocus();
+      }
+    } else if (val.isEmpty && index > 0) {
+      _focusNodes[index - 1].requestFocus();
+    }
+
+    // 3. Agar barcha 4 ta katakcha to'lgan bo'lsa, avtomatik tasdiqlash
+    if (_controllers.every((c) => c.text.isNotEmpty)) {
+      _onConfirm(ctx);
     }
   }
 
@@ -86,8 +128,8 @@ class _OtpPageState extends State<OtpPage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return BlocProvider(
-      create: (_) => getIt<AuthCubit>(),
+    return BlocProvider.value(
+      value: _authCubit,
       child: Scaffold(
         backgroundColor: isDark ? AppColors.darkBackground : Colors.white,
         appBar: AppBar(
@@ -143,9 +185,7 @@ class _OtpPageState extends State<OtpPage> {
                       child: Text(
                         'auth.otp_title'.tr(),
                         style: AppTextStyles.h1.copyWith(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : AppColors.neutral900,
+                          color: isDark ? Colors.white : AppColors.neutral900,
                           fontSize: 26,
                         ),
                         textAlign: TextAlign.center,
@@ -163,17 +203,19 @@ class _OtpPageState extends State<OtpPage> {
                     ),
                     const SizedBox(height: 40),
 
-                    // OTP inputs
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(4, (i) {
-                        return _buildOtpBox(
-                          ctx,
-                          controller: _controllers[i],
-                          focusNode: _focusNodes[i],
-                          index: i,
-                        );
-                      }),
+                    // OTP inputs (AutofillGroup bilan SMS avtomatik to'ldirish qo'llab-quvvatlanadi)
+                    AutofillGroup(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: List.generate(4, (i) {
+                          return _buildOtpBox(
+                            ctx,
+                            controller: _controllers[i],
+                            focusNode: _focusNodes[i],
+                            index: i,
+                          );
+                        }),
+                      ),
                     ),
                     const SizedBox(height: 32),
 
@@ -230,45 +272,54 @@ class _OtpPageState extends State<OtpPage> {
     return SizedBox(
       width: 68,
       height: 68,
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        autofocus: index == 0,
-        autocorrect: false,
-        enableSuggestions: false,
-        spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
-        textAlign: TextAlign.center,
-        keyboardType: TextInputType.number,
-        autofillHints: const [AutofillHints.oneTimeCode],
-        maxLength: 1,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        onChanged: (val) {
-          if (val.isNotEmpty && index < 3) {
-            _focusNodes[index + 1].requestFocus();
-          } else if (val.isEmpty && index > 0) {
+      child: Focus(
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent &&
+              event.logicalKey == LogicalKeyboardKey.backspace &&
+              controller.text.isEmpty &&
+              index > 0) {
+            _controllers[index - 1].clear();
             _focusNodes[index - 1].requestFocus();
+            return KeyEventResult.handled;
           }
-          if (_controllers.every((c) => c.text.isNotEmpty)) {
-            _onConfirm(ctx);
-          }
+          return KeyEventResult.ignored;
         },
-        style: AppTextStyles.h1.copyWith(
-          color: isDark ? Colors.white : AppColors.neutral900,
-        ),
-        decoration: InputDecoration(
-          counterText: '',
-          filled: true,
-          fillColor: isDark ? AppColors.darkCard : AppColors.neutral50,
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(
-              color: isDark ? AppColors.darkBorder : AppColors.neutral200,
-              width: 1,
-            ),
+        child: TextField(
+          controller: controller,
+          focusNode: focusNode,
+          autofocus: index == 0,
+          autocorrect: false,
+          enableSuggestions: false,
+          spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
+          textAlign: TextAlign.center,
+          keyboardType: TextInputType.number,
+          autofillHints: const [AutofillHints.oneTimeCode],
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(4), // SMS autofill uchun to'liq 4 ta raqam sig'ishi lozim
+          ],
+          onChanged: (val) => _onOtpChanged(ctx, index, val),
+          style: AppTextStyles.h1.copyWith(
+            color: isDark ? Colors.white : AppColors.neutral900,
+            fontSize: 26,
+            fontWeight: FontWeight.w800,
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          decoration: InputDecoration(
+            counterText: '',
+            filled: true,
+            fillColor: isDark ? AppColors.darkCard : const Color(0xFFF9FAFB),
+            contentPadding: EdgeInsets.zero,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+                width: 1.2,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            ),
           ),
         ),
       ),

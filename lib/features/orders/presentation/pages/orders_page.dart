@@ -251,7 +251,11 @@ class OrderCard extends StatelessWidget {
               ),
               const SizedBox(height: 14),
 
-              // Info rows: Type, Branch, Payment Method, Items count
+              // Info rows: Vaqt, Type, Branch, Payment Method, Items count
+              if (order.createdAt != null && order.createdAt!.isNotEmpty) ...[
+                _buildInfoRow(context, 'orders.order_time'.tr(), order.createdAt!),
+                const SizedBox(height: 8),
+              ],
               if (order.type != null && order.type!.isNotEmpty) ...[
                 _buildInfoRow(context, 'orders.type'.tr(), order.type!),
                 const SizedBox(height: 8),
@@ -267,7 +271,7 @@ class OrderCard extends StatelessWidget {
               _buildInfoRow(
                 context,
                 'orders.items'.tr(),
-                'orders.items_count'.tr(namedArgs: {'count': order.products.length.toString()}),
+                'orders.items_count'.tr(namedArgs: {'count': (order.itemsCount ?? order.products.length).toString()}),
               ),
 
               Divider(height: 24, color: isDark ? AppColors.darkBorder : AppColors.neutral100),

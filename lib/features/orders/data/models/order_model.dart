@@ -21,6 +21,10 @@ class OrderModel extends OrderEntity {
     required super.deliveryPrice,
     required super.totalPrice,
     required List<OrderItemModel> super.products,
+    super.details = const [],
+    super.priceDetails = const [],
+    super.itemsCount,
+    super.createdAt,
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
@@ -96,6 +100,14 @@ class OrderModel extends OrderEntity {
       deliveryPrice: double.tryParse(json['delivery_price']?.toString() ?? '0') ?? 0.0,
       totalPrice: double.tryParse(json['total_price']?.toString() ?? '0') ?? 0.0,
       products: (json['products'] as List? ?? []).map((e) => OrderItemModel.fromJson(e as Map<String, dynamic>)).toList(),
+      details: (json['details'] as List? ?? [])
+          .map((e) => OrderDetailItemEntity.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      priceDetails: (json['price_details'] as List? ?? [])
+          .map((e) => OrderDetailItemEntity.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      itemsCount: (json['items_count'] as num?)?.toInt() ?? (json['products'] as List?)?.length,
+      createdAt: json['created_at']?.toString(),
     );
   }
 }

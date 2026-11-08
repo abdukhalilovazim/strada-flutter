@@ -94,6 +94,7 @@
   "checkout.not_selected": "Tanlanmagan",
   "checkout.order_summary": "To'lov hisob-kitobi",
   "orders.title": "Buyurtmalarim",
+  "orders.order_time": "Buyurtma vaqti",
   "orders.items": "Mahsulotlar",
   "orders.items_count": "{count} ta mahsulot",
   "orders.pay_now": "To'lovni amalga oshirish",

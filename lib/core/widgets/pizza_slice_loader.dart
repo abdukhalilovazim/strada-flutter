@@ -15,12 +15,14 @@ class PizzaSliceLoader extends StatefulWidget {
   final double size;
   final int sliceCount;
   final Duration duration;
+  final bool is3D;
 
   const PizzaSliceLoader({
     super.key,
     this.size = 172,
     this.sliceCount = 6,
     this.duration = const Duration(milliseconds: 1900),
+    this.is3D = true,
   });
 
   @override
@@ -48,14 +50,77 @@ class _PizzaSliceLoaderState extends State<PizzaSliceLoader>
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.is3D) {
+      return AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return CustomPaint(
+            size: Size(widget.size, widget.size),
+            painter: _RealisticPizzaPainter(
+              progress: _controller.value,
+              sliceCount: widget.sliceCount,
+              is3D: false,
+            ),
+          );
+        },
+      );
+    }
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        return CustomPaint(
-          size: Size(widget.size, widget.size),
-          painter: _RealisticPizzaPainter(
-            progress: _controller.value,
-            sliceCount: widget.sliceCount,
+        final t = _controller.value;
+        final floatY = math.sin(t * 2 * math.pi) * 8.0;
+        final wobbleZ = math.sin(t * 2 * math.pi) * 0.04;
+
+        final shadowScale = 1.0 - (floatY / 55.0);
+        final shadowAlpha = (0.16 - (floatY / 100.0)).clamp(0.08, 0.25);
+
+        return SizedBox(
+          width: widget.size * 1.25,
+          height: widget.size * 1.15,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // 🌟 3D Dinamik polda hosil bo'ladigan yumshoq pol soyasi
+              Positioned(
+                bottom: 12,
+                child: Container(
+                  width: widget.size * 0.95 * shadowScale,
+                  height: 26 * shadowScale,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.all(
+                      Radius.elliptical(widget.size * 0.95, 26),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: shadowAlpha),
+                        blurRadius: 18,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // 🍕 3D Izometrik ko'rinishdagi muallaq (floating) pitsa
+              Transform(
+                alignment: Alignment.center,
+                transform: Matrix4.identity()
+                  ..setEntry(3, 2, 0.0016) // 3D chuqurlik (perspective)
+                  ..rotateX(0.48) // 3D qiyalik (isometric table tilt)
+                  ..rotateZ(-0.06 + wobbleZ) // Mayin tabiiy tebranish
+                  ..translate(0.0, floatY), // Fazoda erkin muallaq turish
+                child: CustomPaint(
+                  size: Size(widget.size, widget.size),
+                  painter: _RealisticPizzaPainter(
+                    progress: t,
+                    sliceCount: widget.sliceCount,
+                    is3D: true,
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -66,10 +131,12 @@ class _PizzaSliceLoaderState extends State<PizzaSliceLoader>
 class _RealisticPizzaPainter extends CustomPainter {
   final double progress;
   final int sliceCount;
+  final bool is3D;
 
   _RealisticPizzaPainter({
     required this.progress,
     required this.sliceCount,
+    this.is3D = false,
   });
 
   @override
@@ -79,16 +146,18 @@ class _RealisticPizzaPainter extends CustomPainter {
     final sliceAngle = (2 * math.pi) / sliceCount;
     const gapAngle = 0.045; // Bo'laklar orasidagi nozik oraliq
 
-    // 🌟 Pitsa ostidagi chuqur yumshoq stol soyasi
-    final boardShadowPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.12)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16);
-    canvas.drawCircle(center.translate(0, 10), radius + 4, boardShadowPaint);
+    // 🌟 Pitsa ostidagi chuqur yumshoq stol soyasi (faqat 2D rejimda yoki 3D ostida qo'shimcha yumshoqlik)
+    if (!is3D) {
+      final boardShadowPaint = Paint()
+        ..color = Colors.black.withValues(alpha: 0.12)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16);
+      canvas.drawCircle(center.translate(0, 10), radius + 4, boardShadowPaint);
 
-    final midBoardPaint = Paint()
-      ..color = const Color(0xFF421C0B).withValues(alpha: 0.08)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-    canvas.drawCircle(center.translate(0, 5), radius + 2, midBoardPaint);
+      final midBoardPaint = Paint()
+        ..color = const Color(0xFF421C0B).withValues(alpha: 0.08)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+      canvas.drawCircle(center.translate(0, 5), radius + 2, midBoardPaint);
+    }
 
     // 🧀 1-bosqich: Chiqqan bo'laklar uchun pishloq iplari (cheese pull strings)
     // Bo'lak orqasidan tortiladigan nozik mozzarella iplari
@@ -135,6 +204,11 @@ class _RealisticPizzaPainter extends CustomPainter {
         canvas.drawPath(shadowPath, elevatedShadow);
       }
 
+      // 3D qalinlik devori (Crust thickness extrusion for 3D depth)
+      if (is3D) {
+        _draw3DCrustThickness(canvas, sliceCenter, radius, startAngle, sweepAngle, midAngle);
+      }
+
       // A. Qobiq asosi (Crust base)
       _drawArtisanalCrust(canvas, sliceCenter, radius, startAngle, sweepAngle, midAngle, i);
 
@@ -143,6 +217,79 @@ class _RealisticPizzaPainter extends CustomPainter {
 
       // C. Eritilgan Mozzarella pishlog'i
       _drawMeltedMozzarella(canvas, sliceCenter, radius * 0.75, startAngle, sweepAngle, midAngle, i);
+
+      // D. Toppinglar: Pepperoni, Rayhon, Zaytun, Ziravorlar
+      _drawGourmetToppings(canvas, sliceCenter, radius * 0.75, midAngle, i);
+
+      canvas.restore();
+    }
+  }
+
+  /// 3D Pitsaning chekka qalinlik devori (Extrusion rim)
+  void _draw3DCrustThickness(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    double startAngle,
+    double sweepAngle,
+    double midAngle,
+  ) {
+    // Faqat pastki tomonga (kameraga qarab turgan yoylarga) qalinlik chiziladi
+    if (math.sin(midAngle) < -0.25) return;
+
+    const depth = 7.0;
+    final rimPath = Path();
+
+    final pStartTop = Offset(
+      center.dx + math.cos(startAngle) * radius,
+      center.dy + math.sin(startAngle) * radius,
+    );
+    final pStartBottom = pStartTop.translate(0, depth);
+
+    rimPath.moveTo(pStartTop.dx, pStartTop.dy);
+    rimPath.lineTo(pStartBottom.dx, pStartBottom.dy);
+
+    const segments = 10;
+    for (int s = 1; s <= segments; s++) {
+      final a = startAngle + (sweepAngle * (s / segments));
+      rimPath.lineTo(
+        center.dx + math.cos(a) * radius,
+        center.dy + math.sin(a) * radius + depth,
+      );
+    }
+
+    final pEndTop = Offset(
+      center.dx + math.cos(startAngle + sweepAngle) * radius,
+      center.dy + math.sin(startAngle + sweepAngle) * radius,
+    );
+    rimPath.lineTo(pEndTop.dx, pEndTop.dy);
+
+    for (int s = segments; s >= 0; s--) {
+      final a = startAngle + (sweepAngle * (s / segments));
+      rimPath.lineTo(
+        center.dx + math.cos(a) * radius,
+        center.dy + math.sin(a) * radius,
+      );
+    }
+    rimPath.close();
+
+    final rimShader = LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: const [
+        Color(0xFFB55D11), // Qovurilgan qobig'i
+        Color(0xFF6E2F05), // Qorong'i pastki qismi
+        Color(0xFF321203), // Chuqur 3D soya
+      ],
+      stops: const [0.0, 0.65, 1.0],
+    ).createShader(rimPath.getBounds());
+
+    final rimPaint = Paint()
+      ..shader = rimShader
+      ..style = PaintingStyle.fill;
+
+    canvas.drawPath(rimPath, rimPaint);
+  }
 
       // D. Toppinglar: Pepperoni, Rayhon, Zaytun, Ziravorlar
       _drawGourmetToppings(canvas, sliceCenter, radius * 0.75, midAngle, i);

@@ -309,7 +309,7 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
             );
         await SecureStorage.saveAddress(
           SavedAddressModel(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            id: 'local_${DateTime.now().millisecondsSinceEpoch}',
             label: trimmed,
             address: trimmed,
             lat: lat,
