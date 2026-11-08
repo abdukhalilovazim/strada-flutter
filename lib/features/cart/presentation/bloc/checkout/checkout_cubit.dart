@@ -90,7 +90,14 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   }
 
   void setPaymentMethod(String method) {
-    emit(state.copyWith(selectedPaymentMethodKey: method));
+    emit(state.copyWith(
+      selectedPaymentMethodKey: method,
+      showPaymentMethodError: false,
+    ));
+  }
+
+  void setPaymentMethodError(bool hasError) {
+    emit(state.copyWith(showPaymentMethodError: hasError));
   }
 
   void setChangeAmount(double? amount) {

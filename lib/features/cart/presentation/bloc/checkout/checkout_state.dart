@@ -18,7 +18,8 @@ class CheckoutState extends Equatable {
   final String? promoError;
   final bool loadingPromo;
 
-  final String selectedPaymentMethodKey;
+  final String? selectedPaymentMethodKey;
+  final bool showPaymentMethodError;
   final double? changeAmount;
   final String comment;
 
@@ -61,7 +62,8 @@ class CheckoutState extends Equatable {
     this.promoValue,
     this.promoError,
     this.loadingPromo = false,
-    this.selectedPaymentMethodKey = 'cash',
+    this.selectedPaymentMethodKey,
+    this.showPaymentMethodError = false,
     this.changeAmount,
     this.comment = '',
     this.entrance,
@@ -153,6 +155,7 @@ class CheckoutState extends Equatable {
     String? promoError,
     bool? loadingPromo,
     String? selectedPaymentMethodKey,
+    bool? showPaymentMethodError,
     double? changeAmount,
     String? comment,
     String? entrance,
@@ -187,6 +190,7 @@ class CheckoutState extends Equatable {
       promoError: promoError,
       loadingPromo: loadingPromo ?? this.loadingPromo,
       selectedPaymentMethodKey: selectedPaymentMethodKey ?? this.selectedPaymentMethodKey,
+      showPaymentMethodError: showPaymentMethodError ?? this.showPaymentMethodError,
       changeAmount: changeAmount ?? this.changeAmount,
       comment: comment ?? this.comment,
       entrance: entrance ?? this.entrance,
@@ -225,6 +229,7 @@ class CheckoutState extends Equatable {
       promoError: null,
       loadingPromo: false,
       selectedPaymentMethodKey: selectedPaymentMethodKey,
+      showPaymentMethodError: showPaymentMethodError,
       changeAmount: changeAmount,
       comment: comment,
       entrance: entrance,
@@ -265,6 +270,7 @@ class CheckoutState extends Equatable {
         promoError,
         loadingPromo,
         selectedPaymentMethodKey,
+        showPaymentMethodError,
         changeAmount,
         comment,
         entrance,

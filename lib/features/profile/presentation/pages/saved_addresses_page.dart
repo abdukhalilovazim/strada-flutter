@@ -75,13 +75,18 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
   }
 
   Future<void> _deleteAddress(String id) async {
+    final target = _addresses.where((a) => a.id == id).firstOrNull;
+    final isServer = target != null
+        ? target.isServerId
+        : (!id.startsWith('local_') && int.tryParse(id) != null && int.parse(id) < 1000000000);
+
     setState(() {
       _addresses.removeWhere((a) => a.id == id);
     });
     await SecureStorage.deleteAddress(id);
 
-    // Agar server ID bo'lsa (raqamli ID), backenddan ham o'chirish
-    if (int.tryParse(id) != null) {
+    // Faqat haqiqiy server ID bo'lsa backenddan o'chirish (mahalliy timestamp bo'lsa serverga so'rov ketmaydi)
+    if (isServer) {
       try {
         await ApiClient().delete('addresses/$id');
       } catch (_) {}
@@ -342,8 +347,9 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                           if (floorCtrl.text.trim().isNotEmpty) '${floorCtrl.text.trim()}-qavat',
                         ];
 
+                        final tempLocalId = 'local_${DateTime.now().millisecondsSinceEpoch}';
                         final newAddress = SavedAddressModel(
-                          id: DateTime.now().millisecondsSinceEpoch.toString(),
+                          id: tempLocalId,
                           label: label,
                           address: street,
                           lat: selectedLat,
@@ -367,6 +373,7 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                             });
                             if (res is Map && res['data'] != null && res['data']['id'] != null) {
                               final serverModel = SavedAddressModel.fromJson(res['data'] as Map<String, dynamic>);
+                              await SecureStorage.deleteAddress(tempLocalId);
                               await SecureStorage.saveAddress(serverModel);
                             }
                           }

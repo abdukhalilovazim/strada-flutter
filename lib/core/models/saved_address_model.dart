@@ -23,6 +23,16 @@ class SavedAddressModel {
     this.doorphone,
   });
 
+  /// Serverdagi haqiqiy ID ekanligini tekshirish.
+  /// Mahalliy vaqt tamg'asi (masalan: 1794171913534) yoki 'local_' prefiksli IDlar serverda mavjud emas.
+  bool get isServerId {
+    if (id.isEmpty || id.startsWith('local_')) return false;
+    final parsed = int.tryParse(id);
+    if (parsed == null) return false;
+    // MySQL auto-increment IDlar odatda kichik sonlar. 13 xonali millisekund timestamp esa 1.7 trilliondan katta.
+    return parsed < 1000000000;
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'label': label,

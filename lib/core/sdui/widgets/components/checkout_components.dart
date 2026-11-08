@@ -1258,7 +1258,7 @@ class _SDUICustomerInfoComponentState extends State<SDUICustomerInfoComponent> {
 }
 
 /// 💳 Checkout: To'lov usullari (Backenddan kelgan ro'yxat bo'yicha: Payme, Naqd pul; Terminal yo'q)
-class SDUIPaymentMethodComponent extends StatefulWidget {
+class SDUIPaymentMethodComponent extends StatelessWidget {
   final SDUISectionModel section;
   final SDUIActionHandler onAction;
 
@@ -1269,28 +1269,15 @@ class SDUIPaymentMethodComponent extends StatefulWidget {
   });
 
   @override
-  State<SDUIPaymentMethodComponent> createState() => _SDUIPaymentMethodComponentState();
-}
-
-class _SDUIPaymentMethodComponentState extends State<SDUIPaymentMethodComponent> {
-  late String _selectedMethod;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedMethod = context.read<CheckoutCubit>().state.selectedPaymentMethodKey;
-  }
-
-  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final props = widget.section.properties;
+    final props = section.properties;
     final title = props['title']?.toString() ?? 'checkout.payment_method_title'.tr();
 
     // 1. Backend SDUI items tekshiruvi
     final List<Map<String, dynamic>> options = [];
-    if (widget.section.items.isNotEmpty) {
-      for (final item in widget.section.items) {
+    if (section.items.isNotEmpty) {
+      for (final item in section.items) {
         final key = (item.properties['key']?.toString() ?? item.id).toLowerCase();
         // Terminal yo'q - qat'iy chetlatiladi
         if (key == 'terminal') continue;
@@ -1331,13 +1318,9 @@ class _SDUIPaymentMethodComponentState extends State<SDUIPaymentMethodComponent>
       ]);
     }
 
-    // Agar tanlangan to'lov usuli mavjud ro'yxatda bo'lmasa, birinchisini avtomatik tanlaymiz
-    if (!options.any((o) => o['key'] == _selectedMethod)) {
-      _selectedMethod = options.first['key'] as String;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) context.read<CheckoutCubit>().setPaymentMethod(_selectedMethod);
-      });
-    }
+    final checkoutState = context.watch<CheckoutCubit>().state;
+    final selectedMethod = checkoutState.selectedPaymentMethodKey;
+    final hasError = checkoutState.showPaymentMethodError && (selectedMethod == null || selectedMethod.isEmpty);
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 6, 16, 6),
@@ -1346,11 +1329,12 @@ class _SDUIPaymentMethodComponentState extends State<SDUIPaymentMethodComponent>
         color: isDark ? AppColors.darkCard : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+          color: hasError ? AppColors.error : (isDark ? AppColors.darkBorder : AppColors.neutral200),
+          width: hasError ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+            color: (hasError ? AppColors.error : Colors.black).withValues(alpha: isDark ? 0.2 : (hasError ? 0.08 : 0.04)),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -1359,20 +1343,53 @@ class _SDUIPaymentMethodComponentState extends State<SDUIPaymentMethodComponent>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: AppTextStyles.h4.copyWith(
-              fontWeight: FontWeight.w800,
-              fontSize: 16,
-              color: isDark ? Colors.white : AppColors.neutral900,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: AppTextStyles.h4.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  color: isDark ? Colors.white : AppColors.neutral900,
+                ),
+              ),
+              if (hasError)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
+                  ),
+                  child: Text(
+                    'checkout.payment_method_required_short'.tr(),
+                    style: AppTextStyles.bodyExtraSmall.copyWith(
+                      color: AppColors.error,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+            ],
           ),
+          if (hasError) ...[
+            const SizedBox(height: 6),
+            Text(
+              'checkout.payment_method_required'.tr(),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.error,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
 
           // Horizontal Payment Cards
           Row(
             children: options.map((opt) {
-              final isSelected = _selectedMethod == opt['key'];
+              final isSelected = selectedMethod == opt['key'];
 
               return Expanded(
                 child: Padding(
@@ -1380,7 +1397,6 @@ class _SDUIPaymentMethodComponentState extends State<SDUIPaymentMethodComponent>
                   child: GestureDetector(
                     onTap: () {
                       HapticFeedback.selectionClick();
-                      setState(() => _selectedMethod = opt['key'] as String);
                       context.read<CheckoutCubit>().setPaymentMethod(opt['key'] as String);
                     },
                     child: AnimatedContainer(
@@ -1392,7 +1408,11 @@ class _SDUIPaymentMethodComponentState extends State<SDUIPaymentMethodComponent>
                             : (isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA)),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isSelected ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.neutral200),
+                          color: isSelected
+                              ? AppColors.primary
+                              : (hasError
+                                  ? AppColors.error.withValues(alpha: 0.45)
+                                  : (isDark ? AppColors.darkBorder : AppColors.neutral200)),
                           width: isSelected ? 2 : 1,
                         ),
                         boxShadow: isSelected
@@ -1413,7 +1433,9 @@ class _SDUIPaymentMethodComponentState extends State<SDUIPaymentMethodComponent>
                             children: [
                               Icon(
                                 opt['icon'] as IconData,
-                                color: isSelected ? AppColors.primary : AppColors.neutral500,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : (hasError ? AppColors.error : AppColors.neutral500),
                                 size: 24,
                               ),
                               if (isSelected)
@@ -1447,7 +1469,7 @@ class _SDUIPaymentMethodComponentState extends State<SDUIPaymentMethodComponent>
             }).toList(),
           ),
 
-          if (_selectedMethod == 'cash') ...[
+          if (selectedMethod == 'cash') ...[
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(10),
@@ -1782,6 +1804,21 @@ class SDUISubmitOrderCtaComponent extends StatelessWidget {
         );
         return;
       }
+    }
+
+    // 3.5. To'lov usuli tekshiruvi (Majburiy)
+    if (checkoutState.selectedPaymentMethodKey == null ||
+        checkoutState.selectedPaymentMethodKey!.trim().isEmpty) {
+      HapticFeedback.heavyImpact();
+      context.read<CheckoutCubit>().setPaymentMethodError(true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('checkout.payment_method_required'.tr()),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
     }
 
     // 4. Mahsulotlar va kuponlar ro'yxatini shakllantirish
