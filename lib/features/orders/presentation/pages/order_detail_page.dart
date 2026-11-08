@@ -878,7 +878,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(item.title, style: AppTextStyles.labelSmall),
-                                if (item.variantName != null)
+                                if (item.variantName != null && VariantLocalizationHelper.localize(item.variantName).isNotEmpty)
                                   Text(
                                     VariantLocalizationHelper.localize(item.variantName),
                                     style: AppTextStyles.bodyExtraSmall.copyWith(color: AppColors.neutral500),
@@ -1155,23 +1155,60 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                       );
                     }
 
-                    if (o.status == 6) {
+                    if (o.canReorder) {
                       return SizedBox(
                         height: 50,
                         width: double.infinity,
-                        child: ElevatedButton(
+                        child: ElevatedButton.icon(
                           onPressed: () => _handleReorder(context, o),
+                          icon: const Icon(Icons.refresh_rounded, size: 20),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           ),
-                          child: Text(
+                          label: Text(
                             'orders.reorder'.tr(),
                             style: AppTextStyles.labelMedium.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    if (!o.canReorder && (o.status == 6 || o.status == 1)) {
+                      return SizedBox(
+                        height: 50,
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(o.reorderMessage ?? 'orders.reorder_unavailable'.tr()),
+                                backgroundColor: AppColors.neutral800,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.info_outline_rounded, size: 18),
+                          label: Text(
+                            o.reorderMessage ?? 'orders.reorder_unavailable'.tr(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.labelSmall.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                            side: BorderSide(
+                              color: isDark ? AppColors.neutral700 : AppColors.neutral300,
+                              width: 1,
+                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           ),
                         ),
                       );
@@ -1187,6 +1224,18 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   }
 
   void _handleReorder(BuildContext context, OrderEntity order) {
+    if (!order.canReorder) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(order.reorderMessage ?? 'orders.reorder_unavailable'.tr()),
+          backgroundColor: AppColors.neutral800,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (dialogContext) {
@@ -1235,67 +1284,80 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     );
   }
 
-  void _executeReorder(BuildContext context, OrderEntity order) {
-    final homeState = context.read<HomeCubit>().state;
-    if (homeState is! HomeLoaded) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('orders.reorder_error'.tr()),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
+  Future<void> _executeReorder(BuildContext context, OrderEntity order) async {
+    try {
+      final client = getIt<ApiClient>();
+      final res = await client.post('orders/${order.id}/reorder');
+      if (res is Map<String, dynamic> && res['success'] == true) {
+        final data = res['data'] as Map<String, dynamic>?;
+        final items = data?['items'] as List? ?? [];
+        if (context.mounted) {
+          context.read<CartCubit>().loadReorderItems(items);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('orders.reorder_success'.tr()),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+          context.go('/cart');
+        }
+        return;
+      } else if (res is Map<String, dynamic> && res['message'] != null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res['message'].toString()),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+        return;
+      }
+    } catch (e) {
+      debugPrint('Reorder API error: $e');
     }
 
-    final fullProducts = homeState.fullProducts;
-    bool someFailed = false;
-
-    // Clear cart first
+    // Local fallback
+    if (!context.mounted) return;
     context.read<CartCubit>().clear();
-
     for (final orderItem in order.products) {
-      final matchedProductList = fullProducts.where((p) => p.slug == orderItem.slug);
-      if (matchedProductList.isEmpty) {
-        someFailed = true;
-        continue;
-      }
-      final matchedProduct = matchedProductList.first;
+      final product = ProductEntity(
+        id: orderItem.productId,
+        slug: orderItem.slug,
+        title: orderItem.title,
+        thumbnail: orderItem.image,
+        photo: orderItem.image,
+        price: orderItem.price,
+        variants: const [],
+        values: const [],
+      );
 
-      VariantEntity? matchedVariant;
-      if (orderItem.variantName != null) {
-        final matchedVariantList = matchedProduct.variants.where((v) => v.title == orderItem.variantName);
-        if (matchedVariantList.isEmpty) {
-          someFailed = true;
-          continue;
-        }
-        matchedVariant = matchedVariantList.first;
+      VariantEntity? variant;
+      if (orderItem.variantName != null && orderItem.variantName!.isNotEmpty) {
+        variant = VariantEntity(
+          id: orderItem.variantId ?? 0,
+          title: orderItem.variantName!,
+          price: orderItem.price,
+        );
       }
 
       for (int i = 0; i < orderItem.quantity; i++) {
-        context.read<CartCubit>().addToCart(matchedProduct, variant: matchedVariant);
+        context.read<CartCubit>().addToCart(product, variant: variant);
       }
     }
 
-    if (someFailed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('orders.reorder_error'.tr()),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('orders.reorder_success'.tr()),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-    }
-
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('orders.reorder_success'.tr()),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
     context.go('/cart');
   }
 }

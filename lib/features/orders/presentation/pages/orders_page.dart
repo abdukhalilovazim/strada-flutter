@@ -12,6 +12,8 @@ import 'package:pizza_strada/core/utils/number_formatter.dart';
 
 import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/widgets/app_button.dart';
+import 'package:pizza_strada/core/network/api_client.dart';
+import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 
 class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
@@ -316,10 +318,157 @@ class OrderCard extends StatelessWidget {
                   ),
                 ],
               ),
+
+              // Reorder Action Button
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _handleReorder(context, order),
+                  icon: Icon(
+                    order.canReorder ? Icons.refresh_rounded : Icons.info_outline_rounded,
+                    size: 17,
+                    color: order.canReorder ? AppColors.primary : AppColors.neutral400,
+                  ),
+                  label: Text(
+                    order.canReorder
+                        ? 'orders.reorder'.tr()
+                        : (order.reorderMessage ?? 'orders.reorder_unavailable'.tr()),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: order.canReorder ? AppColors.primary : AppColors.neutral400,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(
+                      color: order.canReorder
+                          ? AppColors.primary.withValues(alpha: 0.7)
+                          : (isDark ? AppColors.neutral700 : AppColors.neutral300),
+                      width: 1.2,
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  void _handleReorder(BuildContext context, OrderEntity order) {
+    if (!order.canReorder) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(order.reorderMessage ?? 'orders.reorder_unavailable'.tr()),
+          backgroundColor: AppColors.neutral800,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: Theme.of(dialogContext).cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'orders.reorder_confirm_title'.tr(),
+            style: AppTextStyles.h3.copyWith(
+              color: Theme.of(dialogContext).textTheme.headlineMedium?.color,
+            ),
+          ),
+          content: Text(
+            'orders.reorder_confirm_desc'.tr(),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(dialogContext).textTheme.bodyMedium?.color,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                'common.no'.tr(),
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.neutral600,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _executeReorder(context, order);
+              },
+              child: Text(
+                'common.yes'.tr(),
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _executeReorder(BuildContext context, OrderEntity order) async {
+    try {
+      final client = getIt<ApiClient>();
+      final res = await client.post('orders/${order.id}/reorder');
+      if (res is Map<String, dynamic> && res['success'] == true) {
+        final data = res['data'] as Map<String, dynamic>?;
+        final items = data?['items'] as List? ?? [];
+        if (context.mounted) {
+          context.read<CartCubit>().loadReorderItems(items);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('orders.reorder_success'.tr()),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+          context.go('/cart');
+        }
+        return;
+      } else if (res is Map<String, dynamic> && res['message'] != null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res['message'].toString()),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+        return;
+      }
+    } catch (e) {
+      debugPrint('Reorder API error: $e');
+    }
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('orders.reorder_error'.tr()),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
   }
 }

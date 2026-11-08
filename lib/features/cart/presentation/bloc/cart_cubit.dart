@@ -102,4 +102,39 @@ class CartCubit extends Cubit<CartState> {
   }
 
   void clearCart() => clear();
+
+  void loadReorderItems(List<dynamic> rawItems) {
+    clear();
+    final items = <CartItemEntity>[];
+    for (final raw in rawItems) {
+      if (raw is! Map<String, dynamic>) continue;
+      final product = ProductEntity(
+        id: (raw['product_id'] as num?)?.toInt() ?? 0,
+        slug: raw['slug'] as String? ?? '',
+        title: raw['title'] as String? ?? '',
+        thumbnail: raw['image'] as String? ?? '',
+        photo: raw['image'] as String? ?? '',
+        price: (raw['price'] as num?)?.toDouble() ?? 0.0,
+        variants: const [],
+        values: const [],
+      );
+
+      VariantEntity? variant;
+      if (raw['variant_id'] != null) {
+        variant = VariantEntity(
+          id: (raw['variant_id'] as num).toInt(),
+          title: raw['variant_title'] as String? ?? '',
+          price: (raw['price'] as num?)?.toDouble() ?? 0.0,
+        );
+      }
+
+      final qty = (raw['quantity'] as num?)?.toInt() ?? 1;
+      items.add(CartItemEntity(
+        product: product,
+        variant: variant,
+        quantity: qty,
+      ));
+    }
+    emit(CartState(items: items));
+  }
 }

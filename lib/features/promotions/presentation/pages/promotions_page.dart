@@ -348,8 +348,9 @@ class _PromotionsView extends StatelessWidget {
                                   spacing: 6,
                                   runSpacing: 4,
                                   children: deal.items.map((it) {
-                                    final label = it.variantTitle.isNotEmpty
-                                        ? '${it.productTitle} (${it.variantTitle}) × ${it.quantity}'
+                                    final cleanVariant = VariantLocalizationHelper.localize(it.variantTitle);
+                                    final label = cleanVariant.isNotEmpty
+                                        ? '${it.productTitle} ($cleanVariant) × ${it.quantity}'
                                         : '${it.productTitle} × ${it.quantity}';
                                     return Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -452,16 +453,23 @@ class _PromotionsView extends StatelessWidget {
                                       onPressed: () {
                                         HapticFeedback.lightImpact();
                                         context.read<CartCubit>().addCouponToCart(deal);
-                                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        final router = GoRouter.of(context);
+                                        final messenger = ScaffoldMessenger.of(context);
+                                        messenger.hideCurrentSnackBar();
+                                        messenger.showSnackBar(
                                           SnackBar(
                                             content: Text('${deal.title} ${'cart.added'.tr()}'),
                                             backgroundColor: AppColors.success,
                                             duration: const Duration(seconds: 2),
+                                            behavior: SnackBarBehavior.floating,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                             action: SnackBarAction(
                                               label: 'cart.title'.tr(),
                                               textColor: Colors.white,
-                                              onPressed: () => context.go('/cart'),
+                                              onPressed: () {
+                                                messenger.hideCurrentSnackBar();
+                                                router.go('/cart');
+                                              },
                                             ),
                                           ),
                                         );

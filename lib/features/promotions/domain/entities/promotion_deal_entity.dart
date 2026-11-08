@@ -13,9 +13,13 @@ class PromotionDealItemEntity extends Equatable {
   });
 
   factory PromotionDealItemEntity.fromJson(Map<String, dynamic> json) {
+    final rawVariant = json['variant_title']?.toString() ?? '';
+    final isSize = rawVariant.trim().toLowerCase() == 'size' ||
+        rawVariant.trim().toLowerCase() == "o'lcham" ||
+        rawVariant.trim().toLowerCase() == 'размер';
     return PromotionDealItemEntity(
       productTitle: json['product_title']?.toString() ?? '',
-      variantTitle: json['variant_title']?.toString() ?? '',
+      variantTitle: isSize ? '' : rawVariant,
       quantity: (json['quantity'] as num?)?.toInt() ?? 1,
     );
   }

@@ -22,6 +22,8 @@ class OrderEntity {
   final List<OrderDetailItemEntity> priceDetails;
   final int? itemsCount;
   final String? createdAt;
+  final bool canReorder;
+  final String? reorderMessage;
 
   const OrderEntity({
     required this.id,
@@ -47,6 +49,8 @@ class OrderEntity {
     this.priceDetails = const [],
     this.itemsCount,
     this.createdAt,
+    this.canReorder = false,
+    this.reorderMessage,
   });
 }
 
@@ -89,18 +93,22 @@ class OrderDetailItemEntity {
 }
 
 class OrderItemEntity {
+  final int productId;
   final String slug;
   final String title;
   final String image;
+  final int? variantId;
   final String? variantName;
   final int quantity;
   final double price;
   final double totalAmount;
 
   const OrderItemEntity({
+    this.productId = 0,
     required this.slug,
     required this.title,
     required this.image,
+    this.variantId,
     this.variantName,
     required this.quantity,
     required this.price,

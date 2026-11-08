@@ -209,7 +209,8 @@ class CartPage extends StatelessWidget {
         final rawVariantTitle = item.variant?.title;
         final localizedVariant = rawVariantTitle != null && rawVariantTitle.isNotEmpty
             ? VariantLocalizationHelper.localize(rawVariantTitle)
-            : null;
+            : '';
+        final showVariant = localizedVariant.isNotEmpty;
 
         return Container(
           padding: const EdgeInsets.all(12),
@@ -270,7 +271,7 @@ class CartPage extends StatelessWidget {
                           ),
                         ],
                       ),
-                    ] else if (localizedVariant != null) ...[
+                    ] else if (showVariant) ...[
                       const SizedBox(height: 2),
                       Text(
                         localizedVariant,

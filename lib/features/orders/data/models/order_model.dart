@@ -25,6 +25,8 @@ class OrderModel extends OrderEntity {
     super.priceDetails = const [],
     super.itemsCount,
     super.createdAt,
+    super.canReorder = false,
+    super.reorderMessage,
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
@@ -108,15 +110,19 @@ class OrderModel extends OrderEntity {
           .toList(),
       itemsCount: (json['items_count'] as num?)?.toInt() ?? (json['products'] as List?)?.length,
       createdAt: json['created_at']?.toString(),
+      canReorder: json['can_reorder'] == true || json['can_reorder'] == 1,
+      reorderMessage: json['reorder_message'] as String?,
     );
   }
 }
 
 class OrderItemModel extends OrderItemEntity {
   const OrderItemModel({
+    super.productId = 0,
     required super.slug,
     required super.title,
     required super.image,
+    super.variantId,
     super.variantName,
     required super.quantity,
     required super.price,
@@ -124,9 +130,11 @@ class OrderItemModel extends OrderItemEntity {
   });
 
   factory OrderItemModel.fromJson(Map<String, dynamic> json) => OrderItemModel(
+        productId: (json['product_id'] as num?)?.toInt() ?? 0,
         slug: json['slug'] as String? ?? '',
         title: json['title'] as String? ?? '',
         image: json['image'] as String? ?? '',
+        variantId: (json['variant_id'] as num?)?.toInt(),
         variantName: json['variant'] as String?,
         quantity: int.tryParse(json['quantity']?.toString() ?? '1') ?? 1,
         price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,

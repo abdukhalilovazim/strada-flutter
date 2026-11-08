@@ -4,7 +4,19 @@ import 'package:easy_localization/easy_localization.dart';
 class VariantLocalizationHelper {
   const VariantLocalizationHelper._();
 
+  /// Check whether the variant title is a generic/default "size" placeholder
+  static bool isSize(String? rawTitle) {
+    if (rawTitle == null || rawTitle.trim().isEmpty) return false;
+    final lower = rawTitle.trim().toLowerCase();
+    if (lower == 'size' || lower == 'размер' || lower == "o'lcham" || lower == 'size ()') {
+      return true;
+    }
+    final mainPart = lower.contains('(') ? lower.split('(').first.trim() : lower;
+    return mainPart == 'size' || mainPart == 'размер' || mainPart == "o'lcham";
+  }
+
   /// Returns localized full title (e.g. "Medium (30 cm)" -> "O'rtacha (30 cm)")
+  /// NEVER returns 'size' or 'Size'.
   static String localize(String? rawTitle) {
     if (rawTitle == null || rawTitle.trim().isEmpty) return '';
 
@@ -19,6 +31,15 @@ class VariantLocalizationHelper {
     }
 
     final lower = mainPart.toLowerCase();
+
+    // Agar variant "size" bo'lsa, uni hech qayerda ko'rsatma!
+    if (lower == 'size' || lower == 'размер' || lower == "o'lcham") {
+      if (subtitlePart != null && subtitlePart.trim() != '()') {
+        return subtitlePart;
+      }
+      return '';
+    }
+
     String localizedMain;
 
     if (lower == 'medium') {
@@ -42,11 +63,16 @@ class VariantLocalizationHelper {
   }
 
   /// Extracts cleanly the variant size title (without parentheses) and localizes it.
+  /// NEVER returns 'size' or 'Size'.
   static String localizeMainTitle(String? rawTitle) {
     if (rawTitle == null || rawTitle.trim().isEmpty) return '';
     final trimmed = rawTitle.trim();
     final mainPart = trimmed.contains('(') ? trimmed.split('(').first.trim() : trimmed;
     final lower = mainPart.toLowerCase();
+
+    if (lower == 'size' || lower == 'размер' || lower == "o'lcham") {
+      return '';
+    }
 
     if (lower == 'medium') {
       return 'product.size_medium'.tr();
