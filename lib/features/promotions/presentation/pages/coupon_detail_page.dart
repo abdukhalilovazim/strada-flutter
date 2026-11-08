@@ -430,7 +430,7 @@ class CouponDetailPage extends StatelessWidget {
                       messenger.showSnackBar(
                         SnackBar(
                           content: Text('$displayCode ${'cart.added'.tr()}'),
-                          backgroundColor: AppColors.success,
+                          backgroundColor: AppColors.primary,
                           duration: const Duration(seconds: 2),
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -444,6 +444,9 @@ class CouponDetailPage extends StatelessWidget {
                           ),
                         ),
                       );
+                      Future.delayed(const Duration(seconds: 2), () {
+                        messenger.clearSnackBars();
+                      });
                       context.pop();
                     },
                     icon: const Icon(Icons.shopping_bag_outlined, size: 20),

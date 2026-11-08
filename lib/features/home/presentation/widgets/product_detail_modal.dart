@@ -72,11 +72,13 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
       ),
     ]);
     Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
       SnackBar(
-        content: Text('product.added'.tr()),
+        content: Text('${widget.product.title} ${'cart.added'.tr()}'),
         duration: const Duration(seconds: 2),
-        backgroundColor: AppColors.secondary,
+        backgroundColor: AppColors.primary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),

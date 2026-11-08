@@ -101,24 +101,43 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             ),
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                color:
-                    isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
-                padding: const EdgeInsets.all(24),
-                child: product.hasValidImage
-                    ? CachedNetworkImage(
-                        imageUrl: product.validImageUrl,
-                        fit: BoxFit.contain,
-                        placeholder: (_, __) => const Opacity(
-                          opacity: 0.35,
-                          child: PizzaImagePlaceholder(fit: BoxFit.contain),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkCard : const Color(0xFFF8F9FA),
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(28),
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(28),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 52, 16, 16),
+                    child: Center(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: AspectRatio(
+                          aspectRatio: 1.0,
+                          child: product.hasValidImage
+                              ? CachedNetworkImage(
+                                  imageUrl: product.validImageUrl,
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, __) => const Opacity(
+                                    opacity: 0.35,
+                                    child: PizzaImagePlaceholder(fit: BoxFit.cover),
+                                  ),
+                                  errorWidget: (_, __, ___) => const PizzaImagePlaceholder(
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : const PizzaImagePlaceholder(
+                                  fit: BoxFit.cover,
+                                ),
                         ),
-                        errorWidget: (_, __, ___) => const PizzaImagePlaceholder(
-                          fit: BoxFit.contain,
-                        ),
-                      )
-                    : const PizzaImagePlaceholder(
-                        fit: BoxFit.contain,
                       ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -448,6 +467,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                           quantity: _quantity,
                           price: displayPrice,
                           variant: _selectedVariant?.title,
+                        );
+                        final messenger = ScaffoldMessenger.of(context);
+                        messenger.clearSnackBars();
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text('${product.title} ${'cart.added'.tr()}'),
+                            backgroundColor: AppColors.primary,
+                            duration: const Duration(seconds: 2),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
                         );
                         context.pop();
                       },
