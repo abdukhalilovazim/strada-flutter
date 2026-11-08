@@ -133,6 +133,8 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
 
   List<SavedAddressModel> _savedAddresses = [];
   int _branchCount = 3;
+  bool _isLoadingAddresses = true;
+  bool _isPickedFromMap = false;
 
   @override
   void initState() {
@@ -146,21 +148,27 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
   }
 
   Future<void> _loadSavedAddressesAndBranches() async {
-    // 1. Filiallar sonini olish (keshdan yoki API dan)
-    try {
-      final branches = await SecureStorage.getOrFetchBranches();
-      if (branches.isNotEmpty && mounted) {
-        _branchCount = branches.length;
-      }
-    } catch (_) {}
-
-    // 2. Mahalliy saqlangan manzillarni yuklash
+    // 1. Mahalliy saqlangan manzillarni darhol olish (0 ms kesh)
     final localList = await SecureStorage.getSavedAddresses();
     final addressMap = <String, SavedAddressModel>{};
     for (final a in localList) {
       final key = a.address.trim().toLowerCase();
       if (key.isNotEmpty) addressMap[key] = a;
     }
+
+    if (mounted && addressMap.isNotEmpty) {
+      setState(() {
+        _savedAddresses = addressMap.values.toList();
+      });
+    }
+
+    // 2. Filiallar sonini olish (keshdan yoki API dan)
+    try {
+      final branches = await SecureStorage.getOrFetchBranches();
+      if (branches.isNotEmpty && mounted) {
+        _branchCount = branches.length;
+      }
+    } catch (_) {}
 
     // 3. Foydalanuvchining backenddagi saqlangan manzillarini yuklash (/api/v1/addresses)
     try {
@@ -189,6 +197,7 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
     if (mounted) {
       setState(() {
         _savedAddresses = addressMap.values.toList();
+        _isLoadingAddresses = false;
       });
     }
   }
@@ -290,6 +299,9 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
       final address = result['address'] as String?;
       if (lat != null && lng != null && address != null && address.trim().isNotEmpty) {
         final trimmed = address.trim();
+        setState(() {
+          _isPickedFromMap = true;
+        });
         context.read<CheckoutCubit>().setAddressAndCalculateDelivery(
               lat,
               lng,
@@ -322,6 +334,16 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
         final hasLocationError = state.showLocationError &&
             (state.address == null || state.address!.trim().isEmpty);
         final displayedSaved = _savedAddresses.take(_branchCount).toList();
+
+        final hasAddress = state.address != null && state.address!.trim().isNotEmpty;
+        final selectedSavedIndex = displayedSaved.indexWhere((item) =>
+            item.address.trim().toLowerCase() == state.address?.trim().toLowerCase() ||
+            (state.lat != null &&
+                state.lng != null &&
+                (state.lat! - item.lat).abs() < 0.0001 &&
+                (state.lng! - item.lng).abs() < 0.0001));
+
+        final isMapSelected = _isPickedFromMap || (hasAddress && selectedSavedIndex == -1);
 
         return Container(
           margin: const EdgeInsets.fromLTRB(16, 6, 16, 6),
@@ -392,11 +414,15 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: isDark ? 0.12 : 0.06),
+                    color: isMapSelected
+                        ? AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.08)
+                        : (isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA)),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.35),
-                      width: 1.2,
+                      color: isMapSelected
+                          ? AppColors.primary
+                          : (isDark ? AppColors.darkBorder : const Color(0xFFEDF2F7)),
+                      width: isMapSelected ? 1.5 : 1.2,
                     ),
                   ),
                   child: Row(
@@ -405,12 +431,14 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.15),
+                          color: isMapSelected
+                              ? AppColors.primary.withValues(alpha: 0.15)
+                              : (isDark ? AppColors.neutral700 : AppColors.neutral200.withValues(alpha: 0.6)),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.map_outlined,
-                          color: AppColors.primary,
+                          color: isMapSelected ? AppColors.primary : AppColors.neutral500,
                           size: 20,
                         ),
                       ),
@@ -420,7 +448,9 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '1. ${'checkout.pick_on_map'.tr()}',
+                              isMapSelected && hasAddress
+                                  ? '1. Xaritadan tanlangan manzil'
+                                  : '1. ${'checkout.pick_on_map'.tr()}',
                               style: AppTextStyles.labelMedium.copyWith(
                                 fontWeight: FontWeight.w800,
                                 color: isDark ? Colors.white : AppColors.neutral900,
@@ -428,20 +458,68 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Xaritada belgilash yoki GPS orqali',
+                              isMapSelected && hasAddress
+                                  ? state.address!
+                                  : 'Xaritada belgilash yoki GPS orqali',
                               style: AppTextStyles.bodySmall.copyWith(
-                                color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                                color: isMapSelected && hasAddress
+                                    ? (isDark ? AppColors.neutral200 : AppColors.neutral700)
+                                    : (isDark ? AppColors.neutral400 : AppColors.neutral500),
                                 fontSize: 12,
+                                fontWeight: isMapSelected && hasAddress ? FontWeight.w600 : FontWeight.normal,
                               ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right_rounded, color: AppColors.primary, size: 22),
+                      const SizedBox(width: 8),
+                      Icon(
+                        isMapSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                        color: isMapSelected ? AppColors.primary : AppColors.neutral400,
+                        size: 20,
+                      ),
                     ],
                   ),
                 ),
               ),
+
+              // Saqlangan manzillar yuklanish indikatori
+              if (_isLoadingAddresses && displayedSaved.isEmpty) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.neutral800.withValues(alpha: 0.5) : const Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark ? AppColors.darkBorder : const Color(0xFFEDF2F7),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Saqlangan manzillar yuklanmoqda...',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
 
               // 2, 3, ... Eski locationlar (max: branch sonigacha)
               if (displayedSaved.isNotEmpty) ...[
@@ -449,17 +527,16 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                 ...displayedSaved.asMap().entries.map((entry) {
                   final index = entry.key;
                   final item = entry.value;
-                  final isSelected = state.address == item.address ||
-                      (state.lat != null &&
-                          state.lng != null &&
-                          (state.lat! - item.lat).abs() < 0.0001 &&
-                          (state.lng! - item.lng).abs() < 0.0001);
+                  final isSelected = !isMapSelected && selectedSavedIndex == index;
 
                   return Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: InkWell(
                       onTap: () {
                         HapticFeedback.selectionClick();
+                        setState(() {
+                          _isPickedFromMap = false;
+                        });
                         context.read<CheckoutCubit>().setAddressAndCalculateDelivery(
                               item.lat,
                               item.lng,

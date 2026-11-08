@@ -179,6 +179,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
     final addressExtra = addressDetails.isNotEmpty ? addressDetails.join(', ') : null;
 
+    final cartState = context.watch<CartCubit>().state;
+    final discount = state.calculateDiscount(cartState.subtotal);
+    final deliveryPrice = isDelivery ? state.deliveryPrice : 0.0;
+    final subtotalAfterDiscount = (cartState.subtotal - discount).clamp(0.0, double.infinity);
+    final total = subtotalAfterDiscount + deliveryPrice;
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
       padding: const EdgeInsets.all(18),
@@ -262,7 +268,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ],
             ),
           ),
-          const Divider(height: 22),
+          const Divider(height: 20),
 
           // 2. Qabul qiluvchi qatori
           _buildInfoRow(
@@ -299,7 +305,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ],
             ),
           ),
-          const Divider(height: 22),
+          const Divider(height: 20),
 
           // 3. Telefon raqami qatori
           _buildInfoRow(
@@ -312,6 +318,88 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 color: isDark ? Colors.white : AppColors.neutral900,
               ),
             ),
+          ),
+
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1),
+          ),
+
+          // 4. Mahsulotlar summasi
+          _buildInfoRow(
+            label: '${'cart.subtotal'.tr()}:',
+            valueWidget: Text(
+              '${NumberFormatter.formatSum(cartState.subtotal)} ${'common.currency'.tr()}',
+              textAlign: TextAlign.end,
+              style: AppTextStyles.labelSmall.copyWith(
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : AppColors.neutral900,
+              ),
+            ),
+          ),
+
+          // 5. Promokod chegirmasi (agar bo'lsa)
+          if (discount > 0) ...[
+            const SizedBox(height: 8),
+            _buildInfoRow(
+              label: state.isPercentagePromo
+                  ? '${'checkout.promo_discount'.tr()} (${state.appliedPromoCode} • ${state.promoValue?.toInt()}%):'
+                  : '${'checkout.promo_discount'.tr()} (${state.appliedPromoCode}):',
+              valueWidget: Text(
+                '-${NumberFormatter.formatSum(discount)} ${'common.currency'.tr()}',
+                textAlign: TextAlign.end,
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: AppColors.success,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 8),
+          // 6. Yetkazib berish narxi
+          _buildInfoRow(
+            label: '${'cart.delivery'.tr()}:',
+            valueWidget: Text(
+              !isDelivery || deliveryPrice == 0
+                  ? 'checkout.free'.tr()
+                  : '${NumberFormatter.formatSum(deliveryPrice)} ${'common.currency'.tr()}',
+              textAlign: TextAlign.end,
+              style: AppTextStyles.labelSmall.copyWith(
+                color: (!isDelivery || deliveryPrice == 0)
+                    ? AppColors.success
+                    : (isDark ? Colors.white : AppColors.neutral900),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 10),
+            child: Divider(height: 1),
+          ),
+
+          // 7. Jami to'lov
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${'cart.total'.tr()}:',
+                style: AppTextStyles.labelLarge.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                  color: isDark ? Colors.white : AppColors.neutral900,
+                ),
+              ),
+              Text(
+                '${NumberFormatter.formatSum(total)} ${'common.currency'.tr()}',
+                style: AppTextStyles.priceLarge.copyWith(
+                  color: AppColors.primary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -522,10 +610,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
       padding: const EdgeInsets.only(bottom: 30),
       children: [
         _buildStep2OrderInfoCard(context, checkoutState, isDark),
+        const CheckoutPromoCodeWidget(),
         SDUIPaymentMethodComponent(section: dummySection, onAction: (_) {}),
         SDUICourierNotesComponent(section: dummySection, onAction: (_) {}),
-        const CheckoutPromoCodeWidget(),
-        SDUICheckoutSummaryComponent(section: dummySection, onAction: (_) {}),
         SDUISubmitOrderCtaComponent(section: dummySection, onAction: (_) {}),
       ],
     );
