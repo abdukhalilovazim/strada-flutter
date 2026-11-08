@@ -291,13 +291,6 @@ class _RealisticPizzaPainter extends CustomPainter {
     canvas.drawPath(rimPath, rimPaint);
   }
 
-      // D. Toppinglar: Pepperoni, Rayhon, Zaytun, Ziravorlar
-      _drawGourmetToppings(canvas, sliceCenter, radius * 0.75, midAngle, i);
-
-      canvas.restore();
-    }
-  }
-
   /// Bo'lak animatsiya progressi (Sinusoid silliq chiqib-kirish)
   double _calculateSliceOffset(int index, int totalSlices, double t) {
     final sliceDuration = 1.0 / totalSlices;
