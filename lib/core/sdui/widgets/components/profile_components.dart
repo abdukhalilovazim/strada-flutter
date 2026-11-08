@@ -31,6 +31,7 @@ class SDUIProfileHeaderComponent extends StatefulWidget {
 class _SDUIProfileHeaderComponentState extends State<SDUIProfileHeaderComponent> {
   String _userName = 'Mijoz';
   String _userPhone = '+998 -- --- -- --';
+  bool _isLoggedIn = false;
 
   @override
   void initState() {
@@ -39,12 +40,20 @@ class _SDUIProfileHeaderComponentState extends State<SDUIProfileHeaderComponent>
   }
 
   Future<void> _loadUser() async {
+    final token = await SecureStorage.getToken();
     final name = await SecureStorage.getUserName();
     final phone = await SecureStorage.getUserPhone();
+    final hasAuth = token != null && token.isNotEmpty;
     if (mounted) {
       setState(() {
-        if (name != null && name.isNotEmpty) _userName = name;
-        if (phone != null && phone.isNotEmpty) _userPhone = phone;
+        _isLoggedIn = hasAuth;
+        if (hasAuth) {
+          _userName = (name != null && name.trim().isNotEmpty) ? name.trim() : 'Mijoz';
+          _userPhone = (phone != null && phone.trim().isNotEmpty) ? NumberFormatter.formatPhone(phone.trim()) : '';
+        } else {
+          _userName = 'Kirish';
+          _userPhone = 'Profilga kirish uchun bosing';
+        }
       });
     }
   }
@@ -68,7 +77,11 @@ class _SDUIProfileHeaderComponentState extends State<SDUIProfileHeaderComponent>
     return InkWell(
       onTap: () async {
         HapticFeedback.lightImpact();
-        await context.push('/profile/edit');
+        if (_isLoggedIn) {
+          await context.push('/profile/edit');
+        } else {
+          await context.push('/auth/login');
+        }
         _loadUser();
       },
       borderRadius: BorderRadius.circular(22),
@@ -85,27 +98,37 @@ class _SDUIProfileHeaderComponentState extends State<SDUIProfileHeaderComponent>
         ),
         child: Row(
           children: [
-            // Clean Minimalist User Initials Avatar (No gradient border, no camera icon)
+            // User Avatar (Initials for logged in, Person icon for guest)
             Container(
-              width: 54,
-              height: 54,
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isDark ? AppColors.neutral800 : const Color(0xFFF1F3F5),
+                color: _isLoggedIn
+                    ? (isDark ? AppColors.neutral800 : const Color(0xFFF1F3F5))
+                    : AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.1),
                 border: Border.all(
-                  color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+                  color: _isLoggedIn
+                      ? (isDark ? AppColors.darkBorder : AppColors.neutral200)
+                      : AppColors.primary.withValues(alpha: 0.3),
                   width: 1.2,
                 ),
               ),
               child: Center(
-                child: Text(
-                  _initials,
-                  style: AppTextStyles.h3.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 20,
-                  ),
-                ),
+                child: _isLoggedIn
+                    ? Text(
+                        _initials,
+                        style: AppTextStyles.h3.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 19,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.person_outline_rounded,
+                        color: AppColors.primary,
+                        size: 26,
+                      ),
               ),
             ),
             const SizedBox(width: 14),
@@ -122,25 +145,53 @@ class _SDUIProfileHeaderComponentState extends State<SDUIProfileHeaderComponent>
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     _userPhone,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.neutral500,
+                      color: _isLoggedIn ? AppColors.neutral500 : AppColors.primary,
                       fontWeight: FontWeight.w600,
+                      fontSize: 12.5,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
-              onPressed: () async {
-                HapticFeedback.lightImpact();
-                await context.push('/profile/edit');
-                _loadUser();
-              },
-            ),
+            const SizedBox(width: 8),
+            if (_isLoggedIn)
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
+                onPressed: () async {
+                  HapticFeedback.lightImpact();
+                  await context.push('/profile/edit');
+                  _loadUser();
+                },
+              )
+            else
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Kirish',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 11),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

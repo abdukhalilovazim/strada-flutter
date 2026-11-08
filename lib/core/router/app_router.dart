@@ -102,7 +102,7 @@ class MainScaffold extends StatelessWidget {
     final currentIndex = _calculateSelectedIndex(effectiveLocation);
 
     return Scaffold(
-      body: SafeArea(bottom: false, child: child),
+      body: child,
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

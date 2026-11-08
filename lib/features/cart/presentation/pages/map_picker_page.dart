@@ -1,7 +1,5 @@
 import 'dart:convert';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
@@ -258,13 +256,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
     final queryParams = {
       'lat': _currentLat.toString(),
       'lng': _currentLng.toString(),
-      'lang': lang,
-      'theme': 'light',
       if (widget.isReadOnly) 'readonly': '1',
-      'app_version_code': DeviceInfoHelper.appVersionCode,
-      'device_id': DeviceInfoHelper.deviceId,
-      'device_name': DeviceInfoHelper.deviceName,
-      'source': DeviceInfoHelper.appSource,
     };
 
     final uri = Uri.parse('${ApiConstants.webviewBaseUrl}/map-picker')
@@ -275,6 +267,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
       'device-id': DeviceInfoHelper.deviceId,
       'device-name': DeviceInfoHelper.deviceName,
       'language': lang,
+      'Accept-Language': lang,
       'theme': 'light',
       'source': DeviceInfoHelper.appSource,
     };
@@ -369,26 +362,22 @@ class _MapPickerPageState extends State<MapPickerPage> {
       ),
       body: Stack(
         children: [
-          // Yandex Maps WebView (Eager touch recognition for butter-smooth iOS gesture handling)
+          // Yandex Maps WebView (Native touch dispatch on iOS)
           if (_controller != null)
             WebViewWidget(
               controller: _controller!,
-              gestureRecognizers: {
-                Factory<OneSequenceGestureRecognizer>(
-                  () => EagerGestureRecognizer(),
-                ),
-              },
             ),
 
-          // Loading overlay (clean native light background)
+          // Non-blocking top loading indicator
           if (_isMapLoading)
-            IgnorePointer(
-              ignoring: false,
-              child: Container(
-                color: const Color(0xFFF3F4F6),
-                child: const Center(
-                  child: CircularProgressIndicator(color: AppColors.primary),
-                ),
+            const Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: LinearProgressIndicator(
+                backgroundColor: Colors.transparent,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                minHeight: 3,
               ),
             ),
 
