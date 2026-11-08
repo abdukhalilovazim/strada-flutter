@@ -75,19 +75,27 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
       final List items;
       if (response is List) {
         items = response;
-      } else if (response is Map<String, dynamic> && response['data'] is List) {
+      } else if (response is Map && response['data'] is List) {
         items = response['data'] as List;
-      } else if (response is Map<String, dynamic> && response['stories'] is List) {
+      } else if (response is Map && response['stories'] is List) {
         items = response['stories'] as List;
       } else {
         items = const [];
       }
 
-      final stories = items
-          .whereType<Map<String, dynamic>>()
-          .map(StoryModel.fromJson)
-          .where((s) => s.previewImage.isNotEmpty)
-          .toList();
+      final stories = <StoryModel>[];
+      for (final item in items) {
+        if (item is Map) {
+          try {
+            final model = StoryModel.fromJson(Map<String, dynamic>.from(item));
+            if (model.previewImage.isNotEmpty || model.slides.isNotEmpty) {
+              stories.add(model);
+            }
+          } catch (e) {
+            // Log but don't break the entire list
+          }
+        }
+      }
 
       return stories;
     } catch (_) {

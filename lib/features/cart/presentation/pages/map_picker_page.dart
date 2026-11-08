@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
@@ -366,6 +368,11 @@ class _MapPickerPageState extends State<MapPickerPage> {
           if (_controller != null)
             WebViewWidget(
               controller: _controller!,
+              gestureRecognizers: {
+                Factory<OneSequenceGestureRecognizer>(
+                  () => EagerGestureRecognizer(),
+                ),
+              },
             ),
 
           // Non-blocking top loading indicator

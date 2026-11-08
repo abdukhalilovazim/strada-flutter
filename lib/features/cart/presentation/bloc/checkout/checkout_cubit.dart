@@ -184,13 +184,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   }
 
   void clearPromo() {
-    emit(state.copyWith(
-      appliedPromoCode: null,
-      promoType: null,
-      promoTypeString: null,
-      promoValue: null,
-      promoError: null,
-    ));
+    emit(state.clearPromo());
   }
 
   void setRecipient({String? name, String? phone}) {

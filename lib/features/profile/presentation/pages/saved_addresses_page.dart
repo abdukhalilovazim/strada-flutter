@@ -154,8 +154,9 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                   const SizedBox(height: 16),
                   Text(
                     'Yangi manzil qo\'shish',
-                    style: AppTextStyles.h3.copyWith(
+                    style: AppTextStyles.h4.copyWith(
                       fontWeight: FontWeight.w800,
+                      fontSize: 18,
                       color: isDark ? Colors.white : AppColors.neutral900,
                     ),
                     textAlign: TextAlign.center,
@@ -277,13 +278,15 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                           enableSuggestions: false,
                           spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
                           textInputAction: TextInputAction.next,
+                          style: const TextStyle(fontSize: 13),
                           decoration: InputDecoration(
                             labelText: 'Xonadon',
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: TextField(
                           controller: floorCtrl,
@@ -291,13 +294,15 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                           enableSuggestions: false,
                           spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
                           textInputAction: TextInputAction.next,
+                          style: const TextStyle(fontSize: 13),
                           decoration: InputDecoration(
                             labelText: 'Qavat',
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: TextField(
                           controller: entranceCtrl,
@@ -305,8 +310,10 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
                           enableSuggestions: false,
                           spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
                           textInputAction: TextInputAction.done,
+                          style: const TextStyle(fontSize: 13),
                           decoration: InputDecoration(
                             labelText: 'Podyezd',
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                           ),
                         ),
@@ -399,10 +406,13 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
       appBar: AppBar(
         title: Text(
           'profile.saved_addresses'.tr(),
-          style: AppTextStyles.h3.copyWith(
+          style: AppTextStyles.h4.copyWith(
             fontWeight: FontWeight.w800,
+            fontSize: 17,
             color: isDark ? Colors.white : AppColors.neutral900,
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         centerTitle: true,
         backgroundColor: isDark ? AppColors.darkCard : Colors.white,
@@ -431,8 +441,11 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
               onPressed: _showAddAddressSheet,
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
-              icon: const Icon(Icons.add_rounded),
-              label: Text('profile.new_address'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+              icon: const Icon(Icons.add_rounded, size: 20),
+              label: Text(
+                'profile.new_address'.tr(),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+              ),
             ),
     );
   }
@@ -440,23 +453,24 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
   Widget _buildEmptyState(bool isDark) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.location_on_outlined, size: 48, color: AppColors.primary),
+              child: const Icon(Icons.location_on_outlined, size: 44, color: AppColors.primary),
             ),
             const SizedBox(height: 16),
             Text(
               'profile.no_saved_addresses'.tr(),
               style: AppTextStyles.h4.copyWith(
                 fontWeight: FontWeight.w800,
+                fontSize: 18,
                 color: isDark ? Colors.white : AppColors.neutral900,
               ),
               textAlign: TextAlign.center,
@@ -464,19 +478,28 @@ class _SavedAddressesPageState extends State<SavedAddressesPage> {
             const SizedBox(height: 8),
             Text(
               'profile.no_saved_addresses_desc'.tr(),
-              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500),
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500, fontSize: 13),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _showAddAddressSheet,
-              icon: const Icon(Icons.add_location_alt_rounded),
-              label: Text('profile.add_address'.tr()),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            const SizedBox(height: 22),
+            SizedBox(
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: _showAddAddressSheet,
+                icon: const Icon(Icons.add_location_alt_rounded, size: 18),
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'profile.add_address'.tr(),
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                ),
               ),
             ),
           ],

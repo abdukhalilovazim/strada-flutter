@@ -652,8 +652,8 @@ class SDUISupportContactsComponent extends StatelessWidget {
     final props = section.properties;
     final rawPhone = props['phone']?.toString() ?? '+998662211177';
     final formattedPhone = NumberFormatter.formatPhone(rawPhone);
-    final title = props['title']?.toString() ?? 'Qo\'llab-quvvatlash va aloqa';
-    final phoneLabel = props['phone_label']?.toString() ?? 'Call-markazga qo\'ng\'iroq qilish';
+    final title = props['title']?.toString() ?? 'Qo\'llab-quvvatlash';
+    final phoneLabel = props['phone_label']?.toString() ?? 'Call-markaz';
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 6, 16, 6),
@@ -674,12 +674,12 @@ class SDUISupportContactsComponent extends StatelessWidget {
           },
           borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: AppColors.success.withValues(alpha: isDark ? 0.2 : 0.12),
                     shape: BoxShape.circle,
@@ -688,59 +688,68 @@ class SDUISupportContactsComponent extends StatelessWidget {
                     child: Icon(
                       Icons.phone_in_talk_rounded,
                       color: AppColors.success,
-                      size: 22,
+                      size: 20,
                     ),
                   ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         title,
                         style: AppTextStyles.labelSmall.copyWith(
                           color: AppColors.neutral500,
                           fontWeight: FontWeight.w600,
+                          fontSize: 11.5,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 2),
                       Text(
                         formattedPhone,
                         style: AppTextStyles.h4.copyWith(
-                          fontSize: 16,
+                          fontSize: 14.5,
                           fontWeight: FontWeight.w800,
                           color: isDark ? Colors.white : AppColors.neutral900,
-                          letterSpacing: 0.5,
+                          letterSpacing: 0.3,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 1),
                       Text(
                         phoneLabel,
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.neutral400,
-                          fontSize: 11.5,
+                          fontSize: 11,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: AppColors.success,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.call_rounded, size: 14, color: Colors.white),
-                      SizedBox(width: 5),
+                      Icon(Icons.call_rounded, size: 13, color: Colors.white),
+                      SizedBox(width: 4),
                       Text(
                         'Qo\'ng\'iroq',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 12,
+                          fontSize: 11.5,
                           fontWeight: FontWeight.w700,
                         ),
                       ),

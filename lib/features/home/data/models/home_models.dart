@@ -233,10 +233,20 @@ class StoryModel extends StoryEntity {
       fullThumbUrl = 'https://s3.twcstorage.ru/strada/$cleanPath';
     }
 
-    final rawSlides = json['slides'] as List<dynamic>? ?? [];
-    final slides = rawSlides
-        .map((s) => StorySlideModel.fromJson(s as Map<String, dynamic>))
-        .toList();
+    final rawSlides = json['slides'];
+    final List<StorySlideModel> slides = [];
+    if (rawSlides is List) {
+      for (final s in rawSlides) {
+        if (s is Map) {
+          try {
+            final slide = StorySlideModel.fromJson(Map<String, dynamic>.from(s));
+            if (slide.imageUrl.isNotEmpty) {
+              slides.add(slide);
+            }
+          } catch (_) {}
+        }
+      }
+    }
 
     // If no slides array provided, create a single slide from the root item
     if (slides.isEmpty && fullThumbUrl.isNotEmpty) {
@@ -248,9 +258,13 @@ class StoryModel extends StoryEntity {
       );
     }
 
+    final String effectivePreview = fullThumbUrl.isNotEmpty
+        ? fullThumbUrl
+        : (slides.isNotEmpty ? slides.first.imageUrl : '');
+
     return StoryModel(
       id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
-      previewImage: fullThumbUrl,
+      previewImage: effectivePreview,
       slides: slides,
       isViewed: json['is_viewed'] == true,
     );

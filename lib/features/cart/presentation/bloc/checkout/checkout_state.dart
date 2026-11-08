@@ -208,6 +208,43 @@ class CheckoutState extends Equatable {
   }
 
   // Clear specific fields
+  CheckoutState clearPromo() {
+    return CheckoutState(
+      isDelivery: isDelivery,
+      branchId: branchId,
+      branchTitle: branchTitle,
+      lat: lat,
+      lng: lng,
+      address: address,
+      deliveryPrice: deliveryPrice,
+      loadingDelivery: loadingDelivery,
+      appliedPromoCode: null,
+      promoType: null,
+      promoTypeString: null,
+      promoValue: null,
+      promoError: null,
+      loadingPromo: false,
+      selectedPaymentMethodKey: selectedPaymentMethodKey,
+      changeAmount: changeAmount,
+      comment: comment,
+      entrance: entrance,
+      floor: floor,
+      apartment: apartment,
+      doorPhone: doorPhone,
+      noUtensils: noUtensils,
+      courierNote: courierNote,
+      recipientName: recipientName,
+      recipientPhone: recipientPhone,
+      showLocationError: showLocationError,
+      isSubmitting: isSubmitting,
+      submitError: submitError,
+      successData: successData,
+      canOrder: canOrder,
+      canOrderMessage: canOrderMessage,
+      isSettingsLoading: isSettingsLoading,
+    );
+  }
+
   CheckoutState clearPromoError() => copyWith(promoError: null);
   CheckoutState clearSubmitError() => copyWith(submitError: null);
 

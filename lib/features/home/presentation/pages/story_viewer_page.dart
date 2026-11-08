@@ -29,8 +29,23 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
   double _dragOffsetY = 0.0;
 
   StoryEntity get _currentStory => widget.stories[_currentStoryIndex];
-  List<StorySlideEntity> get _slides => _currentStory.slides;
-  StorySlideEntity get _currentSlide => _slides[_currentSlideIndex];
+  List<StorySlideEntity> get _slides {
+    if (_currentStory.slides.isNotEmpty) {
+      return _currentStory.slides;
+    }
+    return [
+      StorySlideEntity(
+        id: _currentStory.id,
+        imageUrl: _currentStory.previewImage,
+      ),
+    ];
+  }
+
+  StorySlideEntity get _currentSlide {
+    final slides = _slides;
+    final safeIndex = _currentSlideIndex.clamp(0, slides.length - 1);
+    return slides[safeIndex];
+  }
 
   @override
   void initState() {
