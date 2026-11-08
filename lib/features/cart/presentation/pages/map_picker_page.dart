@@ -171,7 +171,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
           _currentLng = lastKnown.longitude;
           _checkDeliveryDistance(lastKnown.latitude, lastKnown.longitude);
           if (!_isMapLoading) {
-            _safeRunJavaScript('if (typeof window.moveToCoords === "function") { window.moveToCoords(${lastKnown.latitude}, ${lastKnown.longitude}); }');
+            _safeRunJavaScript('if (typeof window.goToMyLocation === "function") { window.goToMyLocation(${lastKnown.latitude}, ${lastKnown.longitude}); } else if (typeof window.moveToCoords === "function") { window.moveToCoords(${lastKnown.latitude}, ${lastKnown.longitude}, true); }');
           }
         }
 
@@ -186,7 +186,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
           _currentLng = pos.longitude;
           _checkDeliveryDistance(pos.latitude, pos.longitude);
           if (!_isMapLoading) {
-            _safeRunJavaScript('if (typeof window.moveToCoords === "function") { window.moveToCoords(${pos.latitude}, ${pos.longitude}); }');
+            _safeRunJavaScript('if (typeof window.goToMyLocation === "function") { window.goToMyLocation(${pos.latitude}, ${pos.longitude}); } else if (typeof window.moveToCoords === "function") { window.moveToCoords(${pos.latitude}, ${pos.longitude}, true); }');
           }
         }
       }
@@ -318,7 +318,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
         _currentLat = lastKnown.latitude;
         _currentLng = lastKnown.longitude;
         _checkDeliveryDistance(lastKnown.latitude, lastKnown.longitude);
-        _safeRunJavaScript('if (typeof window.moveToCoords === "function") { window.moveToCoords(${lastKnown.latitude}, ${lastKnown.longitude}); }');
+        _safeRunJavaScript('if (typeof window.goToMyLocation === "function") { window.goToMyLocation(${lastKnown.latitude}, ${lastKnown.longitude}); } else if (typeof window.moveToCoords === "function") { window.moveToCoords(${lastKnown.latitude}, ${lastKnown.longitude}, true); }');
       }
 
       final position = await Geolocator.getCurrentPosition(
@@ -332,7 +332,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
         _currentLat = position.latitude;
         _currentLng = position.longitude;
         _checkDeliveryDistance(position.latitude, position.longitude);
-        _safeRunJavaScript('if (typeof window.moveToCoords === "function") { window.moveToCoords(${position.latitude}, ${position.longitude}); }');
+        _safeRunJavaScript('if (typeof window.goToMyLocation === "function") { window.goToMyLocation(${position.latitude}, ${position.longitude}); } else if (typeof window.moveToCoords === "function") { window.moveToCoords(${position.latitude}, ${position.longitude}, true); }');
       }
     } catch (_) {
       if (mounted) {

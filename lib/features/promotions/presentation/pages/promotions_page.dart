@@ -196,6 +196,10 @@ class _PromotionsView extends StatelessWidget {
                     delegate: SliverChildBuilderDelegate(
                       (ctx, i) {
                         final deal = deals[i];
+                        final hasSavings = deal.oldPrice > deal.price && deal.price > 0;
+                        final savings = hasSavings ? (deal.oldPrice - deal.price) : 0.0;
+                        final discountPercent = hasSavings ? (((deal.oldPrice - deal.price) / deal.oldPrice) * 100).round() : 0;
+
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(14),
@@ -233,7 +237,34 @@ class _PromotionsView extends StatelessWidget {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  if (deal.badgeText.isNotEmpty)
+                                  if (hasSavings)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.success.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: AppColors.success.withValues(alpha: 0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.arrow_downward_rounded, size: 12, color: AppColors.success),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            '-$discountPercent%',
+                                            style: const TextStyle(
+                                              color: AppColors.success,
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 11.5,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  else if (deal.badgeText.isNotEmpty)
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
@@ -301,7 +332,47 @@ class _PromotionsView extends StatelessWidget {
                                   fontSize: 15,
                                 ),
                               ),
-                              if (deal.description.isNotEmpty) ...[
+                              // Agar tarkib (items) mavjud bo'lsa, uni alohida chiroyli blokda chiqaramiz
+                              if (deal.items.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Tarkibi:',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 11,
+                                    color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 4,
+                                  children: deal.items.map((it) {
+                                    final label = it.variantTitle.isNotEmpty
+                                        ? '${it.productTitle} (${it.variantTitle}) × ${it.quantity}'
+                                        : '${it.productTitle} × ${it.quantity}';
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: isDark ? AppColors.darkSurface : const Color(0xFFF1F3F5),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+                                          width: 0.8,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        label,
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          color: isDark ? AppColors.neutral200 : AppColors.neutral800,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ] else if (deal.description.isNotEmpty) ...[
                                 const SizedBox(height: 4),
                                 Text(
                                   deal.description,
@@ -311,55 +382,64 @@ class _PromotionsView extends StatelessWidget {
                                   ),
                                 ),
                               ],
-                              if (deal.items.isNotEmpty) ...[
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 6,
-                                  runSpacing: 4,
-                                  children: deal.items.map((it) {
-                                    final label = it.variantTitle.isNotEmpty
-                                        ? '${it.productTitle} (${it.variantTitle}) x${it.quantity}'
-                                        : '${it.productTitle} x${it.quantity}';
-                                    return Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: isDark ? AppColors.darkSurface : const Color(0xFFF1F3F5),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        label,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: isDark ? AppColors.neutral300 : AppColors.neutral700,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              ],
                               const SizedBox(height: 12),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   if (deal.price > 0)
-                                    Row(
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Text(
-                                          '${NumberFormatter.formatSum(deal.price.toInt())} ${'common.currency'.tr()}',
-                                          style: AppTextStyles.labelLarge.copyWith(
-                                            fontWeight: FontWeight.w900,
-                                            fontSize: 16,
-                                            color: AppColors.primary,
-                                          ),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              '${NumberFormatter.formatSum(deal.price.toInt())} ${'common.currency'.tr()}',
+                                              style: AppTextStyles.labelLarge.copyWith(
+                                                fontWeight: FontWeight.w900,
+                                                fontSize: 16.5,
+                                                color: isDark ? Colors.white : AppColors.neutral900,
+                                              ),
+                                            ),
+                                            if (hasSavings) ...[
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                '${NumberFormatter.formatSum(deal.oldPrice.toInt())} ${'common.currency'.tr()}',
+                                                style: AppTextStyles.bodySmall.copyWith(
+                                                  decoration: TextDecoration.lineThrough,
+                                                  color: AppColors.neutral400,
+                                                  fontSize: 12.5,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
                                         ),
-                                        if (deal.oldPrice > deal.price) ...[
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            '${NumberFormatter.formatSum(deal.oldPrice.toInt())} ${'common.currency'.tr()}',
-                                            style: AppTextStyles.bodySmall.copyWith(
-                                              decoration: TextDecoration.lineThrough,
-                                              color: AppColors.neutral400,
+                                        if (hasSavings) ...[
+                                          const SizedBox(height: 3),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.success.withValues(alpha: 0.12),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(
+                                                  Icons.trending_down_rounded,
+                                                  size: 14,
+                                                  color: AppColors.success,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  '${NumberFormatter.formatSum(savings.toInt())} ${'common.currency'.tr()} foyda',
+                                                  style: const TextStyle(
+                                                    color: AppColors.success,
+                                                    fontWeight: FontWeight.w800,
+                                                    fontSize: 11,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ],
@@ -367,7 +447,40 @@ class _PromotionsView extends StatelessWidget {
                                     )
                                   else
                                     const SizedBox.shrink(),
-                                  if (deal.code.isNotEmpty)
+                                  if (deal.price > 0)
+                                    ElevatedButton.icon(
+                                      onPressed: () {
+                                        HapticFeedback.lightImpact();
+                                        context.read<CartCubit>().addCouponToCart(deal);
+                                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('${deal.title} ${'cart.added'.tr()}'),
+                                            backgroundColor: AppColors.success,
+                                            duration: const Duration(seconds: 2),
+                                            action: SnackBarAction(
+                                              label: 'cart.title'.tr(),
+                                              textColor: Colors.white,
+                                              onPressed: () => context.go('/cart'),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.shopping_bag_outlined, size: 16),
+                                      label: Text(
+                                        'cart.add'.tr(),
+                                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                        minimumSize: Size.zero,
+                                        elevation: 0,
+                                      ),
+                                    )
+                                  else if (deal.code.isNotEmpty)
                                     ElevatedButton(
                                       onPressed: () {
                                         HapticFeedback.lightImpact();

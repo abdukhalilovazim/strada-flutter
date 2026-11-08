@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 
 class PromotionDealItemEntity extends Equatable {
   final String productTitle;
@@ -67,6 +68,25 @@ class PromotionDealEntity extends Equatable {
           .whereType<Map<String, dynamic>>()
           .map((i) => PromotionDealItemEntity.fromJson(i))
           .toList(),
+    );
+  }
+
+  ProductEntity toProductEntity() {
+    return ProductEntity(
+      id: 900000 + id,
+      slug: slug.isNotEmpty ? slug : 'coupon-$id',
+      title: title,
+      description: description,
+      thumbnail: imageUrl,
+      photo: imageUrl,
+      price: price,
+      oldPrice: oldPrice > price ? oldPrice : null,
+      variants: const [],
+      values: const [],
+      badges: [
+        if (badgeText.isNotEmpty)
+          ProductBadgeEntity(text: badgeText, type: 'promo'),
+      ],
     );
   }
 

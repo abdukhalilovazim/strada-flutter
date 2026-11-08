@@ -1784,18 +1784,31 @@ class SDUISubmitOrderCtaComponent extends StatelessWidget {
       }
     }
 
-    // 4. Mahsulotlar ro'yxatini shakllantirish
-    final products = cartState.items.map((item) {
-      return {
-        'id': item.variant?.id ?? item.product.id,
-        'product_id': item.product.id,
-        if (item.variant != null) 'variant_id': item.variant!.id,
-        'quantity': item.quantity,
-      };
-    }).toList();
+    // 4. Mahsulotlar va kuponlar ro'yxatini shakllantirish
+    final regularProducts = <Map<String, dynamic>>[];
+    final coupons = <Map<String, dynamic>>[];
+
+    for (final item in cartState.items) {
+      if (item.isCoupon) {
+        coupons.add({
+          'coupon_id': item.couponId ?? (item.product.id > 900000 ? item.product.id - 900000 : item.product.id),
+          'quantity': item.quantity,
+        });
+      } else {
+        regularProducts.add({
+          'id': item.variant?.id ?? item.product.id,
+          'product_id': item.product.id,
+          if (item.variant != null) 'variant_id': item.variant!.id,
+          'quantity': item.quantity,
+        });
+      }
+    }
 
     // 5. Buyurtmani yuborish
-    context.read<CheckoutCubit>().submitOrder(products: products);
+    context.read<CheckoutCubit>().submitOrder(
+      products: regularProducts,
+      coupons: coupons,
+    );
   }
 
   @override

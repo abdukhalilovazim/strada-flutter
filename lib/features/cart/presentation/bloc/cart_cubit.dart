@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:pizza_strada/features/cart/domain/entities/cart_item_entity.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
+import 'package:pizza_strada/features/promotions/domain/entities/promotion_deal_entity.dart';
 
 class CartState extends Equatable {
   final List<CartItemEntity> items;
@@ -23,7 +24,7 @@ class CartCubit extends Cubit<CartState> {
   void addToCart(ProductEntity product, {VariantEntity? variant}) {
     final items = List<CartItemEntity>.from(state.items);
     final index = items.indexWhere((item) =>
-        item.product.slug == product.slug && item.variant?.id == variant?.id);
+        !item.isCoupon && item.product.slug == product.slug && item.variant?.id == variant?.id);
 
     if (index != -1) {
       items[index] = items[index].copyWith(quantity: items[index].quantity + 1);
@@ -33,16 +34,43 @@ class CartCubit extends Cubit<CartState> {
     emit(CartState(items: items));
   }
 
+  void addCouponToCart(PromotionDealEntity deal) {
+    final items = List<CartItemEntity>.from(state.items);
+    final index = items.indexWhere((item) =>
+        item.isCoupon && item.couponId == deal.id);
+
+    if (index != -1) {
+      items[index] = items[index].copyWith(quantity: items[index].quantity + 1);
+    } else {
+      items.add(CartItemEntity(
+        product: deal.toProductEntity(),
+        quantity: 1,
+        isCoupon: true,
+        couponId: deal.id,
+      ));
+    }
+    emit(CartState(items: items));
+  }
+
   void removeFromCart(CartItemEntity item) {
     final items = List<CartItemEntity>.from(state.items);
-    items.removeWhere((i) => i.product.slug == item.product.slug && i.variant?.id == item.variant?.id);
+    items.removeWhere((i) {
+      if (item.isCoupon) {
+        return i.isCoupon && i.couponId == item.couponId;
+      }
+      return !i.isCoupon && i.product.slug == item.product.slug && i.variant?.id == item.variant?.id;
+    });
     emit(CartState(items: items));
   }
 
   void updateQuantity(CartItemEntity item, int delta) {
     final items = List<CartItemEntity>.from(state.items);
-    final index = items.indexWhere((i) =>
-        i.product.slug == item.product.slug && i.variant?.id == item.variant?.id);
+    final index = items.indexWhere((i) {
+      if (item.isCoupon) {
+        return i.isCoupon && i.couponId == item.couponId;
+      }
+      return !i.isCoupon && i.product.slug == item.product.slug && i.variant?.id == item.variant?.id;
+    });
 
     if (index != -1) {
       final newQuantity = items[index].quantity + delta;

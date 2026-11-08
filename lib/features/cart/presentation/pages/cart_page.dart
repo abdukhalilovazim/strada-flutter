@@ -253,7 +253,24 @@ class CartPage extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (localizedVariant != null) ...[
+                    if (item.isCoupon) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.confirmation_number_outlined, size: 12, color: AppColors.primary),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Kupon to\'plami',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.primary,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else if (localizedVariant != null) ...[
                       const SizedBox(height: 2),
                       Text(
                         localizedVariant,
