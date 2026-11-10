@@ -17,20 +17,20 @@ class HomeLoading extends HomeState {}
 class HomeLoaded extends HomeState {
   final List<SliderEntity> sliders;
   final List<StoryEntity> stories;
+  final bool isStoriesLoading;
   final List<CategoryEntity> categories;
   final List<ProductEntity> fullProducts;
   final List<ProductEntity> products;
-  final SettingsEntity? settings;
   final String? selectedCategory;
   final String searchQuery;
 
   const HomeLoaded({
     this.sliders = const [],
     this.stories = const [],
+    this.isStoriesLoading = false,
     required this.categories,
     required this.fullProducts,
     required this.products,
-    this.settings,
     this.selectedCategory,
     this.searchQuery = '',
   });
@@ -38,20 +38,20 @@ class HomeLoaded extends HomeState {
   HomeLoaded copyWith({
     List<SliderEntity>? sliders,
     List<StoryEntity>? stories,
+    bool? isStoriesLoading,
     List<CategoryEntity>? categories,
     List<ProductEntity>? fullProducts,
     List<ProductEntity>? products,
-    SettingsEntity? settings,
     String? selectedCategory,
     String? searchQuery,
   }) {
     return HomeLoaded(
       sliders: sliders ?? this.sliders,
       stories: stories ?? this.stories,
+      isStoriesLoading: isStoriesLoading ?? this.isStoriesLoading,
       categories: categories ?? this.categories,
       fullProducts: fullProducts ?? this.fullProducts,
       products: products ?? this.products,
-      settings: settings ?? this.settings,
       selectedCategory: selectedCategory ?? this.selectedCategory,
       searchQuery: searchQuery ?? this.searchQuery,
     );
@@ -61,10 +61,10 @@ class HomeLoaded extends HomeState {
   List<Object?> get props => [
         sliders,
         stories,
+        isStoriesLoading,
         categories,
         fullProducts,
         products,
-        settings,
         selectedCategory,
         searchQuery,
       ];
@@ -97,10 +97,48 @@ class HomeCubit extends Cubit<HomeState> {
     try {
       final categoriesResult = await _getCategoriesUseCase();
       final productsResult = await _getProductsUseCase();
-      final storiesResult = await _getStoriesUseCase();
 
       final categories = categoriesResult.getOrElse(() => const []);
       final products = productsResult.getOrElse(() => const []);
+
+      if (categories.isEmpty && products.isEmpty) {
+        emit(const HomeFailure('Katalog ma\'lumotlarini yuklab bo\'lmadi'));
+        return;
+      }
+
+      final defaultSlug = categories.isNotEmpty ? categories.first.slug : null;
+      final initialProducts = defaultSlug != null
+          ? products.where((p) => p.category?.slug == defaultSlug).toList()
+          : products;
+
+      final existingStories = (state is HomeLoaded) ? (state as HomeLoaded).stories : const <StoryEntity>[];
+
+      emit(HomeLoaded(
+        sliders: const [],
+        stories: existingStories,
+        isStoriesLoading: existingStories.isEmpty,
+        categories: categories,
+        fullProducts: products,
+        products: initialProducts,
+        selectedCategory: defaultSlug,
+      ));
+    } catch (e) {
+      emit(HomeFailure(e.toString()));
+    }
+  }
+
+  Future<void> loadStories() async {
+    final currentState = state;
+    if (currentState is HomeLoaded && currentState.stories.isNotEmpty) {
+      return;
+    }
+
+    if (currentState is HomeLoaded) {
+      emit(currentState.copyWith(isStoriesLoading: true));
+    }
+
+    try {
+      final storiesResult = await _getStoriesUseCase();
       final rawStories = storiesResult.getOrElse(() => const []);
 
       List<StoryEntity> stories = rawStories;
@@ -113,26 +151,18 @@ class HomeCubit extends Cubit<HomeState> {
         }).toList();
       } catch (_) {}
 
-      if (categories.isEmpty && products.isEmpty) {
-        emit(const HomeFailure('Katalog ma\'lumotlarini yuklab bo\'lmadi'));
-        return;
+      final stateNow = state;
+      if (stateNow is HomeLoaded) {
+        emit(stateNow.copyWith(
+          stories: stories,
+          isStoriesLoading: false,
+        ));
       }
-
-      final defaultSlug = categories.isNotEmpty ? categories.first.slug : null;
-      final initialProducts = defaultSlug != null
-          ? products.where((p) => p.category?.slug == defaultSlug).toList()
-          : products;
-
-      emit(HomeLoaded(
-        sliders: const [],
-        stories: stories,
-        categories: categories,
-        fullProducts: products,
-        products: initialProducts,
-        selectedCategory: defaultSlug,
-      ));
-    } catch (e) {
-      emit(HomeFailure(e.toString()));
+    } catch (_) {
+      final stateNow = state;
+      if (stateNow is HomeLoaded) {
+        emit(stateNow.copyWith(isStoriesLoading: false));
+      }
     }
   }
 

@@ -567,22 +567,9 @@ class _CartPageState extends State<CartPage> {
         final canOrder = checkoutState.canOrder;
 
         return Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.darkSurface : Colors.white,
-            border: Border(
-              top: BorderSide(
-                color: isDark ? AppColors.neutral800 : AppColors.neutral200,
-                width: 1,
-              ),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, -3),
-              ),
-            ],
+            color: Theme.of(context).scaffoldBackgroundColor,
           ),
           child: SafeArea(
             top: false,

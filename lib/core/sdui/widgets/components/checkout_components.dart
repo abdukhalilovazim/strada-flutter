@@ -1292,17 +1292,18 @@ class SDUIPaymentMethodComponent extends StatelessWidget {
       }
     }
 
-    // 2. Agar SDUI items bo'sh bo'lsa, HomeState settings tekshiriladi
+    // 2. Agar SDUI items bo'sh bo'lsa, CheckoutState paymentMethods tekshiriladi
     if (options.isEmpty) {
-      final homeState = context.watch<HomeCubit>().state;
-      if (homeState is HomeLoaded && homeState.settings?.paymentMethods != null) {
-        for (final m in homeState.settings!.paymentMethods) {
-          final k = m.key.toLowerCase();
+      final checkoutState = context.watch<CheckoutCubit>().state;
+      if (checkoutState.paymentMethods.isNotEmpty) {
+        for (final m in checkoutState.paymentMethods) {
+          final k = m['key']?.toString().toLowerCase() ?? '';
           if (k == 'terminal') continue;
           final isPayme = k == '1' || k == 'payme';
+          final titleVal = m['value']?.toString() ?? '';
           options.add({
             'key': isPayme ? 'payme' : 'cash',
-            'title': m.value.isNotEmpty ? m.value : (isPayme ? 'Payme' : 'checkout.cash'.tr()),
+            'title': titleVal.isNotEmpty ? titleVal : (isPayme ? 'Payme' : 'checkout.cash'.tr()),
             'subtitle': isPayme ? 'checkout.online_payment'.tr() : 'checkout.to_courier'.tr(),
             'icon': isPayme ? Icons.credit_card_rounded : Icons.payments_outlined,
           });

@@ -21,6 +21,7 @@ import 'package:pizza_strada/features/home/presentation/widgets/product_card.dar
 import 'package:pizza_strada/features/home/presentation/widgets/product_detail_modal.dart';
 import 'package:pizza_strada/core/di/injection.dart';
 import 'package:pizza_strada/features/notifications/presentation/bloc/notifications_cubit.dart';
+import 'package:shimmer/shimmer.dart';
 
 /// 📱 HomePage powered 100% by Native Flutter UI & BLoC
 class HomePage extends StatefulWidget {
@@ -40,6 +41,11 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _searchController.addListener(_onSearchChanged);
     _searchFocusNode.addListener(() => setState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<HomeCubit>().loadStories();
+      }
+    });
   }
 
   void _onSearchChanged() {
@@ -225,7 +231,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildStories(List<StoryEntity> stories) {
+  Widget _buildStories(List<StoryEntity> stories, bool isStoriesLoading) {
+    if (stories.isEmpty && isStoriesLoading) {
+      return const SliverToBoxAdapter(child: _HomeStoriesShimmer());
+    }
     if (stories.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     return SliverToBoxAdapter(
@@ -378,17 +387,43 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildHomeShimmer(BuildContext context, bool isDark) {
+    return CustomScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      slivers: [
+        SliverToBoxAdapter(child: _buildSearchBar(context)),
+        const SliverToBoxAdapter(child: _HomeStoriesShimmer()),
+        const SliverToBoxAdapter(child: _HomeCategoriesShimmer()),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 14,
+              crossAxisSpacing: 14,
+              childAspectRatio: 0.68,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (_, __) => _ProductCardShimmer(isDark: isDark),
+              childCount: 6,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: _buildAppBar(context),
       body: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, state) {
           if (state is HomeLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            );
+            return _buildHomeShimmer(context, isDark);
           }
 
           if (state is HomeFailure) {
@@ -403,6 +438,9 @@ class _HomePageState extends State<HomePage> {
                       context.read<NotificationsCubit>().refresh();
                     } catch (_) {}
                     await context.read<HomeCubit>().init(forceRefresh: true);
+                    if (context.mounted) {
+                      context.read<HomeCubit>().loadStories();
+                    }
                   },
                 ),
                 SliverFillRemaining(
@@ -447,11 +485,14 @@ class _HomePageState extends State<HomePage> {
                       context.read<NotificationsCubit>().refresh();
                     } catch (_) {}
                     await context.read<HomeCubit>().init(forceRefresh: true);
+                    if (context.mounted) {
+                      context.read<HomeCubit>().loadStories();
+                    }
                   },
                 ),
                 _buildSearchBar(context),
                 if (state.searchQuery.isEmpty) ...[
-                  _buildStories(state.stories),
+                  _buildStories(state.stories, state.isStoriesLoading),
                   _buildCategoryBar(state.categories, state.selectedCategory),
                 ],
                 _buildProductGrid(state.products),
@@ -687,3 +728,173 @@ class _StickyCategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(covariant _StickyCategoryHeaderDelegate oldDelegate) =>
       oldDelegate.child != child || oldDelegate.height != height;
 }
+
+/// 💫 Stories Shimmer Skeleton
+class _HomeStoriesShimmer extends StatelessWidget {
+  const _HomeStoriesShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE8ECEF);
+    final highlightColor = isDark ? const Color(0xFF3D3D3D) : const Color(0xFFF8F9FA);
+
+    return Shimmer.fromColors(
+      baseColor: baseColor,
+      highlightColor: highlightColor,
+      child: Container(
+        height: 104,
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: 6,
+          itemBuilder: (ctx, i) => Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  width: 52,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(5),
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 🏷️ Categories Shimmer Skeleton
+class _HomeCategoriesShimmer extends StatelessWidget {
+  const _HomeCategoriesShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE8ECEF);
+    final highlightColor = isDark ? const Color(0xFF3D3D3D) : const Color(0xFFF8F9FA);
+
+    return Shimmer.fromColors(
+      baseColor: baseColor,
+      highlightColor: highlightColor,
+      child: Container(
+        height: 52,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: List.generate(
+            4,
+            (i) => Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Container(
+                width: 76 + (i * 14.0),
+                height: 38,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 🍕 Product Card Shimmer Skeleton
+class _ProductCardShimmer extends StatelessWidget {
+  final bool isDark;
+  const _ProductCardShimmer({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final baseColor = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE8ECEF);
+    final highlightColor = isDark ? const Color(0xFF3D3D3D) : const Color(0xFFF8F9FA);
+
+    return Shimmer.fromColors(
+      baseColor: baseColor,
+      highlightColor: highlightColor,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCard : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Center(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: 110,
+              height: 14,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(7),
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: 70,
+              height: 12,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(6),
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 60,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.white,
+                  ),
+                ),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

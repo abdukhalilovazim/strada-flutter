@@ -47,6 +47,8 @@ class CheckoutState extends Equatable {
   final bool? _isSettingsLoading;
   bool get isSettingsLoading => _isSettingsLoading ?? false;
 
+  final List<Map<String, dynamic>> paymentMethods;
+
   const CheckoutState({
     this.isDelivery = true,
     this.branchId,
@@ -81,6 +83,7 @@ class CheckoutState extends Equatable {
     bool? canOrder = true,
     this.canOrderMessage,
     bool? isSettingsLoading = false,
+    this.paymentMethods = const [],
   })  : _canOrder = canOrder ?? true,
         _isSettingsLoading = isSettingsLoading ?? false;
 
@@ -173,6 +176,7 @@ class CheckoutState extends Equatable {
     bool? canOrder,
     String? canOrderMessage,
     bool? isSettingsLoading,
+    List<Map<String, dynamic>>? paymentMethods,
   }) {
     return CheckoutState(
       isDelivery: isDelivery ?? this.isDelivery,
@@ -208,6 +212,7 @@ class CheckoutState extends Equatable {
       canOrder: canOrder ?? this.canOrder,
       canOrderMessage: canOrderMessage ?? this.canOrderMessage,
       isSettingsLoading: isSettingsLoading ?? this.isSettingsLoading,
+      paymentMethods: paymentMethods ?? this.paymentMethods,
     );
   }
 
@@ -247,6 +252,7 @@ class CheckoutState extends Equatable {
       canOrder: canOrder,
       canOrderMessage: canOrderMessage,
       isSettingsLoading: isSettingsLoading,
+      paymentMethods: paymentMethods,
     );
   }
 
@@ -288,5 +294,6 @@ class CheckoutState extends Equatable {
         canOrder,
         canOrderMessage,
         isSettingsLoading,
+        paymentMethods,
       ];
 }

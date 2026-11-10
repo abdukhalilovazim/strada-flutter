@@ -27,9 +27,20 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         final rawCanOrder = response['can_order'];
         final canOrder = rawCanOrder == true || rawCanOrder == 1 || rawCanOrder == '1';
         final canOrderMsg = response['can_order_message']?.toString();
+
+        final List<Map<String, dynamic>> paymentMethods = [];
+        if (response['payment_methods'] is List) {
+          for (final item in response['payment_methods']) {
+            if (item is Map) {
+              paymentMethods.add(Map<String, dynamic>.from(item));
+            }
+          }
+        }
+
         emit(state.copyWith(
           canOrder: canOrder,
           canOrderMessage: canOrderMsg,
+          paymentMethods: paymentMethods,
           isSettingsLoading: false,
         ));
       } else {
