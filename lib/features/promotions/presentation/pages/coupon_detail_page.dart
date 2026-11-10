@@ -8,6 +8,7 @@ import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
 import 'package:pizza_strada/core/utils/variant_localization_helper.dart';
+import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import '../../domain/entities/promotion_deal_entity.dart';
@@ -51,148 +52,160 @@ class CouponDetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Square Image (1:1 Aspect Ratio) ──
-            if (deal.imageUrl.isNotEmpty)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(22),
-                child: AspectRatio(
-                  aspectRatio: 1.0,
-                  child: CachedNetworkImage(
-                    imageUrl: deal.imageUrl,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: isDark ? AppColors.darkSurface : AppColors.neutral100,
-                      child: const Center(
-                        child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      color: isDark ? AppColors.darkSurface : AppColors.neutral100,
-                      child: const Center(
-                        child: Icon(Icons.confirmation_number_outlined, size: 64, color: AppColors.neutral400),
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            else
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkSurface : AppColors.neutral100,
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                child: const AspectRatio(
-                  aspectRatio: 1.0,
-                  child: Center(
-                    child: Icon(Icons.confirmation_number_outlined, size: 72, color: AppColors.neutral400),
-                  ),
-                ),
-              ),
-
-            const SizedBox(height: 18),
-
-            // ── Badges & Code Row ──
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // ── Square Image with Overlaid Badges (1:1 Aspect Ratio) ──
+            Stack(
               children: [
-                if (hasSavings)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: AppColors.success.withValues(alpha: 0.35),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.arrow_downward_rounded, size: 14, color: AppColors.success),
-                        const SizedBox(width: 4),
-                        Text(
-                          '-$discountPercent%',
-                          style: const TextStyle(
-                            color: AppColors.success,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 13,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: AspectRatio(
+                    aspectRatio: 1.0,
+                    child: deal.imageUrl.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: deal.imageUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: isDark ? AppColors.darkSurface : AppColors.neutral100,
+                              child: const Center(
+                                child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              color: isDark ? AppColors.darkSurface : AppColors.neutral100,
+                              child: const Center(
+                                child: Icon(Icons.confirmation_number_outlined, size: 64, color: AppColors.neutral400),
+                              ),
+                            ),
+                          )
+                        : Container(
+                            color: isDark ? AppColors.darkSurface : AppColors.neutral100,
+                            child: const Center(
+                              child: Icon(Icons.confirmation_number_outlined, size: 72, color: AppColors.neutral400),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  )
-                else if (deal.badgeText.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      deal.badgeText,
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13,
-                      ),
-                    ),
-                  )
-                else
-                  const SizedBox.shrink(),
+                  ),
+                ),
 
-                // Coupon Code copy block
-                if (deal.code.isNotEmpty)
-                  InkWell(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      Clipboard.setData(ClipboardData(text: deal.code));
-                      final messenger = ScaffoldMessenger.of(context);
-                      messenger.clearSnackBars();
-                      messenger.showSnackBar(
-                        SnackBar(
-                          content: Text('promotions.coupon_copied'.tr(namedArgs: {'code': deal.code})),
-                          backgroundColor: AppColors.success,
-                          duration: const Duration(seconds: 2),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(12),
+                // Top-Left: Discount Badge (xuddi listdagi kabi)
+                if (hasSavings)
+                  Positioned(
+                    top: 12,
+                    left: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.4),
-                          width: 1.2,
-                        ),
+                        color: AppColors.success,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.success.withValues(alpha: 0.35),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          const Icon(Icons.arrow_downward_rounded, size: 14, color: Colors.white),
+                          const SizedBox(width: 3),
                           Text(
-                            deal.code,
+                            '-$discountPercent%',
                             style: const TextStyle(
+                              color: Colors.white,
                               fontWeight: FontWeight.w900,
-                              letterSpacing: 1,
                               fontSize: 13,
-                              color: AppColors.primary,
+                              letterSpacing: -0.2,
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          const Icon(Icons.copy_rounded, size: 14, color: AppColors.primary),
                         ],
+                      ),
+                    ),
+                  )
+                else if (deal.badgeText.isNotEmpty)
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.35),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        deal.badgeText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // Top-Right: Promo Code Pill (xuddi listdagi kabi, tap to copy)
+                if (deal.code.isNotEmpty)
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        Clipboard.setData(ClipboardData(text: deal.code));
+                        final messenger = ScaffoldMessenger.of(context);
+                        messenger.clearSnackBars();
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text('promotions.coupon_copied'.tr(namedArgs: {'code': deal.code})),
+                            backgroundColor: AppColors.success,
+                            duration: const Duration(seconds: 2),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.72),
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.25),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.copy_rounded, size: 13, color: Colors.white),
+                            const SizedBox(width: 5),
+                            Text(
+                              deal.code,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
               ],
             ),
 
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
 
             // ── Title ──
             Text(
@@ -325,15 +338,19 @@ class CouponDetailPage extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       child: Row(
                         children: [
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Center(
-                              child: Icon(Icons.local_pizza_outlined, size: 18, color: AppColors.primary),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: SizedBox(
+                              width: 44,
+                              height: 44,
+                              child: item.imageUrl.isNotEmpty
+                                  ? CachedNetworkImage(
+                                      imageUrl: item.imageUrl,
+                                      fit: BoxFit.cover,
+                                      placeholder: (_, __) => const PizzaImagePlaceholder(width: 44, height: 44),
+                                      errorWidget: (_, __, ___) => const PizzaImagePlaceholder(width: 44, height: 44),
+                                    )
+                                  : const PizzaImagePlaceholder(width: 44, height: 44),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -384,7 +401,8 @@ class CouponDetailPage extends StatelessWidget {
             ],
 
             // ── Description ──
-            if (deal.description.isNotEmpty) ...[
+            if (deal.description.trim().isNotEmpty &&
+                !(deal.items.isNotEmpty && deal.description.trim() == deal.title.trim())) ...[
               Text(
                 'promotions.description'.tr(),
                 style: AppTextStyles.h4.copyWith(
@@ -407,7 +425,7 @@ class CouponDetailPage extends StatelessWidget {
         ),
       ),
       bottomSheet: Container(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurface : Colors.white,
           boxShadow: [

@@ -216,138 +216,214 @@ class _CartPageState extends State<CartPage> {
             ? VariantLocalizationHelper.localize(rawVariantTitle)
             : '';
         final variantDetails = item.variant?.details;
-        final variantDisplay = [
-          if (localizedVariant.isNotEmpty) localizedVariant,
-          if (variantDetails != null && variantDetails.trim().isNotEmpty) variantDetails.trim(),
-        ].join(' • ');
-        final showVariant = variantDisplay.isNotEmpty;
+        final hasSize = localizedVariant.isNotEmpty;
+        final hasDetails = variantDetails != null && variantDetails.trim().isNotEmpty;
 
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard : Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
+        final itemKey = ValueKey(
+          item.isCoupon
+              ? 'cart_coupon_${item.couponId}'
+              : 'cart_item_${item.product.id}_${item.variant?.id ?? 'none'}',
+        );
+
+        return Dismissible(
+          key: itemKey,
+          direction: DismissDirection.horizontal,
+          dismissThresholds: const {
+            DismissDirection.startToEnd: 0.65,
+            DismissDirection.endToStart: 0.65,
+          },
+          background: Container(
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            decoration: BoxDecoration(
+              color: AppColors.error,
+              borderRadius: BorderRadius.circular(18),
             ),
-            boxShadow: AppColors.softShadow(isDark),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  width: 68,
-                  height: 68,
-                  child: product.validImageUrl.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: product.validImageUrl,
-                          fit: BoxFit.cover,
-                          placeholder: (_, __) => const PizzaImagePlaceholder(width: 68, height: 68),
-                          errorWidget: (_, __, ___) => const PizzaImagePlaceholder(width: 68, height: 68),
-                        )
-                      : const PizzaImagePlaceholder(width: 68, height: 68),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  'common.delete'.tr(),
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
+              ],
+            ),
+          ),
+          secondaryBackground: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            decoration: BoxDecoration(
+              color: AppColors.error,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'common.delete'.tr(),
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24),
+              ],
+            ),
+          ),
+          onDismissed: (_) {
+            HapticFeedback.mediumImpact();
+            context.read<CartCubit>().removeFromCart(item);
+          },
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkCard : Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.title,
-                      style: AppTextStyles.labelLarge.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14.5,
+              boxShadow: AppColors.softShadow(isDark),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 68,
+                    height: 68,
+                    child: product.validImageUrl.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: product.validImageUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => const PizzaImagePlaceholder(width: 68, height: 68),
+                            errorWidget: (_, __, ___) => const PizzaImagePlaceholder(width: 68, height: 68),
+                          )
+                        : const PizzaImagePlaceholder(width: 68, height: 68),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        product.title,
+                        style: AppTextStyles.labelLarge.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14.5,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (item.isCoupon) ...[
-                      const SizedBox(height: 2),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.confirmation_number_outlined, size: 12, color: AppColors.primary),
-                          const SizedBox(width: 4),
+                      if (item.isCoupon) ...[
+                        const SizedBox(height: 2),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.confirmation_number_outlined, size: 12, color: AppColors.primary),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Kupon to\'plami',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.primary,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        // 2. Size
+                        if (hasSize) ...[
+                          const SizedBox(height: 2),
                           Text(
-                            'Kupon to\'plami',
+                            localizedVariant,
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.primary,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
+                              color: isDark ? AppColors.neutral300 : AppColors.neutral700,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
-                      ),
-                    ] else if (showVariant) ...[
-                      const SizedBox(height: 2),
+                        // 3. Detail
+                        if (hasDetails) ...[
+                          const SizedBox(height: 1.5),
+                          Text(
+                            variantDetails!.trim(),
+                            style: AppTextStyles.bodyExtraSmall.copyWith(
+                              color: AppColors.neutral500,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ],
+                      // 4. Price
+                      const SizedBox(height: 5),
                       Text(
-                        variantDisplay,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.neutral500,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 6),
-                    Text(
-                      '${NumberFormatter.formatSum(item.totalPrice)} ${'common.currency'.tr()}',
-                      style: AppTextStyles.labelLarge.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkSurface : const Color(0xFFF1F3F5),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        item.quantity == 1 ? Icons.delete_outline_rounded : Icons.remove_rounded,
-                        size: 18,
-                        color: item.quantity == 1 ? AppColors.error : AppColors.neutral700,
-                      ),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        context.read<CartCubit>().updateQuantity(item, -1);
-                      },
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                      padding: EdgeInsets.zero,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: Text(
-                        '${item.quantity}',
-                        style: AppTextStyles.labelMedium.copyWith(
+                        '${NumberFormatter.formatSum(item.totalPrice)} ${'common.currency'.tr()}',
+                        style: AppTextStyles.labelLarge.copyWith(
+                          color: AppColors.primary,
                           fontWeight: FontWeight.w800,
                           fontSize: 14,
                         ),
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.add_rounded, size: 18, color: AppColors.neutral900),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        context.read<CartCubit>().updateQuantity(item, 1);
-                      },
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                      padding: EdgeInsets.zero,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkSurface : const Color(0xFFF1F3F5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          item.quantity == 1 ? Icons.delete_outline_rounded : Icons.remove_rounded,
+                          size: 18,
+                          color: item.quantity == 1 ? AppColors.error : AppColors.neutral700,
+                        ),
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          context.read<CartCubit>().updateQuantity(item, -1);
+                        },
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        padding: EdgeInsets.zero,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: Text(
+                          '${item.quantity}',
+                          style: AppTextStyles.labelMedium.copyWith(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.add_rounded, size: 18, color: AppColors.neutral900),
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          context.read<CartCubit>().updateQuantity(item, 1);
+                        },
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        padding: EdgeInsets.zero,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -491,7 +567,7 @@ class _CartPageState extends State<CartPage> {
         final canOrder = checkoutState.canOrder;
 
         return Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkSurface : Colors.white,
             border: Border(
@@ -550,7 +626,7 @@ class _CartPageState extends State<CartPage> {
                 ],
                 SizedBox(
                   width: double.infinity,
-                  height: 54,
+                  height: 52,
                   child: ElevatedButton(
                     onPressed: !canOrder
                         ? null

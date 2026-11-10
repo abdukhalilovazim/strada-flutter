@@ -421,7 +421,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                           // 1. "Купить сейчас" (Secondary)
                           Expanded(
                             child: SizedBox(
-                              height: 50,
+                              height: 52,
                               child: OutlinedButton(
                                 onPressed: () => _onBuyNow(context),
                                 style: OutlinedButton.styleFrom(
@@ -454,7 +454,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                           // 2. "Добавить в корзину" (Primary CTA)
                           Expanded(
                             child: SizedBox(
-                              height: 50,
+                              height: 52,
                               child: ElevatedButton(
                                 onPressed: () => _onAddToCart(context),
                                 style: ElevatedButton.styleFrom(

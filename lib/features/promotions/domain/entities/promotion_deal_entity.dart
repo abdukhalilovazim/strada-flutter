@@ -5,11 +5,13 @@ class PromotionDealItemEntity extends Equatable {
   final String productTitle;
   final String variantTitle;
   final int quantity;
+  final String imageUrl;
 
   const PromotionDealItemEntity({
     required this.productTitle,
     this.variantTitle = '',
     this.quantity = 1,
+    this.imageUrl = '',
   });
 
   factory PromotionDealItemEntity.fromJson(Map<String, dynamic> json) {
@@ -21,11 +23,12 @@ class PromotionDealItemEntity extends Equatable {
       productTitle: json['product_title']?.toString() ?? '',
       variantTitle: isSize ? '' : rawVariant,
       quantity: (json['quantity'] as num?)?.toInt() ?? 1,
+      imageUrl: json['image_url']?.toString() ?? '',
     );
   }
 
   @override
-  List<Object?> get props => [productTitle, variantTitle, quantity];
+  List<Object?> get props => [productTitle, variantTitle, quantity, imageUrl];
 }
 
 class PromotionDealEntity extends Equatable {

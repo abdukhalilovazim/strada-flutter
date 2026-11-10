@@ -146,7 +146,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           // ── Kontent ──
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -386,12 +386,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           top: false,
           child: Row(
             children: [
-              // Qizil pill stepper
+              // Stepper (Standard 52px height, 16px radius)
               Container(
-                height: 48,
+                height: 52,
                 decoration: BoxDecoration(
                   color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: const [
                     BoxShadow(
                       color: Color(0x33D32F2F),
@@ -406,12 +406,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     GestureDetector(
                       onTap: () {
                         if (_quantity > 1) {
+                          HapticFeedback.lightImpact();
                           setState(() => _quantity--);
                         }
                       },
                       child: Container(
-                        width: 48,
-                        height: 48,
+                        width: 44,
+                        height: 52,
                         alignment: Alignment.center,
                         child: Icon(
                           Icons.remove_rounded,
@@ -423,7 +424,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       ),
                     ),
                     SizedBox(
-                      width: 32,
+                      width: 28,
                       child: Text(
                         '$_quantity',
                         textAlign: TextAlign.center,
@@ -435,10 +436,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () => setState(() => _quantity++),
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        setState(() => _quantity++);
+                      },
                       child: Container(
-                        width: 48,
-                        height: 48,
+                        width: 44,
+                        height: 52,
                         alignment: Alignment.center,
                         child: const Icon(
                           Icons.add_rounded,
@@ -451,12 +455,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ),
               ),
 
-              // Savatga qo'shish tugmasi (pill uslubi)
+              // Savatga qo'shish tugmasi (Primary CTA 52px, radius 16)
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(left: 12),
                   child: SizedBox(
-                    height: 48,
+                    height: 52,
                     child: ElevatedButton(
                       onPressed: () {
                         if (hasVariants && _selectedVariant == null) {
@@ -488,15 +492,20 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         context.pop();
                       },
                       style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(999),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        minimumSize: const Size(0, 48),
                         elevation: 0,
                       ),
                       child: Text(
                         '${'product.add_to_cart'.tr()} • ${NumberFormatter.formatSum(totalPrice)} ${'common.currency'.tr()}',
                         overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
                       ),
                     ),
                   ),
