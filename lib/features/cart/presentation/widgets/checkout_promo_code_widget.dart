@@ -2,11 +2,13 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
+import 'package:pizza_strada/features/cart/presentation/widgets/login_prompt_bottom_sheet.dart';
 
 /// 🎟 Checkout sahifasi uchun promo-kod kiritish va tasdiqlash vidjeti
 class CheckoutPromoCodeWidget extends StatefulWidget {
@@ -18,6 +20,22 @@ class CheckoutPromoCodeWidget extends StatefulWidget {
 
 class _CheckoutPromoCodeWidgetState extends State<CheckoutPromoCodeWidget> {
   final _controller = TextEditingController();
+
+  Future<bool> _ensureLoggedIn(BuildContext context) async {
+    final token = await SecureStorage.getToken();
+    if (token == null || token.isEmpty) {
+      if (!context.mounted) return false;
+      FocusScope.of(context).unfocus();
+      await LoginPromptBottomSheet.show(
+        context,
+        title: 'checkout.login_prompt_promo_title'.tr(),
+        description: 'checkout.login_prompt_promo_desc'.tr(),
+        icon: Icons.confirmation_number_outlined,
+      );
+      return false;
+    }
+    return true;
+  }
 
   @override
   void dispose() {
@@ -176,10 +194,16 @@ class _CheckoutPromoCodeWidgetState extends State<CheckoutPromoCodeWidget> {
                             fontSize: 14,
                             color: isDark ? Colors.white : AppColors.neutral900,
                           ),
+                          onTap: () async {
+                            await _ensureLoggedIn(context);
+                          },
                           onChanged: (_) => setState(() {}),
-                          onSubmitted: (code) {
+                          onSubmitted: (code) async {
                             if (code.trim().isNotEmpty) {
-                              context.read<CheckoutCubit>().applyPromo(code.trim(), cartSubtotal);
+                              final ok = await _ensureLoggedIn(context);
+                              if (ok && context.mounted) {
+                                context.read<CheckoutCubit>().applyPromo(code.trim(), cartSubtotal);
+                              }
                             }
                           },
                           decoration: InputDecoration(
@@ -242,10 +266,13 @@ class _CheckoutPromoCodeWidgetState extends State<CheckoutPromoCodeWidget> {
                       child: ElevatedButton(
                         onPressed: _controller.text.trim().isEmpty || isLoading
                             ? null
-                            : () {
+                            : () async {
                                 HapticFeedback.mediumImpact();
                                 FocusScope.of(context).unfocus();
-                                context.read<CheckoutCubit>().applyPromo(_controller.text.trim(), cartSubtotal);
+                                final ok = await _ensureLoggedIn(context);
+                                if (ok && context.mounted) {
+                                  context.read<CheckoutCubit>().applyPromo(_controller.text.trim(), cartSubtotal);
+                                }
                               },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,

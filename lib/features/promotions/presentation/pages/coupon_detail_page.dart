@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
@@ -11,6 +12,7 @@ import 'package:pizza_strada/core/utils/variant_localization_helper.dart';
 import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
+import 'package:pizza_strada/features/cart/presentation/widgets/login_prompt_bottom_sheet.dart';
 import '../../domain/entities/promotion_deal_entity.dart';
 
 class CouponDetailPage extends StatelessWidget {
@@ -437,9 +439,21 @@ class CouponDetailPage extends StatelessWidget {
                     ),
                   )
                 : ElevatedButton.icon(
-                    onPressed: () {
+                    onPressed: () async {
                       HapticFeedback.mediumImpact();
-                      if (deal.code.isNotEmpty) {
+                      final token = await SecureStorage.getToken();
+                      if (token == null || token.isEmpty) {
+                        if (context.mounted) {
+                          await LoginPromptBottomSheet.show(
+                            context,
+                            title: 'checkout.login_prompt_promo_title'.tr(),
+                            description: 'checkout.login_prompt_promo_desc'.tr(),
+                            icon: Icons.confirmation_number_outlined,
+                          );
+                        }
+                        return;
+                      }
+                      if (deal.code.isNotEmpty && context.mounted) {
                         final cartSubtotal = context.read<CartCubit>().state.subtotal;
                         context.read<CheckoutCubit>().applyPromo(deal.code, cartSubtotal);
                         final messenger = ScaffoldMessenger.of(context);
@@ -454,7 +468,9 @@ class CouponDetailPage extends StatelessWidget {
                           ),
                         );
                       }
-                      context.pop();
+                      if (context.mounted) {
+                        context.pop();
+                      }
                     },
                     icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
                     label: Text(

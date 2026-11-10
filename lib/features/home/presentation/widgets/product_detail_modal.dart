@@ -13,6 +13,7 @@ import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';
 import 'package:pizza_strada/features/cart/domain/entities/cart_item_entity.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
+import 'package:pizza_strada/features/cart/presentation/widgets/login_prompt_bottom_sheet.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 
@@ -94,8 +95,8 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
 
     final checkoutState = cubit.state;
 
-    // 2. can_order == false bo'lsa: hech qayerga o'tmaydi, xabarnoma ko'rsatiladi
-    if (!checkoutState.canOrder) {
+    // 2. Do'kon yopiq bo'lsa (store_closed): hech qayerga o'tmaydi, xabarnoma ko'rsatiladi
+    if (checkoutState.isStoreClosed) {
       final msg = checkoutState.canOrderMessage ?? 'checkout.ordering_suspended'.tr();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -118,19 +119,11 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
     ]);
     Navigator.of(context).pop();
 
-    // 4. Login holatini tekshiramiz: agar kirmagan bo'lsa to'g'ridan-to'g'ri login sahifasiga
+    // 4. Login holatini tekshiramiz: agar kirmagan bo'lsa, avval tasdiqlash bottom sheetini ochamiz
     final token = await SecureStorage.getToken();
     if (token == null || token.isEmpty) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('checkout.login_required'.tr()),
-            backgroundColor: AppColors.primary,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-        context.push('/auth/login');
+        LoginPromptBottomSheet.show(context);
       }
       return;
     }

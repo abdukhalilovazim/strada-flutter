@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:pizza_strada/core/services/analytics_service.dart';
+import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
 
 import 'package:pizza_strada/core/di/injection.dart';
@@ -25,6 +26,8 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         final rawCanOrder = response['can_order'];
         final canOrder = rawCanOrder == true || rawCanOrder == 1 || rawCanOrder == '1';
         final canOrderMsg = response['can_order_message']?.toString();
+        final status = response['status']?.toString() ?? (canOrder ? 'allowed' : 'store_closed');
+        final isAuth = response['is_authenticated'] == true;
 
         final List<Map<String, dynamic>> paymentMethods = [];
         if (response['payment_methods'] is List) {
@@ -38,6 +41,8 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         emit(state.copyWith(
           canOrder: canOrder,
           canOrderMessage: canOrderMsg,
+          orderStatus: status,
+          isAuthenticated: isAuth,
           paymentMethods: paymentMethods,
           isSettingsLoading: false,
         ));
@@ -152,6 +157,16 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   }
 
   Future<void> applyPromo(String code, double subtotal) async {
+    final token = await SecureStorage.getToken();
+    if (token == null || token.isEmpty) {
+      emit(state.copyWith(
+        loadingPromo: false,
+        promoError: 'checkout.login_required_promo'.tr(),
+        appliedPromoCode: null,
+      ));
+      return;
+    }
+
     emit(state.copyWith(loadingPromo: true, promoError: null));
     try {
       final response = await _apiClient.post(

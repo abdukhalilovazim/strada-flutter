@@ -14,6 +14,7 @@ import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
+import 'package:pizza_strada/features/cart/presentation/widgets/login_prompt_bottom_sheet.dart';
 
 /// 🛒 CartPage powered 100% by Native Flutter UI & BLoC
 class CartPage extends StatefulWidget {
@@ -587,12 +588,13 @@ class _CartPageState extends State<CartPage> {
 
     return BlocBuilder<CheckoutCubit, CheckoutState>(
       builder: (context, checkoutState) {
-        final canOrder = checkoutState.canOrder;
+        final isClosed = checkoutState.isStoreClosed;
+        final canOrder = !isClosed;
 
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (!canOrder) ...[
+            if (isClosed) ...[
               Container(
                 width: double.infinity,
                 margin: const EdgeInsets.only(bottom: 10),
@@ -631,22 +633,17 @@ class _CartPageState extends State<CartPage> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: !canOrder
+                onPressed: isClosed
                     ? null
                     : () async {
                         HapticFeedback.mediumImpact();
+                        if (checkoutState.isStoreClosed) {
+                          return;
+                        }
                         final token = await SecureStorage.getToken();
-                        if (token == null || token.isEmpty) {
+                        if (token == null || token.isEmpty || checkoutState.isAuthRequired) {
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('checkout.login_required'.tr()),
-                                backgroundColor: AppColors.primary,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                            );
-                            context.push('/auth/login');
+                            LoginPromptBottomSheet.show(context);
                           }
                           return;
                         }

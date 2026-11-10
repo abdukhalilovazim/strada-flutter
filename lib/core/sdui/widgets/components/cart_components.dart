@@ -7,9 +7,11 @@ import 'package:go_router/go_router.dart';
 import '../../../../features/cart/presentation/bloc/cart_cubit.dart';
 import '../../../../features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import '../../../../features/cart/presentation/bloc/checkout/checkout_state.dart';
+import '../../../../features/cart/presentation/widgets/login_prompt_bottom_sheet.dart';
 import '../../../../features/home/presentation/bloc/home_cubit.dart';
 import '../../../services/analytics_service.dart';
 import '../../../services/smart_recommendation_engine.dart';
+import '../../../storage/secure_storage.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_text_styles.dart';
 import '../../../utils/number_formatter.dart';
@@ -626,10 +628,39 @@ class _SDUIPromoCodeComponentState extends State<SDUIPromoCodeComponent> {
                                 fontSize: 14,
                                 color: isDark ? Colors.white : AppColors.neutral900,
                               ),
+                              onTap: () async {
+                                final token = await SecureStorage.getToken();
+                                if (token == null || token.isEmpty) {
+                                  FocusScope.of(context).unfocus();
+                                  if (context.mounted) {
+                                    await LoginPromptBottomSheet.show(
+                                      context,
+                                      title: 'checkout.login_prompt_promo_title'.tr(),
+                                      description: 'checkout.login_prompt_promo_desc'.tr(),
+                                      icon: Icons.confirmation_number_outlined,
+                                    );
+                                  }
+                                }
+                              },
                               onChanged: (_) => setState(() {}),
-                              onSubmitted: (code) {
+                              onSubmitted: (code) async {
                                 if (code.trim().isNotEmpty) {
-                                  context.read<CheckoutCubit>().applyPromo(code.trim(), cartState.subtotal);
+                                  final token = await SecureStorage.getToken();
+                                  if (token == null || token.isEmpty) {
+                                    FocusScope.of(context).unfocus();
+                                    if (context.mounted) {
+                                      await LoginPromptBottomSheet.show(
+                                        context,
+                                        title: 'checkout.login_prompt_promo_title'.tr(),
+                                        description: 'checkout.login_prompt_promo_desc'.tr(),
+                                        icon: Icons.confirmation_number_outlined,
+                                      );
+                                    }
+                                    return;
+                                  }
+                                  if (context.mounted) {
+                                    context.read<CheckoutCubit>().applyPromo(code.trim(), cartState.subtotal);
+                                  }
                                 }
                               },
                               decoration: InputDecoration(
@@ -692,10 +723,23 @@ class _SDUIPromoCodeComponentState extends State<SDUIPromoCodeComponent> {
                           child: ElevatedButton(
                             onPressed: (isLoading || _controller.text.trim().isEmpty)
                                 ? null
-                                : () {
+                                : () async {
                                     HapticFeedback.lightImpact();
+                                    FocusScope.of(context).unfocus();
+                                    final token = await SecureStorage.getToken();
+                                    if (token == null || token.isEmpty) {
+                                      if (context.mounted) {
+                                        await LoginPromptBottomSheet.show(
+                                          context,
+                                          title: 'checkout.login_prompt_promo_title'.tr(),
+                                          description: 'checkout.login_prompt_promo_desc'.tr(),
+                                          icon: Icons.confirmation_number_outlined,
+                                        );
+                                      }
+                                      return;
+                                    }
                                     final code = _controller.text.trim();
-                                    if (code.isNotEmpty) {
+                                    if (code.isNotEmpty && context.mounted) {
                                       context.read<CheckoutCubit>().applyPromo(code, cartState.subtotal);
                                     }
                                   },

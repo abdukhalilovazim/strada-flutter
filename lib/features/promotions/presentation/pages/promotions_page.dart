@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
@@ -11,6 +12,7 @@ import 'package:pizza_strada/core/utils/variant_localization_helper.dart';
 import 'package:pizza_strada/core/widgets/strada_refresh_control.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
+import 'package:pizza_strada/features/cart/presentation/widgets/login_prompt_bottom_sheet.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_card.dart';
@@ -493,7 +495,7 @@ class _CouponDealCard extends StatelessWidget {
                         shadowColor: AppColors.primary.withValues(alpha: 0.4),
                         child: InkWell(
                           customBorder: const CircleBorder(),
-                          onTap: () {
+                          onTap: () async {
                             HapticFeedback.lightImpact();
                             if (deal.price > 0) {
                               context.read<CartCubit>().addCouponToCart(deal);
@@ -524,6 +526,19 @@ class _CouponDealCard extends StatelessWidget {
                                 messenger.clearSnackBars();
                               });
                             } else if (deal.code.isNotEmpty) {
+                              final token = await SecureStorage.getToken();
+                              if (token == null || token.isEmpty) {
+                                if (context.mounted) {
+                                  await LoginPromptBottomSheet.show(
+                                    context,
+                                    title: 'checkout.login_prompt_promo_title'.tr(),
+                                    description: 'checkout.login_prompt_promo_desc'.tr(),
+                                    icon: Icons.confirmation_number_outlined,
+                                  );
+                                }
+                                return;
+                              }
+                              if (!context.mounted) return;
                               final cartSubtotal = context.read<CartCubit>().state.subtotal;
                               context.read<CheckoutCubit>().applyPromo(deal.code, cartSubtotal);
                               final messenger = ScaffoldMessenger.of(context);

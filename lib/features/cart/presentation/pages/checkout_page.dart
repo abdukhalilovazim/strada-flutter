@@ -13,6 +13,7 @@ import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
 import 'package:pizza_strada/features/cart/presentation/widgets/checkout_promo_code_widget.dart';
+import 'package:pizza_strada/features/cart/presentation/widgets/login_prompt_bottom_sheet.dart';
 
 /// 💳 CheckoutPage: Bosqichli (Stepped) Native Checkout
 /// Step 1: Yetkazib berish (Manzil / Filial tanlash & Qabul qiluvchi)
@@ -45,15 +46,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final token = await SecureStorage.getToken();
     if (token == null || token.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('checkout.login_required'.tr()),
-            backgroundColor: AppColors.primary,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-        context.go('/auth/login');
+        final didLogin = await LoginPromptBottomSheet.show(context);
+        if (didLogin != true && mounted) {
+          context.pop();
+        }
         return;
       }
     }
