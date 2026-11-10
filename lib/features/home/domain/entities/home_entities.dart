@@ -18,12 +18,18 @@ class CategoryEntity extends Equatable {
 class VariantEntity extends Equatable {
   final int id;
   final String title;
+  final String? details;
   final double price;
 
-  const VariantEntity({required this.id, required this.title, required this.price});
+  const VariantEntity({
+    required this.id,
+    required this.title,
+    this.details,
+    required this.price,
+  });
 
   @override
-  List<Object?> get props => [id, title, price];
+  List<Object?> get props => [id, title, details, price];
 }
 
 class KeyValueEntity extends Equatable {

@@ -220,43 +220,47 @@ class CouponDetailPage extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'common.price'.tr(),
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.neutral500,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            Text(
-                              '${NumberFormatter.formatSum(deal.price.toInt())} ${'common.currency'.tr()}',
-                              style: AppTextStyles.h3.copyWith(
-                                fontWeight: FontWeight.w900,
-                                fontSize: 20,
-                                color: AppColors.primary,
-                              ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'product.price'.tr(),
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.neutral500,
+                              fontWeight: FontWeight.w500,
                             ),
-                            if (hasSavings) ...[
-                              const SizedBox(width: 10),
+                          ),
+                          const SizedBox(height: 2),
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
                               Text(
-                                '${NumberFormatter.formatSum(deal.oldPrice.toInt())} ${'common.currency'.tr()}',
-                                style: AppTextStyles.bodyMedium.copyWith(
-                                  decoration: TextDecoration.lineThrough,
-                                  color: AppColors.neutral400,
-                                  fontWeight: FontWeight.w500,
+                                '${NumberFormatter.formatSum(deal.price.toInt())} ${'common.currency'.tr()}',
+                                style: AppTextStyles.h3.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 19,
+                                  color: AppColors.primary,
                                 ),
                               ),
+                              if (hasSavings)
+                                Text(
+                                  '${NumberFormatter.formatSum(deal.oldPrice.toInt())} ${'common.currency'.tr()}',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    decoration: TextDecoration.lineThrough,
+                                    color: AppColors.neutral400,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                             ],
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
-                    if (hasSavings)
+                    if (hasSavings) ...[
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
@@ -273,12 +277,13 @@ class CouponDetailPage extends StatelessWidget {
                               style: const TextStyle(
                                 color: AppColors.success,
                                 fontWeight: FontWeight.w800,
-                                fontSize: 12.5,
+                                fontSize: 12,
                               ),
                             ),
                           ],
                         ),
                       ),
+                    ],
                   ],
                 ),
               ),

@@ -54,6 +54,9 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
   }
 
   String? _getVariantSubtitle(VariantEntity variant) {
+    if (variant.details != null && variant.details!.trim().isNotEmpty) {
+      return variant.details!.trim();
+    }
     final raw = variant.title;
     if (raw.contains('(') && raw.contains(')')) {
       final start = raw.indexOf('(') + 1;
@@ -64,6 +67,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
   }
 
   void _onAddToCart(BuildContext context) {
+    HapticFeedback.lightImpact();
     context.read<CartCubit>().addMultipleToCart([
       CartItemEntity(
         product: widget.product,
@@ -72,17 +76,6 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
       ),
     ]);
     Navigator.of(context).pop();
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.clearSnackBars();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text('${widget.product.title} ${'cart.added'.tr()}'),
-        duration: const Duration(seconds: 2),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
   }
 
   void _onBuyNow(BuildContext context) {
@@ -296,43 +289,23 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                             ]
                                           : null,
                                     ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          title,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: AppTextStyles.labelMedium.copyWith(
-                                            fontSize: 13,
-                                            fontWeight: isSelected
-                                                ? FontWeight.w800
-                                                : FontWeight.w600,
-                                            color: isSelected
-                                                ? AppColors.primary
-                                                : (isDark
-                                                    ? Colors.white
-                                                    : AppColors.neutral800),
-                                          ),
+                                    child: Center(
+                                      child: Text(
+                                        title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTextStyles.labelMedium.copyWith(
+                                          fontSize: 13.5,
+                                          fontWeight: isSelected
+                                              ? FontWeight.w800
+                                              : FontWeight.w600,
+                                          color: isSelected
+                                              ? AppColors.primary
+                                              : (isDark
+                                                  ? Colors.white
+                                                  : AppColors.neutral800),
                                         ),
-                                        if (subtitle != null) ...[
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            subtitle,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: AppTextStyles.bodySmall.copyWith(
-                                              fontSize: 11,
-                                              fontWeight: isSelected
-                                                  ? FontWeight.w700
-                                                  : FontWeight.w500,
-                                              color: isSelected
-                                                  ? AppColors.primary
-                                                  : AppColors.neutral500,
-                                            ),
-                                          ),
-                                        ],
-                                      ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -442,15 +415,15 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                       ),
                       const SizedBox(height: 18),
 
-                      // ── 5. Amallar tugmalari ("Добавить в корзину" & "Купить сейчас") ──
+                      // ── 5. Amallar tugmalari ("Купить сейчас" & "Добавить в корзину") ──
                       Row(
                         children: [
-                          // 1. "Добавить в корзину"
+                          // 1. "Купить сейчас" (Secondary)
                           Expanded(
                             child: SizedBox(
                               height: 50,
                               child: OutlinedButton(
-                                onPressed: () => _onAddToCart(context),
+                                onPressed: () => _onBuyNow(context),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: AppColors.primary,
                                   side: const BorderSide(
@@ -464,7 +437,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                       horizontal: 8),
                                 ),
                                 child: Text(
-                                  'product.add_to_cart_full'.tr(),
+                                  'product.buy_now'.tr(),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: AppTextStyles.labelMedium.copyWith(
@@ -478,12 +451,12 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                           ),
                           const SizedBox(width: 12),
 
-                          // 2. "Купить сейчас"
+                          // 2. "Добавить в корзину" (Primary CTA)
                           Expanded(
                             child: SizedBox(
                               height: 50,
                               child: ElevatedButton(
-                                onPressed: () => _onBuyNow(context),
+                                onPressed: () => _onAddToCart(context),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,
                                   foregroundColor: Colors.white,
@@ -495,7 +468,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                       horizontal: 8),
                                 ),
                                 child: Text(
-                                  'product.buy_now'.tr(),
+                                  'product.add_to_cart_full'.tr(),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: AppTextStyles.labelMedium.copyWith(

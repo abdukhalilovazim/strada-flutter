@@ -41,6 +41,7 @@
   "product.choose": "Tanlash:",
   "product.size": "O'lchamni tanlang",
   "product.price": "Narx",
+  "common.price": "Narx",
   "product.added": "Savatga qo'shildi",
   "product.info": "Ma'lumot",
   "product.select_variant_error": "Iltimos, avval o'lchamni tanlang",
@@ -353,5 +354,7 @@
   "refresh.done": "Tayyor! ✨",
   "refresh.refreshing": "Sahifa yangilanmoqda",
   "refresh.armed": "Qo'yib yuboring! 🍕",
-  "refresh.pull": "Yangilash uchun torting"
+  "refresh.pull": "Yangilash uchun torting",
+  "splash.tagline": "Har bir bo'lagida haqiqiy lazzat",
+  "common.loading": "Yuklanmoqda..."
 }

@@ -19,12 +19,18 @@ class CategoryModel extends CategoryEntity {
 
 
 class VariantModel extends VariantEntity {
-  const VariantModel({required super.id, required super.title, required super.price});
+  const VariantModel({
+    required super.id,
+    required super.title,
+    super.details,
+    required super.price,
+  });
 
   factory VariantModel.fromJson(Map<String, dynamic> json) {
     return VariantModel(
       id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       title: json['title'] as String? ?? '',
+      details: json['details'] as String?,
       price: double.tryParse(json['price']?.toString() ?? '0') ?? 0,
     );
   }

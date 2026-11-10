@@ -41,6 +41,7 @@
   "product.choose": "Choose:",
   "product.size": "Select size",
   "product.price": "Price",
+  "common.price": "Price",
   "product.added": "Added to cart",
   "product.info": "Info",
   "product.select_variant_error": "Please select size first",
@@ -353,5 +354,7 @@
   "refresh.done": "Done! ✨",
   "refresh.refreshing": "Refreshing page",
   "refresh.armed": "Release to refresh! 🍕",
-  "refresh.pull": "Pull to refresh"
+  "refresh.pull": "Pull to refresh",
+  "splash.tagline": "Real taste in every slice",
+  "common.loading": "Loading..."
 }

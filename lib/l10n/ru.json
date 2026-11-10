@@ -39,6 +39,7 @@
   "product.choose": "Выбрать:",
   "product.size": "Выберите размер",
   "product.price": "Цена",
+  "common.price": "Цена",
   "product.added": "Добавлено в корзину",
   "product.info": "Информация",
   "product.select_variant": "Выбрать",
@@ -353,5 +354,7 @@
   "refresh.done": "Готово! ✨",
   "refresh.refreshing": "Обновление страницы",
   "refresh.armed": "Отпустите! 🍕",
-  "refresh.pull": "Потяните для обновления"
+  "refresh.pull": "Потяните для обновления",
+  "splash.tagline": "Настоящий вкус в каждом кусочке",
+  "common.loading": "Загрузка..."
 }

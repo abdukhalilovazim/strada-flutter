@@ -207,366 +207,18 @@ class _PromotionsView extends StatelessWidget {
                   ),
                 ),
 
-                // ── Deals Cards ──
+                // ── Deals Cards (2 per row) ──
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  sliver: SliverList(
+                  sliver: SliverGrid(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 14,
+                      crossAxisSpacing: 14,
+                      childAspectRatio: 0.68,
+                    ),
                     delegate: SliverChildBuilderDelegate(
-                      (ctx, i) {
-                        final deal = deals[i];
-                        final hasSavings = deal.oldPrice > deal.price && deal.price > 0;
-                        final savings = hasSavings ? (deal.oldPrice - deal.price) : 0.0;
-                        final discountPercent = hasSavings ? (((deal.oldPrice - deal.price) / deal.oldPrice) * 100).round() : 0;
-
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: isDark ? AppColors.darkCard : Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
-                            ),
-                            boxShadow: AppColors.softShadow(isDark),
-                          ),
-                          child: InkWell(
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              context.push('/coupon-detail', extra: deal);
-                            },
-                            borderRadius: BorderRadius.circular(20),
-                            child: Padding(
-                              padding: const EdgeInsets.all(14),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // ── Square Image (1:1 Aspect Ratio) ──
-                                  if (deal.imageUrl.isNotEmpty) ...[
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(16),
-                                      child: AspectRatio(
-                                        aspectRatio: 1.0,
-                                        child: CachedNetworkImage(
-                                          imageUrl: deal.imageUrl,
-                                          fit: BoxFit.cover,
-                                          placeholder: (context, url) => Container(
-                                            color: isDark ? AppColors.darkSurface : AppColors.neutral100,
-                                            child: const Center(
-                                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
-                                            ),
-                                          ),
-                                          errorWidget: (context, url, error) => Container(
-                                            color: isDark ? AppColors.darkSurface : AppColors.neutral100,
-                                            child: const Center(
-                                              child: Icon(Icons.confirmation_number_outlined, size: 48, color: AppColors.neutral400),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                  ],
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      if (hasSavings)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.success.withValues(alpha: 0.12),
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(
-                                              color: AppColors.success.withValues(alpha: 0.3),
-                                              width: 1,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(Icons.arrow_downward_rounded, size: 12, color: AppColors.success),
-                                              const SizedBox(width: 3),
-                                              Text(
-                                                '-$discountPercent%',
-                                                style: const TextStyle(
-                                                  color: AppColors.success,
-                                                  fontWeight: FontWeight.w900,
-                                                  fontSize: 11.5,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        )
-                                      else if (deal.badgeText.isNotEmpty)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primary.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            deal.badgeText,
-                                            style: const TextStyle(
-                                              color: AppColors.primary,
-                                              fontWeight: FontWeight.w800,
-                                              fontSize: 11.5,
-                                            ),
-                                          ),
-                                        )
-                                      else
-                                        const SizedBox.shrink(),
-                                      if (deal.code.isNotEmpty)
-                                        GestureDetector(
-                                          onTap: () {
-                                            HapticFeedback.lightImpact();
-                                            Clipboard.setData(ClipboardData(text: deal.code));
-                                            final messenger = ScaffoldMessenger.of(context);
-                                            messenger.clearSnackBars();
-                                            messenger.showSnackBar(
-                                              SnackBar(
-                                                content: Text('promotions.coupon_copied'.tr(namedArgs: {'code': deal.code})),
-                                                backgroundColor: AppColors.success,
-                                                duration: const Duration(seconds: 2),
-                                                behavior: SnackBarBehavior.floating,
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                              ),
-                                            );
-                                          },
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: isDark ? AppColors.darkSurface : const Color(0xFFF1F3F5),
-                                              borderRadius: BorderRadius.circular(10),
-                                              border: Border.all(
-                                                color: AppColors.primary.withValues(alpha: 0.3),
-                                                style: BorderStyle.solid,
-                                              ),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Text(
-                                                  deal.code,
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.w800,
-                                                    letterSpacing: 0.8,
-                                                    fontSize: 12,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 4),
-                                                const Icon(Icons.copy_rounded, size: 12, color: AppColors.primary),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    deal.title,
-                                    style: AppTextStyles.labelLarge.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  // Agar tarkib (items) mavjud bo'lsa, uni alohida chiroyli blokda chiqaramiz
-                                  if (deal.items.isNotEmpty) ...[
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'promotions.composition'.tr(),
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 11,
-                                        color: isDark ? AppColors.neutral400 : AppColors.neutral600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Wrap(
-                                      spacing: 6,
-                                      runSpacing: 4,
-                                      children: deal.items.map((it) {
-                                        final cleanVariant = VariantLocalizationHelper.localize(it.variantTitle);
-                                        final label = cleanVariant.isNotEmpty
-                                            ? '${it.productTitle} ($cleanVariant) × ${it.quantity}'
-                                            : '${it.productTitle} × ${it.quantity}';
-                                        return Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: isDark ? AppColors.darkSurface : const Color(0xFFF1F3F5),
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(
-                                              color: isDark ? AppColors.darkBorder : AppColors.neutral200,
-                                              width: 0.8,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            label,
-                                            style: TextStyle(
-                                              fontSize: 11.5,
-                                              color: isDark ? AppColors.neutral200 : AppColors.neutral800,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        );
-                                      }).toList(),
-                                    ),
-                                  ] else if (deal.description.isNotEmpty) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      deal.description,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        color: AppColors.neutral500,
-                                        height: 1.3,
-                                      ),
-                                    ),
-                                  ],
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      if (deal.price > 0)
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  '${NumberFormatter.formatSum(deal.price.toInt())} ${'common.currency'.tr()}',
-                                                  style: AppTextStyles.labelLarge.copyWith(
-                                                    fontWeight: FontWeight.w900,
-                                                    fontSize: 16.5,
-                                                    color: isDark ? Colors.white : AppColors.neutral900,
-                                                  ),
-                                                ),
-                                                if (hasSavings) ...[
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    '${NumberFormatter.formatSum(deal.oldPrice.toInt())} ${'common.currency'.tr()}',
-                                                    style: AppTextStyles.bodySmall.copyWith(
-                                                      decoration: TextDecoration.lineThrough,
-                                                      color: AppColors.neutral400,
-                                                      fontSize: 12.5,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ],
-                                            ),
-                                            if (hasSavings) ...[
-                                              const SizedBox(height: 3),
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                                decoration: BoxDecoration(
-                                                  color: AppColors.success.withValues(alpha: 0.12),
-                                                  borderRadius: BorderRadius.circular(6),
-                                                ),
-                                                child: Row(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    const Icon(
-                                                      Icons.trending_down_rounded,
-                                                      size: 14,
-                                                      color: AppColors.success,
-                                                    ),
-                                                    const SizedBox(width: 4),
-                                                    Text(
-                                                      '${NumberFormatter.formatSum(savings.toInt())} ${'common.currency'.tr()}',
-                                                      style: const TextStyle(
-                                                        color: AppColors.success,
-                                                        fontWeight: FontWeight.w800,
-                                                        fontSize: 11,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ],
-                                        )
-                                      else
-                                        const SizedBox.shrink(),
-                                      if (deal.price > 0)
-                                        ElevatedButton.icon(
-                                          onPressed: () {
-                                            HapticFeedback.lightImpact();
-                                            context.read<CartCubit>().addCouponToCart(deal);
-                                            final router = GoRouter.of(context);
-                                            final messenger = ScaffoldMessenger.of(context);
-                                            messenger.clearSnackBars();
-
-                                            final displayCode = deal.code.isNotEmpty ? deal.code : deal.title;
-
-                                            messenger.showSnackBar(
-                                              SnackBar(
-                                                content: Text('$displayCode ${'cart.added'.tr()}'),
-                                                backgroundColor: AppColors.primary,
-                                                duration: const Duration(seconds: 2),
-                                                behavior: SnackBarBehavior.floating,
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                                action: SnackBarAction(
-                                                  label: 'cart.title'.tr(),
-                                                  textColor: Colors.white,
-                                                  onPressed: () {
-                                                    messenger.clearSnackBars();
-                                                    router.go('/cart');
-                                                  },
-                                                ),
-                                              ),
-                                            );
-                                            Future.delayed(const Duration(seconds: 2), () {
-                                              messenger.clearSnackBars();
-                                            });
-                                          },
-                                          icon: const Icon(Icons.shopping_bag_outlined, size: 16),
-                                          label: Text(
-                                            'cart.add'.tr(),
-                                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                                          ),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppColors.primary,
-                                            foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                            minimumSize: Size.zero,
-                                            elevation: 0,
-                                          ),
-                                        )
-                                      else if (deal.code.isNotEmpty)
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            HapticFeedback.lightImpact();
-                                            final cartSubtotal = context.read<CartCubit>().state.subtotal;
-                                            context.read<CheckoutCubit>().applyPromo(deal.code, cartSubtotal);
-                                            final messenger = ScaffoldMessenger.of(context);
-                                            messenger.clearSnackBars();
-                                            messenger.showSnackBar(
-                                              SnackBar(
-                                                content: Text('promotions.coupon_applied'.tr(namedArgs: {'code': deal.code})),
-                                                backgroundColor: AppColors.success,
-                                                duration: const Duration(seconds: 2),
-                                                behavior: SnackBarBehavior.floating,
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                              ),
-                                            );
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppColors.primary,
-                                            foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                            minimumSize: Size.zero,
-                                            elevation: 0,
-                                          ),
-                                          child: Text('cart.apply'.tr(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
-                                        ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
+                      (ctx, i) => _CouponDealCard(deal: deals[i]),
                       childCount: deals.length,
                     ),
                   ),
@@ -647,6 +299,373 @@ class _PromotionsView extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// 🎟️ 2-Column Bento Coupon Deal Card
+class _CouponDealCard extends StatelessWidget {
+  final PromotionDealEntity deal;
+
+  const _CouponDealCard({required this.deal});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasSavings = deal.oldPrice > deal.price && deal.price > 0;
+    final discountPercent = hasSavings
+        ? (((deal.oldPrice - deal.price) / deal.oldPrice) * 100).round()
+        : 0;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? AppColors.darkBorder : const Color(0xFFF1F3F5),
+          width: 1,
+        ),
+        boxShadow: isDark
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: const Color(0xFF1E293B).withValues(alpha: 0.06),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+                BoxShadow(
+                  color: const Color(0xFF1E293B).withValues(alpha: 0.03),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            context.push('/coupon-detail', extra: deal);
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── 1. Hero Image Section (Square 1:1 style) ──
+              Expanded(
+                flex: 6,
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
+                      child: Container(
+                        width: double.infinity,
+                        height: double.infinity,
+                        color: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
+                        child: deal.imageUrl.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: deal.imageUrl,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Container(
+                                  color: isDark ? AppColors.darkSurface : AppColors.neutral100,
+                                  child: const Center(
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  color: isDark ? AppColors.darkSurface : AppColors.neutral100,
+                                  child: const Center(
+                                    child: Icon(Icons.confirmation_number_outlined, size: 40, color: AppColors.neutral400),
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                color: isDark ? AppColors.darkSurface : AppColors.neutral100,
+                                child: const Center(
+                                  child: Icon(Icons.confirmation_number_outlined, size: 40, color: AppColors.neutral400),
+                                ),
+                              ),
+                      ),
+                    ),
+
+                    // Top-Left: Discount Badge
+                    if (hasSavings)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.success,
+                            borderRadius: BorderRadius.circular(7),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.success.withValues(alpha: 0.35),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1.5),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.arrow_downward_rounded, size: 11, color: Colors.white),
+                              const SizedBox(width: 2),
+                              Text(
+                                '-$discountPercent%',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 10.5,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else if (deal.badgeText.isNotEmpty)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(7),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.35),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1.5),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            deal.badgeText,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // Top-Right: Promo Code Pill
+                    if (deal.code.isNotEmpty)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            Clipboard.setData(ClipboardData(text: deal.code));
+                            final messenger = ScaffoldMessenger.of(context);
+                            messenger.clearSnackBars();
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text('promotions.coupon_copied'.tr(namedArgs: {'code': deal.code})),
+                                backgroundColor: AppColors.success,
+                                duration: const Duration(seconds: 2),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.65),
+                              borderRadius: BorderRadius.circular(7),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  deal.code,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.5,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                                const SizedBox(width: 3),
+                                const Icon(Icons.copy_rounded, size: 10, color: Colors.white70),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // Bottom-Right: Floating CTA (Add / Apply)
+                    Positioned(
+                      bottom: 8,
+                      right: 8,
+                      child: Material(
+                        color: AppColors.primary,
+                        shape: const CircleBorder(),
+                        elevation: 3,
+                        shadowColor: AppColors.primary.withValues(alpha: 0.4),
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            if (deal.price > 0) {
+                              context.read<CartCubit>().addCouponToCart(deal);
+                              final router = GoRouter.of(context);
+                              final messenger = ScaffoldMessenger.of(context);
+                              messenger.clearSnackBars();
+
+                              final displayCode = deal.code.isNotEmpty ? deal.code : deal.title;
+
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text('$displayCode ${'cart.added'.tr()}'),
+                                  backgroundColor: AppColors.primary,
+                                  duration: const Duration(seconds: 2),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  action: SnackBarAction(
+                                    label: 'cart.title'.tr(),
+                                    textColor: Colors.white,
+                                    onPressed: () {
+                                      messenger.clearSnackBars();
+                                      router.go('/cart');
+                                    },
+                                  ),
+                                ),
+                              );
+                              Future.delayed(const Duration(seconds: 2), () {
+                                messenger.clearSnackBars();
+                              });
+                            } else if (deal.code.isNotEmpty) {
+                              final cartSubtotal = context.read<CartCubit>().state.subtotal;
+                              context.read<CheckoutCubit>().applyPromo(deal.code, cartSubtotal);
+                              final messenger = ScaffoldMessenger.of(context);
+                              messenger.clearSnackBars();
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text('promotions.coupon_applied'.tr(namedArgs: {'code': deal.code})),
+                                  backgroundColor: AppColors.success,
+                                  duration: const Duration(seconds: 2),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              );
+                              Future.delayed(const Duration(seconds: 2), () {
+                                messenger.clearSnackBars();
+                              });
+                            } else {
+                              context.push('/coupon-detail', extra: deal);
+                            }
+                          },
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.shopping_bag_outlined,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ── 2. Information Section ──
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Price Row with Old Price
+                    if (deal.price > 0)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              '${NumberFormatter.formatSum(deal.price.toInt())} ${'common.currency'.tr()}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.priceMedium.copyWith(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w800,
+                                color: hasSavings ? AppColors.primary : (isDark ? Colors.white : AppColors.neutral900),
+                              ),
+                            ),
+                          ),
+                          if (hasSavings) ...[
+                            const SizedBox(width: 5),
+                            Text(
+                              NumberFormatter.formatSum(deal.oldPrice.toInt()),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.neutral400,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            ),
+                          ],
+                        ],
+                      )
+                    else
+                      Text(
+                        deal.code.isNotEmpty ? deal.code : 'promotions.deals_title'.tr(),
+                        style: AppTextStyles.labelMedium.copyWith(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    const SizedBox(height: 3),
+
+                    // Title
+                    Text(
+                      deal.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.h4.copyWith(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : AppColors.neutral900,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+
+                    // Subtitle (items count or description)
+                    Text(
+                      deal.items.isNotEmpty
+                          ? 'orders.items_count'.tr(namedArgs: {'count': deal.items.length.toString()})
+                          : (deal.description.isNotEmpty ? deal.description : 'promotions.deal_detail_title'.tr()),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        fontSize: 10.5,
+                        color: AppColors.neutral500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

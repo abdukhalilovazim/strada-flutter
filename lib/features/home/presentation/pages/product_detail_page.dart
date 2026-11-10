@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/services/analytics_service.dart';
@@ -206,11 +207,25 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   // ── Variantlar ──
                   if (hasVariants) ...[
                     const SizedBox(height: 24),
-                    Text(
-                      'product.size'.tr(),
-                      style: AppTextStyles.labelLarge.copyWith(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'product.choose'.tr(),
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                        if (_selectedVariant?.details != null &&
+                            _selectedVariant!.details!.trim().isNotEmpty)
+                          Text(
+                            _selectedVariant!.details!.trim(),
+                            style: AppTextStyles.labelSmall.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     Wrap(
@@ -233,10 +248,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: isSelected
-                                    ? AppColors.primary
-                                    : (isDark
-                                        ? AppColors.neutral700
-                                        : AppColors.neutral200),
+                                  ? AppColors.primary
+                                  : (isDark
+                                      ? AppColors.neutral700
+                                      : AppColors.neutral200),
                                 width: 1.5,
                               ),
                             ),
@@ -255,6 +270,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
+                                const SizedBox(height: 2),
                                 Text(
                                   '${NumberFormatter.formatSum(v.price)} ${'common.currency'.tr()}',
                                   style: AppTextStyles.bodyExtraSmall
@@ -468,17 +484,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                           price: displayPrice,
                           variant: _selectedVariant?.title,
                         );
-                        final messenger = ScaffoldMessenger.of(context);
-                        messenger.clearSnackBars();
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text('${product.title} ${'cart.added'.tr()}'),
-                            backgroundColor: AppColors.primary,
-                            duration: const Duration(seconds: 2),
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        );
+                        HapticFeedback.lightImpact();
                         context.pop();
                       },
                       style: ElevatedButton.styleFrom(

@@ -215,7 +215,12 @@ class _CartPageState extends State<CartPage> {
         final localizedVariant = rawVariantTitle != null && rawVariantTitle.isNotEmpty
             ? VariantLocalizationHelper.localize(rawVariantTitle)
             : '';
-        final showVariant = localizedVariant.isNotEmpty;
+        final variantDetails = item.variant?.details;
+        final variantDisplay = [
+          if (localizedVariant.isNotEmpty) localizedVariant,
+          if (variantDetails != null && variantDetails.trim().isNotEmpty) variantDetails.trim(),
+        ].join(' • ');
+        final showVariant = variantDisplay.isNotEmpty;
 
         return Container(
           padding: const EdgeInsets.all(12),
@@ -279,7 +284,7 @@ class _CartPageState extends State<CartPage> {
                     ] else if (showVariant) ...[
                       const SizedBox(height: 2),
                       Text(
-                        localizedVariant,
+                        variantDisplay,
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.neutral500,
                           fontSize: 12,

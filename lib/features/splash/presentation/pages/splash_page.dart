@@ -130,14 +130,11 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  // 🍕 1 dona maxsus realistik 3D animatsion pitsa
+                                  // 🍕 Nafis va silliq Strada Pizza loader
                                   const PizzaSliceLoader(
-                                    size: 184,
-                                    sliceCount: 6,
-                                    duration: Duration(milliseconds: 1900),
-                                    is3D: true,
+                                    size: 170,
                                   ),
-                                  const SizedBox(height: 24),
+                                  const SizedBox(height: 20),
 
                                   // Brend nomi
                                   Text(
@@ -152,16 +149,33 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                                   ),
                                   const SizedBox(height: 6),
 
-                                  // Nafis shior
-                                  Text(
-                                    'Har bir bo\'lagida haqiqiy lazzat',
-                                    textAlign: TextAlign.center,
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      color: AppColors.neutral500,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                      letterSpacing: 0.4,
-                                    ),
+                                  // Nafis shior (Ko'p tilli va fallback bilan)
+                                  Builder(
+                                    builder: (context) {
+                                      final text = 'splash.tagline'.tr();
+                                      final isRu = context.locale.languageCode == 'ru';
+                                      final isEn = context.locale.languageCode == 'en';
+                                      final fallback = isRu
+                                          ? 'Настоящий вкус в каждом кусочке'
+                                          : (isEn
+                                              ? 'Real taste in every slice'
+                                              : 'Har bir bo\'lagida haqiqiy lazzat');
+                                      final displayText =
+                                          (text.isEmpty || text == 'splash.tagline')
+                                              ? fallback
+                                              : text;
+
+                                      return Text(
+                                        displayText,
+                                        textAlign: TextAlign.center,
+                                        style: AppTextStyles.bodySmall.copyWith(
+                                          color: AppColors.neutral500,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                          letterSpacing: 0.4,
+                                        ),
+                                      );
+                                    },
                                   ),
 
                                   // Xatolik bo'lsa
@@ -239,13 +253,28 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Text(
-                                      'common.loading'.tr(),
-                                      style: AppTextStyles.bodyExtraSmall.copyWith(
-                                        color: AppColors.neutral400,
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 0.5,
-                                      ),
+                                    Builder(
+                                      builder: (context) {
+                                        final text = 'common.loading'.tr();
+                                        final isRu = context.locale.languageCode == 'ru';
+                                        final isEn = context.locale.languageCode == 'en';
+                                        final fallback = isRu
+                                            ? 'Загрузка...'
+                                            : (isEn ? 'Loading...' : 'Yuklanmoqda...');
+                                        final displayText =
+                                            (text.isEmpty || text == 'common.loading')
+                                                ? fallback
+                                                : text;
+
+                                        return Text(
+                                          displayText,
+                                          style: AppTextStyles.bodyExtraSmall.copyWith(
+                                            color: AppColors.neutral400,
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
