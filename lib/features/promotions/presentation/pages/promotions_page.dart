@@ -121,7 +121,7 @@ class _PromotionsView extends StatelessWidget {
             final homeState = context.watch<HomeCubit>().state;
             if (homeState is HomeLoaded) {
               discountProducts = homeState.fullProducts
-                  .where((p) => p.oldPrice != null || p.badges.isNotEmpty)
+                  .where((p) => p.oldPrice != null && p.oldPrice! > p.price)
                   .toList();
             }
           }
@@ -313,7 +313,7 @@ class _CouponDealCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final hasSavings = deal.oldPrice > deal.price && deal.price > 0;
+    final hasSavings = deal.oldPrice > deal.price && deal.oldPrice > 0;
     final discountPercent = hasSavings
         ? (((deal.oldPrice - deal.price) / deal.oldPrice) * 100).round()
         : 0;
@@ -459,48 +459,24 @@ class _CouponDealCard extends StatelessWidget {
                         ),
                       ),
 
-                    // Top-Right: Promo Code Pill
+                    // Top-Right: Promo Code Pill (Static badge)
                     if (deal.code.isNotEmpty)
                       Positioned(
                         top: 8,
                         right: 8,
-                        child: GestureDetector(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            Clipboard.setData(ClipboardData(text: deal.code));
-                            final messenger = ScaffoldMessenger.of(context);
-                            messenger.clearSnackBars();
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text('promotions.coupon_copied'.tr(namedArgs: {'code': deal.code})),
-                                backgroundColor: AppColors.success,
-                                duration: const Duration(seconds: 2),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.65),
-                              borderRadius: BorderRadius.circular(7),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  deal.code,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.5,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                                const SizedBox(width: 3),
-                                const Icon(Icons.copy_rounded, size: 10, color: Colors.white70),
-                              ],
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.65),
+                            borderRadius: BorderRadius.circular(7),
+                          ),
+                          child: Text(
+                            deal.code,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                              fontSize: 10,
                             ),
                           ),
                         ),
@@ -593,14 +569,16 @@ class _CouponDealCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Price Row with Old Price
-                    if (deal.price > 0)
+                    if (deal.price > 0 || deal.oldPrice > 0)
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.baseline,
                         textBaseline: TextBaseline.alphabetic,
                         children: [
                           Flexible(
                             child: Text(
-                              '${NumberFormatter.formatSum(deal.price.toInt())} ${'common.currency'.tr()}',
+                              deal.price > 0
+                                  ? '${NumberFormatter.formatSum(deal.price.toInt())} ${'common.currency'.tr()}'
+                                  : '0 ${'common.currency'.tr()}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: AppTextStyles.priceMedium.copyWith(

@@ -21,18 +21,26 @@ class CouponDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final hasSavings = deal.oldPrice > deal.price && deal.price > 0;
+    final hasSavings = deal.oldPrice > deal.price && deal.oldPrice > 0;
     final savings = hasSavings ? (deal.oldPrice - deal.price) : 0.0;
-    final discountPercent = hasSavings ? (((deal.oldPrice - deal.price) / deal.oldPrice) * 100).round() : 0;
+    final int effectiveDiscount = hasSavings && deal.oldPrice > 0
+        ? (((deal.oldPrice - deal.price) / deal.oldPrice) * 100).round()
+        : 0;
+    final String displayCode = deal.code.isNotEmpty
+        ? deal.code
+        : (deal.id > 0 ? '#${deal.id}' : '');
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          'promotions.deal_detail_title'.tr(),
+          deal.title.isNotEmpty ? deal.title : 'promotions.deal_detail_title'.tr(),
           style: AppTextStyles.h3.copyWith(
+            fontWeight: FontWeight.w800,
             color: Theme.of(context).textTheme.headlineMedium?.color,
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
@@ -85,8 +93,8 @@ class CouponDetailPage extends StatelessWidget {
                   ),
                 ),
 
-                // Top-Left: Discount Badge (xuddi listdagi kabi)
-                if (hasSavings)
+                // Top-Left: Discount Badge (Fixed over image)
+                if (effectiveDiscount > 0)
                   Positioned(
                     top: 12,
                     left: 12,
@@ -109,7 +117,7 @@ class CouponDetailPage extends StatelessWidget {
                           const Icon(Icons.arrow_downward_rounded, size: 14, color: Colors.white),
                           const SizedBox(width: 3),
                           Text(
-                            '-$discountPercent%',
+                            '-$effectiveDiscount%',
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w900,
@@ -149,55 +157,31 @@ class CouponDetailPage extends StatelessWidget {
                     ),
                   ),
 
-                // Top-Right: Promo Code Pill (xuddi listdagi kabi, tap to copy)
-                if (deal.code.isNotEmpty)
+                // Top-Right: Promo Code / ID Pill (Static badge, not copyable)
+                if (displayCode.isNotEmpty)
                   Positioned(
                     top: 12,
                     right: 12,
-                    child: GestureDetector(
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        Clipboard.setData(ClipboardData(text: deal.code));
-                        final messenger = ScaffoldMessenger.of(context);
-                        messenger.clearSnackBars();
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text('promotions.coupon_copied'.tr(namedArgs: {'code': deal.code})),
-                            backgroundColor: AppColors.success,
-                            duration: const Duration(seconds: 2),
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.72),
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.25),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
                           ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.72),
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.25),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.copy_rounded, size: 13, color: Colors.white),
-                            const SizedBox(width: 5),
-                            Text(
-                              deal.code,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
+                        ],
+                      ),
+                      child: Text(
+                        displayCode,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
@@ -207,20 +191,8 @@ class CouponDetailPage extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // ── Title ──
-            Text(
-              deal.title,
-              style: AppTextStyles.h2.copyWith(
-                fontWeight: FontWeight.w800,
-                fontSize: 22,
-                color: isDark ? Colors.white : AppColors.neutral900,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
             // ── Price & Savings Section ──
-            if (deal.price > 0) ...[
+            if (deal.price > 0 || deal.oldPrice > 0) ...[
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
@@ -251,7 +223,9 @@ class CouponDetailPage extends StatelessWidget {
                             runSpacing: 4,
                             children: [
                               Text(
-                                '${NumberFormatter.formatSum(deal.price.toInt())} ${'common.currency'.tr()}',
+                                deal.price > 0
+                                    ? '${NumberFormatter.formatSum(deal.price.toInt())} ${'common.currency'.tr()}'
+                                    : '0 ${'common.currency'.tr()}',
                                 style: AppTextStyles.h3.copyWith(
                                   fontWeight: FontWeight.w900,
                                   fontSize: 19,
@@ -398,28 +372,6 @@ class CouponDetailPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 18),
-            ],
-
-            // ── Description ──
-            if (deal.description.trim().isNotEmpty &&
-                !(deal.items.isNotEmpty && deal.description.trim() == deal.title.trim())) ...[
-              Text(
-                'promotions.description'.tr(),
-                style: AppTextStyles.h4.copyWith(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                  color: isDark ? Colors.white : AppColors.neutral900,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                deal.description,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: isDark ? AppColors.neutral300 : AppColors.neutral700,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 16),
             ],
           ],
         ),

@@ -5,6 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 class DeviceInfoHelper {
   static String deviceId   = '';
   static String deviceName = '';
+  static String appVersion = '1.0.0';
   static String appVersionCode = '1';
   static String get appSource => Platform.isIOS ? 'app_store' : 'play_store';
 
@@ -22,8 +23,10 @@ class DeviceInfoHelper {
 
     try {
       final packageInfo = await PackageInfo.fromPlatform();
+      appVersion = packageInfo.version;
       appVersionCode = packageInfo.buildNumber;
     } catch (_) {
+      appVersion = '1.0.0';
       appVersionCode = '1'; // Fallback
     }
   }

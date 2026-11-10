@@ -303,12 +303,16 @@ class ProductCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.baseline,
                       textBaseline: TextBaseline.alphabetic,
                       children: [
-                        Text(
-                          '${NumberFormatter.formatSum(product.price)} ${'common.currency'.tr()}',
-                          style: AppTextStyles.priceMedium.copyWith(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w800,
-                            color: hasDiscount ? AppColors.primary : (isDark ? Colors.white : AppColors.neutral900),
+                        Flexible(
+                          child: Text(
+                            '${NumberFormatter.formatSum(product.price)} ${'common.currency'.tr()}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.priceMedium.copyWith(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w800,
+                              color: hasDiscount ? AppColors.primary : (isDark ? Colors.white : AppColors.neutral900),
+                            ),
                           ),
                         ),
                         if (hasDiscount) ...[

@@ -22,7 +22,7 @@ class PromotionDealItemEntity extends Equatable {
     return PromotionDealItemEntity(
       productTitle: json['product_title']?.toString() ?? '',
       variantTitle: isSize ? '' : rawVariant,
-      quantity: (json['quantity'] as num?)?.toInt() ?? 1,
+      quantity: int.tryParse(json['quantity']?.toString() ?? '1') ?? 1,
       imageUrl: json['image_url']?.toString() ?? '',
     );
   }
@@ -60,17 +60,18 @@ class PromotionDealEntity extends Equatable {
 
   factory PromotionDealEntity.fromJson(Map<String, dynamic> json) {
     final rawItems = json['items'] as List<dynamic>? ?? [];
+    final rawOldPrice = json['old_price'] ?? json['oldPrice'] ?? json['calculated_old_price'];
     return PromotionDealEntity(
-      id: (json['id'] as num?)?.toInt() ?? 0,
+      id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       code: json['code']?.toString() ?? '',
       slug: json['slug']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
-      price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      oldPrice: (json['old_price'] as num?)?.toDouble() ?? 0.0,
+      price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
+      oldPrice: double.tryParse(rawOldPrice?.toString() ?? '0') ?? 0.0,
       badgeText: json['badge_text']?.toString() ?? '',
       imageUrl: json['image_url']?.toString() ?? json['image']?.toString() ?? '',
-      perUserLimit: (json['per_user_limit'] as num?)?.toInt(),
+      perUserLimit: int.tryParse(json['per_user_limit']?.toString() ?? ''),
       items: rawItems
           .whereType<Map<String, dynamic>>()
           .map((i) => PromotionDealItemEntity.fromJson(i))

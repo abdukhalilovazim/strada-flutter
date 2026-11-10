@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../features/home/presentation/bloc/home_cubit.dart';
 import '../../../storage/secure_storage.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_text_styles.dart';
 import '../../../theme/theme_cubit.dart';
+import '../../../utils/device_info_helper.dart';
 import '../../../utils/number_formatter.dart';
 import '../../models/section_model.dart';
 import '../../registry/action_dispatcher.dart';
@@ -571,47 +573,60 @@ class SDUIAppSettingsComponent extends StatelessWidget {
           BlocBuilder<ThemeCubit, ThemeMode>(
             builder: (context, mode) {
               final isDarkMode = mode == ThemeMode.dark;
+              final lang = context.locale.languageCode;
+              final titleText = lang == 'ru'
+                  ? 'Тема оформления'
+                  : (lang == 'en' ? 'App Theme' : 'Ilova mavzusi');
+              final statusText = isDarkMode
+                  ? (lang == 'ru' ? 'Темная тема' : (lang == 'en' ? 'Dark mode' : 'Tungi mavzu'))
+                  : (lang == 'ru' ? 'Светлая тема' : (lang == 'en' ? 'Light mode' : 'Yorug\' mavzu'));
+
               return ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 leading: Container(
-                  padding: const EdgeInsets.all(8),
+                  width: 38,
+                  height: 38,
                   decoration: BoxDecoration(
-                    color: (isDarkMode ? Colors.amber : AppColors.primary).withValues(alpha: 0.12),
+                    color: isDarkMode
+                        ? const Color(0xFF1E1B4B)
+                        : const Color(0xFFFEF3C7),
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDarkMode
+                          ? const Color(0xFF312E81)
+                          : const Color(0xFFFDE68A),
+                      width: 1,
+                    ),
                   ),
-                  child: Icon(
-                    isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                    color: isDarkMode ? Colors.amber : AppColors.primary,
-                    size: 20,
+                  child: Center(
+                    child: Icon(
+                      isDarkMode ? Icons.nightlight_round : Icons.wb_sunny_rounded,
+                      color: isDarkMode ? const Color(0xFFA5B4FC) : const Color(0xFFD97706),
+                      size: 19,
+                    ),
                   ),
                 ),
                 title: Text(
-                  'profile.dark_mode_title'.tr(),
+                  titleText,
                   style: AppTextStyles.labelMedium.copyWith(
                     fontWeight: FontWeight.w700,
                     color: isDark ? Colors.white : AppColors.neutral900,
                   ),
                 ),
                 subtitle: Text(
-                  isDarkMode
-                      ? (context.locale.languageCode == 'ru' ? 'Темная тема включена' : 'Qorong\'i mavzu yoqilgan')
-                      : (context.locale.languageCode == 'ru' ? 'Светлая тема включена' : 'Yorug\' mavzu yoqilgan'),
+                  statusText,
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.neutral400,
+                    color: AppColors.neutral500,
                     fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                trailing: Transform.scale(
-                  scale: 0.85,
-                  child: Switch.adaptive(
-                    value: isDarkMode,
-                    activeThumbColor: Colors.white,
-                    activeTrackColor: AppColors.primary,
-                    onChanged: (_) {
-                      HapticFeedback.lightImpact();
-                      context.read<ThemeCubit>().toggleTheme();
-                    },
-                  ),
+                trailing: _ThemeSwitchWidget(
+                  isDark: isDarkMode,
+                  onToggle: () {
+                    HapticFeedback.lightImpact();
+                    context.read<ThemeCubit>().toggleTheme();
+                  },
                 ),
                 onTap: () {
                   HapticFeedback.lightImpact();
@@ -624,6 +639,102 @@ class SDUIAppSettingsComponent extends StatelessWidget {
       ),
     ),
     );
+  }
+}
+
+/// 🌓 Zamonaviy va nafis Dark/Light Mode switcheri
+class _ThemeSwitchWidget extends StatelessWidget {
+  final bool isDark;
+  final VoidCallback onToggle;
+
+  const _ThemeSwitchWidget({required this.isDark, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onToggle,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOutCubic,
+        width: 68,
+        height: 34,
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F3F5),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 1.5),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Orqa tarafdagi quyosh va oy piktogrammalari
+            Positioned.fill(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: Icon(
+                      Icons.wb_sunny_rounded,
+                      size: 13,
+                      color: isDark ? AppColors.neutral500 : const Color(0xFFF59E0B),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Icon(
+                      Icons.nightlight_round,
+                      size: 13,
+                      color: isDark ? const Color(0xFFA5B4FC) : AppColors.neutral400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Harakatlanuvchi dumaloq indikator (thumb)
+            AnimatedAlign(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOutCubic,
+              alignment: isDark ? Alignment.centerRight : Alignment.centerLeft,
+              child: Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF312E81) : Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
+                      blurRadius: 5,
+                      offset: const Offset(0, 1.5),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Icon(
+                    isDark ? Icons.nightlight_round : Icons.wb_sunny_rounded,
+                    size: 14,
+                    color: isDark ? const Color(0xFFFDE68A) : const Color(0xFFF59E0B),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
   }
 }
 
@@ -806,8 +917,8 @@ class SDUILogoutDeleteComponent extends StatelessWidget {
   }
 }
 
-/// ℹ️ Profil: Ilova versiyasi
-class SDUIAppVersionComponent extends StatelessWidget {
+/// ℹ️ Profil: Ilova versiyasi (pubspec.yaml dan real versiya)
+class SDUIAppVersionComponent extends StatefulWidget {
   final SDUISectionModel section;
   final SDUIActionHandler onAction;
 
@@ -818,13 +929,58 @@ class SDUIAppVersionComponent extends StatelessWidget {
   });
 
   @override
+  State<SDUIAppVersionComponent> createState() => _SDUIAppVersionComponentState();
+}
+
+class _SDUIAppVersionComponentState extends State<SDUIAppVersionComponent> {
+  late String _versionText;
+
+  @override
+  void initState() {
+    super.initState();
+    _versionText = _formatVersion(
+      DeviceInfoHelper.appVersion,
+      DeviceInfoHelper.appVersionCode,
+    );
+    _loadRealVersion();
+  }
+
+  String _formatVersion(String version, String buildNumber) {
+    if (version.isEmpty) return '';
+    if (buildNumber.isNotEmpty && buildNumber != '0') {
+      return 'v$version ($buildNumber)';
+    }
+    return 'v$version';
+  }
+
+  Future<void> _loadRealVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      final formatted = _formatVersion(info.version, info.buildNumber);
+      if (mounted && formatted != _versionText && formatted.isNotEmpty) {
+        setState(() {
+          _versionText = formatted;
+        });
+      }
+    } catch (_) {}
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final display = _versionText.isNotEmpty
+        ? 'Pizza Strada Uzbekistan • $_versionText'
+        : 'Pizza Strada Uzbekistan';
+
     return Container(
       padding: const EdgeInsets.only(bottom: 30, top: 8),
       alignment: Alignment.center,
-      child: const Text(
-        'Pizza Strada Uzbekistan • v1.2.0',
-        style: TextStyle(color: AppColors.neutral400, fontSize: 11, fontWeight: FontWeight.w500),
+      child: Text(
+        display,
+        style: const TextStyle(
+          color: AppColors.neutral400,
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }

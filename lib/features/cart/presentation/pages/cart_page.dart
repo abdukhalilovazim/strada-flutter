@@ -112,10 +112,20 @@ class _CartPageState extends State<CartPage> {
           ),
           body: cartState.items.isEmpty
               ? _buildEmptyCart(context, isDark)
-              : _buildCartContent(context, cartState, isDark),
-          bottomNavigationBar: cartState.items.isEmpty
-              ? null
-              : _buildCheckoutBottomBar(context, cartState, isDark),
+              : Stack(
+                  children: [
+                    _buildCartContent(context, cartState, isDark),
+                    Positioned(
+                      left: 16,
+                      right: 16,
+                      bottom: 12,
+                      child: SafeArea(
+                        top: false,
+                        child: _buildCheckoutBottomBar(context, cartState, isDark),
+                      ),
+                    ),
+                  ],
+                ),
         );
       },
     );
@@ -192,7 +202,7 @@ class _CartPageState extends State<CartPage> {
   Widget _buildCartContent(BuildContext context, CartState cartState, bool isDark) {
     return ListView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 120),
+      padding: const EdgeInsets.only(bottom: 90),
       children: [
         _buildCartItemsList(context, cartState, isDark),
         _buildUpsellSlider(context, cartState, isDark),
@@ -566,90 +576,82 @@ class _CartPageState extends State<CartPage> {
       builder: (context, checkoutState) {
         final canOrder = checkoutState.canOrder;
 
-        return Container(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-          ),
-          child: SafeArea(
-            top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (!canOrder) ...[
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF3E2D12) : const Color(0xFFFEF3C7),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isDark ? const Color(0xFF78350F) : const Color(0xFFFDE68A),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
-                          size: 20,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            checkoutState.canOrderMessage ?? 'checkout.ordering_suspended'.tr(),
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: !canOrder
-                        ? null
-                        : () {
-                            HapticFeedback.mediumImpact();
-                            context.push('/checkout');
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: canOrder
-                          ? AppColors.primary
-                          : (isDark ? AppColors.neutral800 : AppColors.neutral300),
-                      disabledBackgroundColor: isDark ? AppColors.neutral800 : AppColors.neutral300,
-                      foregroundColor: Colors.white,
-                      disabledForegroundColor: isDark ? AppColors.neutral500 : AppColors.neutral500,
-                      elevation: canOrder ? 0 : 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          canOrder ? 'cart.checkout'.tr() : '${'cart.checkout'.tr()} (${'checkout.inactive'.tr()})',
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                        ),
-                        Text(
-                          '${NumberFormatter.formatSum(total)} ${'common.currency'.tr()}',
-                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
-                        ),
-                      ],
-                    ),
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!canOrder) ...[
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF3E2D12) : const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF78350F) : const Color(0xFFFDE68A),
+                    width: 1,
                   ),
                 ),
-              ],
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        checkoutState.canOrderMessage ?? 'checkout.ordering_suspended'.tr(),
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: !canOrder
+                    ? null
+                    : () {
+                        HapticFeedback.mediumImpact();
+                        context.push('/checkout');
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: canOrder
+                      ? AppColors.primary
+                      : (isDark ? AppColors.neutral800 : AppColors.neutral300),
+                  disabledBackgroundColor: isDark ? AppColors.neutral800 : AppColors.neutral300,
+                  foregroundColor: Colors.white,
+                  disabledForegroundColor: isDark ? AppColors.neutral500 : AppColors.neutral500,
+                  elevation: canOrder ? 4 : 0,
+                  shadowColor: Colors.black.withValues(alpha: 0.25),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      canOrder ? 'cart.checkout'.tr() : '${'cart.checkout'.tr()} (${'checkout.inactive'.tr()})',
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                    ),
+                    Text(
+                      '${NumberFormatter.formatSum(total)} ${'common.currency'.tr()}',
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
+          ],
         );
       },
     );
