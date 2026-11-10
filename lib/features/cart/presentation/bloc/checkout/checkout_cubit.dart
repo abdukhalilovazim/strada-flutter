@@ -14,15 +14,13 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   CheckoutCubit({ApiClient? apiClient, OrderRepository? orderRepository})
       : _apiClient = apiClient ?? ApiClient(),
         _orderRepository = orderRepository ?? getIt<OrderRepository>(),
-        super(const CheckoutState()) {
-    loadSettings();
-  }
+        super(const CheckoutState());
 
-  /// Backend settings orqali can_order va buyurtma holatini yuklash
-  Future<void> loadSettings() async {
+  /// Backend orqali checkout opsiyalari (can_order va to'lov usullari)ni faqat checkout pageda yuklash
+  Future<void> loadCheckoutOptions() async {
     emit(state.copyWith(isSettingsLoading: true));
     try {
-      final response = await _apiClient.get('settings');
+      final response = await _apiClient.get('checkout-options');
       if (response is Map<String, dynamic>) {
         final rawCanOrder = response['can_order'];
         final canOrder = rawCanOrder == true || rawCanOrder == 1 || rawCanOrder == '1';
@@ -50,6 +48,8 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       emit(state.copyWith(isSettingsLoading: false));
     }
   }
+
+  Future<void> loadSettings() => loadCheckoutOptions();
 
   /// Yetkazib berish turini o'zgartirish.
   /// Pickup ga o'tganda delivery narxi avtomatik sifirlanadi.

@@ -7,10 +7,12 @@ import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
+import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/utils/variant_localization_helper.dart';
 import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';
 import 'package:pizza_strada/features/cart/domain/entities/cart_item_entity.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
+import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 
@@ -78,9 +80,36 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
     Navigator.of(context).pop();
   }
 
-  void _onBuyNow(BuildContext context) {
+  Future<void> _onBuyNow(BuildContext context) async {
     HapticFeedback.mediumImpact();
-    context.read<CartCubit>().addMultipleToCart([
+    final cubit = context.read<CheckoutCubit>();
+    final cartCubit = context.read<CartCubit>();
+
+    // 1. Agar can_order hali yuklanmagan bo'lsa, tezda yuklaymiz
+    if (cubit.state.paymentMethods.isEmpty) {
+      await cubit.loadCheckoutOptions();
+    }
+
+    if (!context.mounted) return;
+
+    final checkoutState = cubit.state;
+
+    // 2. can_order == false bo'lsa: hech qayerga o'tmaydi, xabarnoma ko'rsatiladi
+    if (!checkoutState.canOrder) {
+      final msg = checkoutState.canOrderMessage ?? 'checkout.ordering_suspended'.tr();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: AppColors.neutral800,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    // 3. Savatga qo'shamiz
+    cartCubit.addMultipleToCart([
       CartItemEntity(
         product: widget.product,
         variant: _selectedVariant,
@@ -88,7 +117,28 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
       ),
     ]);
     Navigator.of(context).pop();
-    context.push('/checkout');
+
+    // 4. Login holatini tekshiramiz: agar kirmagan bo'lsa to'g'ridan-to'g'ri login sahifasiga
+    final token = await SecureStorage.getToken();
+    if (token == null || token.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('checkout.login_required'.tr()),
+            backgroundColor: AppColors.primary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+        context.push('/auth/login');
+      }
+      return;
+    }
+
+    // 5. Faqat login qilingan va can_order true bo'lgandagina checkoutga o'tadi
+    if (context.mounted) {
+      context.push('/checkout');
+    }
   }
 
   @override
@@ -260,7 +310,6 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                             children: displayVariants.map((v) {
                               final isSelected = _selectedVariant?.id == v.id;
                               final title = _getVariantTitle(v.title);
-                              final subtitle = _getVariantSubtitle(v);
 
                               return Expanded(
                                 child: GestureDetector(

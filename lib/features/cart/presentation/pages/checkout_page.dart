@@ -36,12 +36,28 @@ class _CheckoutPageState extends State<CheckoutPage> {
     _loadProfileInfo();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<CheckoutCubit>().loadSettings();
+        context.read<CheckoutCubit>().loadCheckoutOptions();
       }
     });
   }
 
   Future<void> _loadProfileInfo() async {
+    final token = await SecureStorage.getToken();
+    if (token == null || token.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('checkout.login_required'.tr()),
+            backgroundColor: AppColors.primary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+        context.go('/auth/login');
+        return;
+      }
+    }
+
     final name = await SecureStorage.getUserName();
     final phone = await SecureStorage.getUserPhone();
     if (mounted) {

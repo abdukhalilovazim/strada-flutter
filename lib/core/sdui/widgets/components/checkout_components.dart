@@ -10,7 +10,6 @@ import '../../../../features/cart/presentation/bloc/cart_cubit.dart';
 import '../../../../features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import '../../../../features/cart/presentation/bloc/checkout/checkout_state.dart';
 import '../../../../features/cart/presentation/widgets/order_type_bottom_sheet.dart';
-import '../../../../features/home/presentation/bloc/home_cubit.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_text_styles.dart';
 import '../../../utils/number_formatter.dart';
@@ -1731,6 +1730,23 @@ class SDUISubmitOrderCtaComponent extends StatelessWidget {
 
   Future<void> _handleSubmit(BuildContext context, CheckoutState checkoutState, CartState cartState) async {
     HapticFeedback.heavyImpact();
+
+    // -1. Autentifikatsiya (Token) tekshiruvi: faqat buyurtma berish uchun login talab etiladi
+    final token = await SecureStorage.getToken();
+    if (token == null || token.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('checkout.login_required'.tr()),
+            backgroundColor: AppColors.primary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+        context.push('/auth/login');
+      }
+      return;
+    }
 
     // 0. Restoran ochiq/yopiqligi (canOrder) tekshiruvi
     if (!checkoutState.canOrder) {

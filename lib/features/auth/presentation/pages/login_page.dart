@@ -27,10 +27,18 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     _authCubit = getIt<AuthCubit>();
+    _phoneController.addListener(_onFieldChanged);
+    _nameController.addListener(_onFieldChanged);
+  }
+
+  void _onFieldChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _phoneController.removeListener(_onFieldChanged);
+    _nameController.removeListener(_onFieldChanged);
     _authCubit.close();
     _phoneController.dispose();
     _nameController.dispose();
@@ -91,7 +99,7 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     const SizedBox(height: 16),
 
-                    // Til tanlash tugmalar
+                    // Til tanlash paneli
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -163,15 +171,11 @@ class _LoginPageState extends State<LoginPage> {
                       style: AppTextStyles.bodyLarge.copyWith(
                         color: isDark ? Colors.white : AppColors.neutral900,
                       ),
-                      decoration: _inputDecoration(
-                        'auth.name_hint'.tr(),
-                        Icons.person_outline_rounded,
-                        isDark,
-                      ),
+                      decoration: _nameInputDecoration(isDark),
                     ),
                     const SizedBox(height: 16),
 
-                    // Telefon maydoni
+                    // Telefon maydoni (doimiy +998 prefiksi bilan)
                     TextField(
                       controller: _phoneController,
                       focusNode: _phoneFocus,
@@ -185,18 +189,10 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                       style: AppTextStyles.bodyLarge.copyWith(
                         color: isDark ? Colors.white : AppColors.neutral900,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
                       ),
-                      decoration: _inputDecoration(
-                        '(90) 123-45-67',
-                        Icons.phone_outlined,
-                        isDark,
-                      ).copyWith(
-                        prefixText: '+998 ',
-                        prefixStyle: AppTextStyles.bodyLarge.copyWith(
-                          color: isDark ? Colors.white : AppColors.neutral900,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      decoration: _phoneInputDecoration(isDark),
                     ),
                     const SizedBox(height: 32),
 
@@ -216,6 +212,49 @@ class _LoginPageState extends State<LoginPage> {
                                     color: Colors.white, strokeWidth: 2.5),
                               )
                             : Text('auth.send_sms'.tr()),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Loginsiz davom etish tugmasi (Secondary Action)
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          context.go('/home');
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: isDark ? AppColors.darkBorder : AppColors.neutral300,
+                            width: 1.2,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          foregroundColor: isDark ? Colors.white : AppColors.neutral800,
+                          backgroundColor: isDark ? AppColors.darkCard : const Color(0xFFF9FAFB),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'auth.continue_as_guest'.tr(),
+                              style: AppTextStyles.labelMedium.copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                                color: isDark ? Colors.white : AppColors.neutral800,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 18,
+                              color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -263,15 +302,97 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  InputDecoration _inputDecoration(String hint, IconData icon, bool isDark) =>
-      InputDecoration(
-        hintText: hint,
+  InputDecoration _nameInputDecoration(bool isDark) => InputDecoration(
+        hintText: 'auth.name_hint'.tr(),
         hintStyle: AppTextStyles.bodyMedium.copyWith(
           color: isDark ? AppColors.neutral500 : AppColors.neutral400,
         ),
         filled: true,
         fillColor: isDark ? AppColors.darkCard : const Color(0xFFF9FAFB),
-        prefixIcon: Icon(icon, color: isDark ? AppColors.neutral400 : AppColors.neutral500, size: 20),
+        prefixIcon: Icon(Icons.person_outline_rounded,
+            color: isDark ? AppColors.neutral400 : AppColors.neutral500, size: 20),
+        suffixIcon: _nameController.text.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.close_rounded, size: 18),
+                color: AppColors.neutral400,
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  _nameController.clear();
+                },
+              )
+            : null,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+            width: 1.2,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+            width: 1.2,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(
+            color: AppColors.primary,
+            width: 1.8,
+          ),
+        ),
+      );
+
+  InputDecoration _phoneInputDecoration(bool isDark) => InputDecoration(
+        hintText: '(90) 123-45-67',
+        hintStyle: AppTextStyles.bodyMedium.copyWith(
+          color: isDark ? AppColors.neutral500 : AppColors.neutral400,
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
+        ),
+        filled: true,
+        fillColor: isDark ? AppColors.darkCard : const Color(0xFFF9FAFB),
+        prefixIcon: Padding(
+          padding: const EdgeInsets.only(left: 14, right: 10),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.phone_outlined,
+                color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '+998',
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: isDark ? Colors.white : AppColors.neutral900,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15.5,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 1.2,
+                height: 20,
+                color: isDark ? AppColors.darkBorder : AppColors.neutral300,
+              ),
+            ],
+          ),
+        ),
+        prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+        suffixIcon: _phoneController.text.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.close_rounded, size: 18),
+                color: AppColors.neutral400,
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  _phoneController.clear();
+                },
+              )
+            : null,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),

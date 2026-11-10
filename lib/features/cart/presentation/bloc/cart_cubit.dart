@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
+import 'package:pizza_strada/core/services/smart_recommendation_engine.dart';
 import 'package:pizza_strada/features/cart/domain/entities/cart_item_entity.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/promotions/domain/entities/promotion_deal_entity.dart';
@@ -98,6 +99,7 @@ class CartCubit extends Cubit<CartState> {
   }
 
   void clear() {
+    SmartRecommendationEngine.clear();
     emit(const CartState(items: []));
   }
 

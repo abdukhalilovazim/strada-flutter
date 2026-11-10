@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:device_marketing_names/device_marketing_names.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class DeviceInfoHelper {
-  static String deviceId   = '';
+  static String deviceId = '';
   static String deviceName = '';
   static String appVersion = '1.0.0';
   static String appVersionCode = '1';
@@ -11,14 +12,27 @@ class DeviceInfoHelper {
 
   static Future<void> init() async {
     final info = DeviceInfoPlugin();
+
+    String? marketingName;
+    try {
+      marketingName = await DeviceMarketingNames().getSingleName();
+    } catch (_) {}
+
     if (Platform.isAndroid) {
       final android = await info.androidInfo;
-      deviceId   = android.id;
-      deviceName = '${android.manufacturer} ${android.model}';
-    } else {
+      deviceId = android.id;
+      deviceName = (marketingName != null && marketingName.isNotEmpty)
+          ? marketingName
+          : '${android.manufacturer} ${android.model}';
+    } else if (Platform.isIOS) {
       final ios = await info.iosInfo;
-      deviceId   = ios.identifierForVendor ?? '';
-      deviceName = _mapIosDeviceName(ios.utsname.machine);
+      deviceId = ios.identifierForVendor ?? '';
+      deviceName = (marketingName != null && marketingName.isNotEmpty)
+          ? marketingName
+          : (ios.name.isNotEmpty ? ios.name : ios.utsname.machine);
+    } else {
+      deviceId = 'unknown';
+      deviceName = marketingName ?? 'Unknown Device';
     }
 
     try {
@@ -29,52 +43,5 @@ class DeviceInfoHelper {
       appVersion = '1.0.0';
       appVersionCode = '1'; // Fallback
     }
-  }
-
-  static String _mapIosDeviceName(String machine) {
-    const iosMap = {
-      'iPhone10,1': 'iPhone 8',
-      'iPhone10,2': 'iPhone 8 Plus',
-      'iPhone10,3': 'iPhone X',
-      'iPhone10,4': 'iPhone 8',
-      'iPhone10,5': 'iPhone 8 Plus',
-      'iPhone10,6': 'iPhone X',
-      'iPhone11,2': 'iPhone XS',
-      'iPhone11,4': 'iPhone XS Max',
-      'iPhone11,6': 'iPhone XS Max',
-      'iPhone11,8': 'iPhone XR',
-      'iPhone12,1': 'iPhone 11',
-      'iPhone12,3': 'iPhone 11 Pro',
-      'iPhone12,5': 'iPhone 11 Pro Max',
-      'iPhone12,8': 'iPhone SE (2nd gen)',
-      'iPhone13,1': 'iPhone 12 mini',
-      'iPhone13,2': 'iPhone 12',
-      'iPhone13,3': 'iPhone 12 Pro',
-      'iPhone13,4': 'iPhone 12 Pro Max',
-      'iPhone14,2': 'iPhone 13 Pro',
-      'iPhone14,3': 'iPhone 13 Pro Max',
-      'iPhone14,4': 'iPhone 13 mini',
-      'iPhone14,5': 'iPhone 13',
-      'iPhone14,6': 'iPhone SE (3rd gen)',
-      'iPhone14,7': 'iPhone 14',
-      'iPhone14,8': 'iPhone 14 Plus',
-      'iPhone15,2': 'iPhone 14 Pro',
-      'iPhone15,3': 'iPhone 14 Pro Max',
-      'iPhone15,4': 'iPhone 15',
-      'iPhone15,5': 'iPhone 15 Plus',
-      'iPhone16,1': 'iPhone 15 Pro',
-      'iPhone16,2': 'iPhone 15 Pro Max',
-      'iPhone17,1': 'iPhone 16 Pro',
-      'iPhone17,2': 'iPhone 16 Pro Max',
-      'iPhone17,3': 'iPhone 16',
-      'iPhone17,4': 'iPhone 16 Plus',
-      'iPhone18,1': 'iPhone 17 Pro',
-      'iPhone18,2': 'iPhone 17 Pro Max',
-      'iPhone18,3': 'iPhone 17',
-      'iPhone18,4': 'iPhone 17 Air',
-      'x86_64': 'iPhone Simulator',
-      'arm64': 'iPhone Simulator',
-    };
-    return iosMap[machine] ?? (machine.startsWith('iPhone') ? machine : 'iPhone $machine');
   }
 }

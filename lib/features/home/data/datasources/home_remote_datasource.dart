@@ -40,8 +40,12 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
 
   @override
   Future<SettingsModel> getSettings() async {
-    final response = await _client.get('settings');
-    return SettingsModel.fromJson(response as Map<String, dynamic>);
+    return const SettingsModel(
+      discount: 0,
+      canOrder: true,
+      supportPhone: '',
+      paymentMethods: [],
+    );
   }
 
   @override

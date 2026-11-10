@@ -14,7 +14,6 @@ import 'package:pizza_strada/core/utils/number_formatter.dart';
 import 'package:pizza_strada/core/utils/variant_localization_helper.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
-import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 import 'package:pizza_strada/features/orders/data/models/order_model.dart';
 import 'package:pizza_strada/features/orders/domain/entities/order_entity.dart';
 import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';

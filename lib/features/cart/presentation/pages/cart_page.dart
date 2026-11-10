@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/services/smart_recommendation_engine.dart';
+import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
@@ -13,7 +14,6 @@ import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
-import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 
 /// 🛒 CartPage powered 100% by Native Flutter UI & BLoC
 class CartPage extends StatefulWidget {
@@ -24,6 +24,16 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<CheckoutCubit>().loadCheckoutOptions();
+      }
+    });
+  }
+
   void _showClearConfirm(BuildContext context) {
     HapticFeedback.lightImpact();
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -366,7 +376,7 @@ class _CartPageState extends State<CartPage> {
                         if (hasDetails) ...[
                           const SizedBox(height: 1.5),
                           Text(
-                            variantDetails!.trim(),
+                            variantDetails.trim(),
                             style: AppTextStyles.bodyExtraSmall.copyWith(
                               color: AppColors.neutral500,
                               fontSize: 11,
@@ -441,11 +451,14 @@ class _CartPageState extends State<CartPage> {
   }
 
   Widget _buildUpsellSlider(BuildContext context, CartState cartState, bool isDark) {
-    final productIds = cartState.items.map((e) => e.product.id).toList();
-    if (productIds.isEmpty) return const SizedBox.shrink();
+    if (cartState.items.isEmpty) return const SizedBox.shrink();
+
+    final cartItemsPayload = cartState.items
+        .map((e) => {'product_id': e.product.id, 'quantity': e.quantity})
+        .toList();
 
     return FutureBuilder<RecommendationMatch>(
-      future: SmartRecommendationEngine.fetch(productIds: productIds),
+      future: SmartRecommendationEngine.fetch(items: cartItemsPayload),
       initialData: SmartRecommendationEngine.currentMatch,
       builder: (context, snapshot) {
         final match = snapshot.data;
@@ -620,9 +633,26 @@ class _CartPageState extends State<CartPage> {
               child: ElevatedButton(
                 onPressed: !canOrder
                     ? null
-                    : () {
+                    : () async {
                         HapticFeedback.mediumImpact();
-                        context.push('/checkout');
+                        final token = await SecureStorage.getToken();
+                        if (token == null || token.isEmpty) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('checkout.login_required'.tr()),
+                                backgroundColor: AppColors.primary,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            );
+                            context.push('/auth/login');
+                          }
+                          return;
+                        }
+                        if (context.mounted) {
+                          context.push('/checkout');
+                        }
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: canOrder

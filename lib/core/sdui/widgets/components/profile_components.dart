@@ -735,8 +735,6 @@ class _ThemeSwitchWidget extends StatelessWidget {
     );
   }
 }
-  }
-}
 
 /// 📞 Profil: Qo'llab-quvvatlash telefon raqami (Faqat raqam, Telegram emas)
 class SDUISupportContactsComponent extends StatelessWidget {
@@ -938,25 +936,19 @@ class _SDUIAppVersionComponentState extends State<SDUIAppVersionComponent> {
   @override
   void initState() {
     super.initState();
-    _versionText = _formatVersion(
-      DeviceInfoHelper.appVersion,
-      DeviceInfoHelper.appVersionCode,
-    );
+    _versionText = _formatVersion(DeviceInfoHelper.appVersion);
     _loadRealVersion();
   }
 
-  String _formatVersion(String version, String buildNumber) {
+  String _formatVersion(String version) {
     if (version.isEmpty) return '';
-    if (buildNumber.isNotEmpty && buildNumber != '0') {
-      return 'v$version ($buildNumber)';
-    }
     return 'v$version';
   }
 
   Future<void> _loadRealVersion() async {
     try {
       final info = await PackageInfo.fromPlatform();
-      final formatted = _formatVersion(info.version, info.buildNumber);
+      final formatted = _formatVersion(info.version);
       if (mounted && formatted != _versionText && formatted.isNotEmpty) {
         setState(() {
           _versionText = formatted;
