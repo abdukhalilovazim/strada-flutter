@@ -16,9 +16,14 @@ import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_s
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
 
 /// 🛒 CartPage powered 100% by Native Flutter UI & BLoC
-class CartPage extends StatelessWidget {
+class CartPage extends StatefulWidget {
   const CartPage({super.key});
 
+  @override
+  State<CartPage> createState() => _CartPageState();
+}
+
+class _CartPageState extends State<CartPage> {
   void _showClearConfirm(BuildContext context) {
     HapticFeedback.lightImpact();
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -345,130 +350,131 @@ class CartPage extends StatelessWidget {
   }
 
   Widget _buildUpsellSlider(BuildContext context, CartState cartState, bool isDark) {
-    final homeState = context.watch<HomeCubit>().state;
-    if (homeState is! HomeLoaded) return const SizedBox.shrink();
+    final productIds = cartState.items.map((e) => e.product.id).toList();
+    if (productIds.isEmpty) return const SizedBox.shrink();
 
-    final match = SmartRecommendationEngine.resolve(
-      cartItems: cartState.items,
-      allProducts: homeState.fullProducts,
-      localeCode: context.locale.languageCode,
-    );
+    return FutureBuilder<RecommendationMatch>(
+      future: SmartRecommendationEngine.fetch(productIds: productIds),
+      initialData: SmartRecommendationEngine.currentMatch,
+      builder: (context, snapshot) {
+        final match = snapshot.data;
+        if (match == null || match.isEmpty) return const SizedBox.shrink();
 
-    if (match.isEmpty) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 14, bottom: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                const Icon(Icons.auto_awesome_rounded, color: AppColors.primary, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    match.title.isNotEmpty ? match.title : 'cart.upsell_title'.tr(),
-                    style: AppTextStyles.h4.copyWith(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 135,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: match.products.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder: (ctx, i) {
-                final product = match.products[i];
-                return Container(
-                  width: 110,
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkCard : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Stack(
-                          children: [
-                            Center(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: product.validImageUrl.isNotEmpty
-                                    ? CachedNetworkImage(
-                                        imageUrl: product.validImageUrl,
-                                        fit: BoxFit.cover,
-                                        errorWidget: (_, __, ___) => const PizzaImagePlaceholder(width: 48, height: 48),
-                                      )
-                                    : const PizzaImagePlaceholder(width: 48, height: 48),
-                              ),
-                            ),
-                            Positioned(
-                              right: 0,
-                              bottom: 0,
-                              child: InkWell(
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  context.read<CartCubit>().addToCart(
-                                        product,
-                                        variant: product.variants.firstOrNull,
-                                      );
-                                },
-                                borderRadius: BorderRadius.circular(14),
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.primary,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.add_rounded, color: Colors.white, size: 14),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        product.title,
-                        style: AppTextStyles.labelSmall.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11.5,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        '${NumberFormatter.formatSum(product.price.toInt())} ${'common.currency'.tr()}',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.primary,
+        return Padding(
+          padding: const EdgeInsets.only(top: 14, bottom: 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    const Icon(Icons.auto_awesome_rounded, color: AppColors.primary, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        match.title.isNotEmpty ? match.title : 'cart.upsell_title'.tr(),
+                        style: AppTextStyles.h4.copyWith(
                           fontWeight: FontWeight.w800,
-                          fontSize: 11,
+                          fontSize: 15,
                         ),
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 135,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: match.products.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  itemBuilder: (ctx, i) {
+                    final product = match.products[i];
+                    return Container(
+                      width: 110,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.darkCard : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Stack(
+                              children: [
+                                Center(
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: product.validImageUrl.isNotEmpty
+                                        ? CachedNetworkImage(
+                                            imageUrl: product.validImageUrl,
+                                            fit: BoxFit.cover,
+                                            errorWidget: (_, __, ___) => const PizzaImagePlaceholder(width: 48, height: 48),
+                                          )
+                                        : const PizzaImagePlaceholder(width: 48, height: 48),
+                                  ),
+                                ),
+                                Positioned(
+                                  right: 0,
+                                  bottom: 0,
+                                  child: InkWell(
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      context.read<CartCubit>().addToCart(
+                                            product,
+                                            variant: product.variants.firstOrNull,
+                                          );
+                                    },
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: const BoxDecoration(
+                                        color: AppColors.primary,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.add_rounded, color: Colors.white, size: 14),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            product.title,
+                            style: AppTextStyles.labelSmall.copyWith(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 11.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            '${NumberFormatter.formatSum(product.price.toInt())} ${'common.currency'.tr()}',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

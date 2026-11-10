@@ -57,11 +57,10 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  Widget _buildAppBar(BuildContext context) {
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SliverAppBar(
-      pinned: true,
+    return AppBar(
       backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
@@ -383,18 +382,12 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.surface,
+      appBar: _buildAppBar(context),
       body: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, state) {
           if (state is HomeLoading) {
-            return CustomScrollView(
-              slivers: [
-                _buildAppBar(context),
-                const SliverFillRemaining(
-                  child: Center(
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  ),
-                ),
-              ],
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
             );
           }
 
@@ -412,7 +405,6 @@ class _HomePageState extends State<HomePage> {
                     await context.read<HomeCubit>().init(forceRefresh: true);
                   },
                 ),
-                _buildAppBar(context),
                 SliverFillRemaining(
                   child: Center(
                     child: Column(
@@ -457,7 +449,6 @@ class _HomePageState extends State<HomePage> {
                     await context.read<HomeCubit>().init(forceRefresh: true);
                   },
                 ),
-                _buildAppBar(context),
                 _buildSearchBar(context),
                 if (state.searchQuery.isEmpty) ...[
                   _buildStories(state.stories),
