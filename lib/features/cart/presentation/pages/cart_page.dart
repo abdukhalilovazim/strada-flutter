@@ -431,8 +431,12 @@ class _CartPageState extends State<CartPage> {
                 ),
                 Container(
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurface : const Color(0xFFF1F3F5),
+                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F3F5),
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? AppColors.darkBorder : Colors.transparent,
+                      width: 1,
+                    ),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                   child: Row(
@@ -442,7 +446,9 @@ class _CartPageState extends State<CartPage> {
                         icon: Icon(
                           item.quantity == 1 ? Icons.delete_outline_rounded : Icons.remove_rounded,
                           size: 18,
-                          color: item.quantity == 1 ? AppColors.error : AppColors.neutral700,
+                          color: item.quantity == 1
+                              ? AppColors.error
+                              : (isDark ? Colors.white : AppColors.neutral700),
                         ),
                         onPressed: () {
                           HapticFeedback.lightImpact();
@@ -458,11 +464,16 @@ class _CartPageState extends State<CartPage> {
                           style: AppTextStyles.labelMedium.copyWith(
                             fontWeight: FontWeight.w800,
                             fontSize: 14,
+                            color: isDark ? Colors.white : AppColors.neutral900,
                           ),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.add_rounded, size: 18, color: AppColors.neutral900),
+                        icon: Icon(
+                          Icons.add_rounded,
+                          size: 18,
+                          color: isDark ? Colors.white : AppColors.neutral900,
+                        ),
                         onPressed: () {
                           HapticFeedback.lightImpact();
                           context.read<CartCubit>().updateQuantity(item, 1);

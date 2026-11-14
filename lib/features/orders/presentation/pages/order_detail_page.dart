@@ -435,15 +435,12 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: isDark ? AppColors.darkCard : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(
+          color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
+        ),
+        boxShadow: AppColors.softShadow(isDark),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -557,7 +554,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                                   color: nodeBg,
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: Theme.of(context).cardColor,
+                                    color: isDark ? AppColors.darkCard : Colors.white,
                                     width: 2.5,
                                   ),
                                   boxShadow: isActive
@@ -643,12 +640,15 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: isDark ? AppColors.darkCard : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.amber.shade200, width: 1.5),
+        border: Border.all(
+          color: isDark ? const Color(0xFF785B12) : Colors.amber.shade200,
+          width: 1.2,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.amber.withValues(alpha: 0.08),
+            color: Colors.amber.withValues(alpha: isDark ? 0.12 : 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -666,7 +666,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                 'orders.rate_order'.tr(),
                 style: AppTextStyles.h4.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                  color: isDark ? Colors.white : AppColors.neutral900,
                 ),
               ),
             ],
@@ -770,13 +770,29 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   }
 
   Widget _buildScaffold(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (_isLoading) {
       return Scaffold(
+        backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8F9FA),
         appBar: AppBar(
-          title: Text('#${widget.orderId}', style: AppTextStyles.h2),
-          backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+          title: Text(
+            '#${widget.orderId}',
+            style: AppTextStyles.h2.copyWith(
+              color: isDark ? Colors.white : AppColors.neutral900,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
           elevation: 0,
           leading: _buildBackButton(context),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Container(
+              height: 1,
+              color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+            ),
+          ),
         ),
         body: const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
@@ -786,11 +802,25 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
 
     if (_order == null) {
       return Scaffold(
+        backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8F9FA),
         appBar: AppBar(
-          title: Text('#${widget.orderId}', style: AppTextStyles.h2),
-          backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+          title: Text(
+            '#${widget.orderId}',
+            style: AppTextStyles.h2.copyWith(
+              color: isDark ? Colors.white : AppColors.neutral900,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
           elevation: 0,
           leading: _buildBackButton(context),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Container(
+              height: 1,
+              color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+            ),
+          ),
         ),
         body: Center(
           child: Column(
@@ -817,16 +847,28 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     }
 
     final o = _order!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final showPayNow = o.paymentUrl != null && o.status != 6 && o.status != 1;
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: Text('#${o.id}', style: AppTextStyles.h2),
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        title: Text(
+          '#${o.id}',
+          style: AppTextStyles.h2.copyWith(
+            color: isDark ? Colors.white : AppColors.neutral900,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
         elevation: 0,
         leading: _buildBackButton(context),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+          ),
+        ),
       ),
       body: RefreshIndicator(
         color: AppColors.primary,
@@ -853,19 +895,33 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
+                color: isDark ? AppColors.darkCard : Colors.white,
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
+                ),
+                boxShadow: AppColors.softShadow(isDark),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('orders.items'.tr(), style: AppTextStyles.labelLarge),
+                  Text(
+                    'orders.items'.tr(),
+                    style: AppTextStyles.labelLarge.copyWith(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                      color: isDark ? Colors.white : AppColors.neutral900,
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: o.products.length,
-                    separatorBuilder: (_, __) => const Divider(height: 24),
+                    separatorBuilder: (_, __) => Divider(
+                      height: 24,
+                      color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
+                    ),
                     itemBuilder: (_, i) {
                       final item = o.products[i];
                       return Row(
@@ -892,11 +948,21 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(item.title, style: AppTextStyles.labelSmall),
+                                Text(
+                                  item.title,
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13.5,
+                                    color: isDark ? Colors.white : AppColors.neutral900,
+                                  ),
+                                ),
                                 if (item.variantName != null && VariantLocalizationHelper.localize(item.variantName).isNotEmpty)
                                   Text(
                                     VariantLocalizationHelper.localize(item.variantName),
-                                    style: AppTextStyles.bodyExtraSmall.copyWith(color: AppColors.neutral500),
+                                    style: AppTextStyles.bodyExtraSmall.copyWith(
+                                      color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                                      fontSize: 11.5,
+                                    ),
                                   ),
                               ],
                             ),
@@ -904,8 +970,21 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text('x${item.quantity}', style: AppTextStyles.bodySmall),
-                              Text('${NumberFormatter.formatSum(item.price)} ${'common.currency'.tr()}', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary)),
+                              Text(
+                                'x${item.quantity}',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${NumberFormatter.formatSum(item.price)} ${'common.currency'.tr()}',
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -921,8 +1000,12 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
+                color: isDark ? AppColors.darkCard : Colors.white,
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
+                ),
+                boxShadow: AppColors.softShadow(isDark),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -930,7 +1013,9 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                   Text(
                     'orders.order_info'.tr(), 
                     style: AppTextStyles.labelLarge.copyWith(
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                      color: isDark ? Colors.white : AppColors.neutral900,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -961,7 +1046,11 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                               ),
                             ),
                           ],
-                          if (!isLast) const Divider(height: 24),
+                          if (!isLast)
+                            Divider(
+                              height: 24,
+                              color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
+                            ),
                         ],
                       );
                     }),
@@ -977,25 +1066,38 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                           onTap: () => _openMap(lat: o.latitude, lng: o.longitude, address: o.address),
                         ),
                       ],
-                      const Divider(height: 24),
+                      Divider(
+                        height: 24,
+                        color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
+                      ),
                     ],
                     if (o.branch != null && o.branch!.isNotEmpty) ...[
                       _DetailRow(
                         label: 'orders.branch'.tr(),
                         value: o.branch!,
                       ),
-                      const Divider(height: 24),
+                      Divider(
+                        height: 24,
+                        color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
+                      ),
                     ],
                     if (o.phone != null && o.phone!.isNotEmpty) ...[
                       _DetailRow(
                         label: 'checkout.recipient_phone'.tr(),
                         value: NumberFormatter.formatPhone(o.phone!),
                       ),
-                      const Divider(height: 24),
+                      Divider(
+                        height: 24,
+                        color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
+                      ),
                     ],
                     if (o.paymentMethodText != null && o.paymentMethodText!.isNotEmpty) ...[
                       _DetailRow(label: 'checkout.payment'.tr(), value: o.paymentMethodText!),
-                      if (o.comment != null && o.comment!.isNotEmpty) const Divider(height: 24),
+                      if (o.comment != null && o.comment!.isNotEmpty)
+                        Divider(
+                          height: 24,
+                          color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
+                        ),
                     ],
                     if (o.comment != null && o.comment!.isNotEmpty)
                       _DetailRow(label: 'checkout.comment'.tr(), value: o.comment!),
@@ -1009,8 +1111,12 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
+                color: isDark ? AppColors.darkCard : Colors.white,
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
+                ),
+                boxShadow: AppColors.softShadow(isDark),
               ),
               child: Column(
                 children: [
@@ -1023,7 +1129,10 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                       if (item.bold) {
                         return Column(
                           children: [
-                            const Divider(height: 32),
+                            Divider(
+                              height: 32,
+                              color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
+                            ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -1032,7 +1141,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                                   style: AppTextStyles.labelLarge.copyWith(
                                     fontWeight: FontWeight.w800,
                                     fontSize: 16,
-                                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                                    color: isDark ? Colors.white : AppColors.neutral900,
                                   ),
                                 ),
                                 Text(
@@ -1056,14 +1165,16 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                           children: [
                             Text(
                               item.key,
-                              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500),
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                              ),
                             ),
                             Text(
                               item.value,
                               style: AppTextStyles.labelSmall.copyWith(
                                 color: item.isDiscount
                                     ? AppColors.success
-                                    : Theme.of(context).textTheme.bodySmall?.color,
+                                    : (isDark ? Colors.white : AppColors.neutral900),
                                 fontWeight: item.isDiscount ? FontWeight.w700 : FontWeight.w600,
                               ),
                             ),
@@ -1083,7 +1194,10 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                          padding: const EdgeInsets.only(top: 12),
                          child: _PriceRow(label: 'cart.discount'.tr(), price: o.discountAmount, isNegative: true),
                        ),
-                    const Divider(height: 32),
+                    Divider(
+                      height: 32,
+                      color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
+                    ),
                     _PriceRow(label: 'cart.total'.tr(), price: o.totalPrice, isTotal: true),
                   ],
                 ],
@@ -1095,18 +1209,26 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     ),
       bottomNavigationBar: (showPayNow || o.status == 6 || (o.phone != null && o.phone!.isNotEmpty))
           ? Container(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
+                color: isDark ? AppColors.darkSurface : Colors.white,
+                border: Border(
+                  top: BorderSide(
+                    color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+                    width: 1,
+                  ),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, -4),
                   ),
                 ],
               ),
               child: SafeArea(
+                top: false,
+                bottom: true,
                 child: Builder(
                   builder: (context) {
                     if (showPayNow) {
@@ -1392,20 +1514,36 @@ class _PriceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
           style: isTotal
-              ? AppTextStyles.labelLarge.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)
-              : AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500),
+              ? AppTextStyles.labelLarge.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  color: isDark ? Colors.white : AppColors.neutral900,
+                )
+              : AppTextStyles.bodyMedium.copyWith(
+                  color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                  fontSize: 13.5,
+                ),
         ),
         Text(
           "${isNegative ? '- ' : ''}${NumberFormatter.formatSum(price)} ${'common.currency'.tr()}",
           style: isTotal
-              ? AppTextStyles.h4.copyWith(color: AppColors.primary)
-              : AppTextStyles.labelSmall.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
+              ? AppTextStyles.h4.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 17,
+                )
+              : AppTextStyles.labelSmall.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13.5,
+                  color: isDark ? Colors.white : AppColors.neutral900,
+                ),
         ),
       ],
     );
@@ -1425,6 +1563,7 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1432,8 +1571,9 @@ class _DetailRow extends StatelessWidget {
         Text(
           label,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.neutral500,
+            color: isDark ? AppColors.neutral400 : AppColors.neutral500,
             fontWeight: isBold ? FontWeight.w700 : FontWeight.normal,
+            fontSize: 13.5,
           ),
         ),
         const SizedBox(width: 16),
@@ -1444,11 +1584,13 @@ class _DetailRow extends StatelessWidget {
             style: isBold
                 ? AppTextStyles.labelMedium.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                    fontSize: 14,
+                    color: isDark ? Colors.white : AppColors.neutral900,
                   )
                 : AppTextStyles.labelSmall.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                    fontSize: 13.5,
+                    color: isDark ? Colors.white : AppColors.neutral900,
                   ),
           ),
         ),

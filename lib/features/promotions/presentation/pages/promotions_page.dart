@@ -635,11 +635,11 @@ class _CouponDealCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
 
-                    // Subtitle (items count or description)
+                    // Subtitle (items count)
                     Text(
                       deal.items.isNotEmpty
                           ? 'orders.items_count'.tr(namedArgs: {'count': deal.items.length.toString()})
-                          : (deal.description.isNotEmpty ? deal.description : 'promotions.deal_detail_title'.tr()),
+                          : 'promotions.deal_detail_title'.tr(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.bodySmall.copyWith(

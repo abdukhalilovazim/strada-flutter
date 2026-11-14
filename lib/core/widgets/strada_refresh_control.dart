@@ -196,14 +196,14 @@ class _StradaRefreshIndicatorViewState extends State<StradaRefreshIndicatorView>
                     children: [
                       // 🍕 Animated Pizza Ring & Icon
                       SizedBox(
-                        width: 26,
-                        height: 26,
+                        width: 28,
+                        height: 28,
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
                             // Circular Progress Arc
                             CustomPaint(
-                              size: const Size(26, 26),
+                              size: const Size(28, 28),
                               painter: _PizzaProgressPainter(
                                 progress: isRefreshing ? 1.0 : progress,
                                 isRefreshing: isRefreshing,
@@ -219,15 +219,17 @@ class _StradaRefreshIndicatorViewState extends State<StradaRefreshIndicatorView>
                               angle: isRefreshing
                                   ? (_spinController.value * 2 * math.pi)
                                   : (progress * 2 * math.pi),
-                              child: Image.asset(
-                                'assets/icons/pizza_placeholder.png',
-                                width: 17,
-                                height: 17,
-                                fit: BoxFit.contain,
-                                errorBuilder: (_, __, ___) => const Icon(
-                                  Icons.local_pizza_rounded,
-                                  color: AppColors.primary,
-                                  size: 16,
+                              child: ClipOval(
+                                child: Image.asset(
+                                  'assets/images/splash_pizza.png',
+                                  width: 20,
+                                  height: 20,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.local_pizza_rounded,
+                                    color: AppColors.primary,
+                                    size: 18,
+                                  ),
                                 ),
                               ),
                             ),

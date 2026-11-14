@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/di/injection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -440,21 +441,34 @@ class _NotificationsView extends StatelessWidget {
               Expanded(
                 child: isLoading
                     ? const Center(child: CircularProgressIndicator.adaptive())
-                    : filteredList.isEmpty
-                        ? _buildEmptyState(context, isDark)
-                        : RefreshIndicator(
-                            onRefresh: () => context.read<NotificationsCubit>().refresh(),
-                            child: ListView.separated(
-                              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                              padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-                              itemCount: filteredList.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 10),
-                              itemBuilder: (ctx, index) {
+                    : RefreshIndicator(
+                        onRefresh: () => context.read<NotificationsCubit>().refresh(),
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                          padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+                          children: [
+                            if (selectedFilter == 'all' || selectedFilter == 'promo') ...[
+                              _buildSocialCommunityPost(context, isDark),
+                              const SizedBox(height: 12),
+                            ],
+                            if (filteredList.isEmpty)
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  top: (selectedFilter == 'all' || selectedFilter == 'promo') ? 24 : 60,
+                                ),
+                                child: _buildEmptyState(context, isDark),
+                              )
+                            else
+                              ...List.generate(filteredList.length, (index) {
                                 final item = filteredList[index];
-                                return _buildNotificationCard(context, item, isDark);
-                              },
-                            ),
-                          ),
+                                return Padding(
+                                  padding: EdgeInsets.only(bottom: index == filteredList.length - 1 ? 0 : 10),
+                                  child: _buildNotificationCard(context, item, isDark),
+                                );
+                              }),
+                          ],
+                        ),
+                      ),
               ),
             ],
           ),
@@ -738,6 +752,229 @@ class _NotificationsView extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      try {
+        await launchUrl(uri);
+      } catch (_) {}
+    }
+  }
+
+  Widget _buildSocialCommunityPost(BuildContext context, bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
+          width: 1.2,
+        ),
+        boxShadow: AppColors.softShadow(isDark),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header: Pizza Icon + Title + Pinned Badge
+              Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.local_pizza_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                'notifications.community_title'.tr(),
+                                style: AppTextStyles.labelMedium.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14,
+                                  color: isDark ? Colors.white : AppColors.neutral900,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.verified_rounded,
+                              size: 15,
+                              color: AppColors.primary,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'profile.social_title'.tr(),
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.push_pin_rounded,
+                          size: 11,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          'notifications.community_badge'.tr(),
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Description
+              Text(
+                'notifications.community_desc'.tr(),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: isDark ? AppColors.neutral300 : AppColors.neutral700,
+                  fontSize: 12.5,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Action Buttons: Telegram & Instagram
+              Row(
+                children: [
+                  // 1. Telegram
+                  Expanded(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          _openUrl('https://t.me/pizza_strada');
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2AABEE),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.send_rounded, color: Colors.white, size: 15),
+                              SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  'Telegram',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12.5,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+
+                  // 2. Instagram
+                  Expanded(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          _openUrl('https://www.instagram.com/pizzastrada.uz');
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [
+                                Color(0xFF833AB4),
+                                Color(0xFFFD1D1D),
+                                Color(0xFFF77737),
+                              ],
+                              begin: Alignment.bottomLeft,
+                              end: Alignment.topRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.camera_alt_rounded, color: Colors.white, size: 15),
+                              SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  'Instagram',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12.5,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

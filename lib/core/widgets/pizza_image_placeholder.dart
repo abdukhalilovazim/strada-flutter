@@ -26,12 +26,12 @@ class PizzaImagePlaceholder extends StatelessWidget {
       color: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
       alignment: Alignment.center,
       child: Image.asset(
-        'assets/icons/pizza_placeholder.jpg',
+        'assets/images/splash_pizza.png',
         fit: fit,
         width: width,
         height: height,
         errorBuilder: (_, __, ___) => Image.asset(
-          'assets/icons/pizza_placeholder.png',
+          'assets/icons/pizza_placeholder.jpg',
           fit: fit,
           width: width,
           height: height,

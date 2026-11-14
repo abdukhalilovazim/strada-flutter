@@ -379,27 +379,6 @@ class CouponDetailPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
             ],
-
-            // ── Description Section ──
-            if (deal.description.isNotEmpty) ...[
-              Text(
-                'promotions.description'.tr(),
-                style: AppTextStyles.h4.copyWith(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                  color: isDark ? Colors.white : AppColors.neutral900,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                deal.description,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: isDark ? AppColors.neutral300 : AppColors.neutral700,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
           ],
         ),
       ),
