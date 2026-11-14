@@ -71,6 +71,7 @@ flutter:
   assets:
     - .env
     - assets/icons/
+    - assets/images/
     - lib/l10n/
 
 flutter_launcher_icons:

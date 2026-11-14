@@ -71,32 +71,6 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     }
   }
 
-  String _getSplashTagline(BuildContext context) {
-    final lang = context.locale.languageCode;
-    switch (lang) {
-      case 'ru':
-        return 'Настоящий вкус в каждом кусочке';
-      case 'en':
-        return 'Real taste in every slice';
-      case 'uz':
-      default:
-        return 'Har bir bo\'lagida haqiqiy lazzat';
-    }
-  }
-
-  String _getSplashLoading(BuildContext context) {
-    final lang = context.locale.languageCode;
-    switch (lang) {
-      case 'ru':
-        return 'Загрузка...';
-      case 'en':
-        return 'Loading...';
-      case 'uz':
-      default:
-        return 'Yuklanmoqda...';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -112,9 +86,11 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
           ),
         ],
         child: Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: BlocBuilder<HomeCubit, HomeState>(
             builder: (context, homeState) {
+              final theme = Theme.of(context);
+              final isDark = theme.brightness == Brightness.dark;
               return BlocBuilder<SplashCubit, SplashState>(
                 bloc: _splashCubit,
                 builder: (context, splashState) {
@@ -158,9 +134,9 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                                 children: [
                                   // 🍕 Nafis va silliq Strada Pizza loader
                                   const PizzaSliceLoader(
-                                    size: 170,
+                                    size: 200,
                                   ),
-                                  const SizedBox(height: 20),
+                                  const SizedBox(height: 24),
 
                                   // Brend nomi
                                   Text(
@@ -177,7 +153,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
 
                                   // Nafis shior (Ko'p tilli)
                                   Text(
-                                    _getSplashTagline(context),
+                                    'splash.tagline'.tr(),
                                     textAlign: TextAlign.center,
                                     style: AppTextStyles.bodySmall.copyWith(
                                       color: AppColors.neutral500,
@@ -244,33 +220,17 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                           // ⏳ Pastki qismdagi nafis yuklanish matni
                           if (!hasError)
                             Positioned(
-                              bottom: 40,
+                              bottom: 44,
                               left: 0,
                               right: 0,
                               child: Center(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SizedBox(
-                                      width: 12,
-                                      height: 12,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          AppColors.primary.withValues(alpha: 0.6),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      _getSplashLoading(context),
-                                      style: AppTextStyles.bodyExtraSmall.copyWith(
-                                        color: AppColors.neutral400,
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                  ],
+                                child: Text(
+                                  'common.loading'.tr(),
+                                  style: AppTextStyles.bodyExtraSmall.copyWith(
+                                    color: isDark ? AppColors.neutral500 : AppColors.neutral400,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 1.2,
+                                  ),
                                 ),
                               ),
                             ),
