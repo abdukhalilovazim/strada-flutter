@@ -239,7 +239,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       ),
       onPressed: () {
         if (context.canPop()) {
-          context.pop();
+          context.pop(_order);
         } else {
           context.go('/orders');
         }
@@ -755,6 +755,21 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop(_order);
+        } else {
+          context.go('/orders');
+        }
+      },
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(

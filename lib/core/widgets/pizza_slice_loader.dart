@@ -18,12 +18,12 @@ class PizzaSliceLoader extends StatefulWidget {
 
   const PizzaSliceLoader({
     super.key,
-    this.size = 210,
+    this.size = 130,
     this.sliceCount = 6,
     this.animateIntro = true,
     this.loopWave = true,
-    this.baseSeparation = 2.5,
-    this.liftDistance = 9.0,
+    this.baseSeparation = 1.8,
+    this.liftDistance = 6.0,
     this.introDuration = const Duration(milliseconds: 1100),
     this.waveDuration = const Duration(milliseconds: 1800),
     Duration? rotationDuration,
@@ -119,8 +119,8 @@ class _PizzaSliceLoaderState extends State<PizzaSliceLoader>
           return Transform.scale(
             scale: _pulseAnimation.value,
             child: SizedBox(
-              width: widget.size + 36,
-              height: widget.size + 36,
+              width: widget.size + 24,
+              height: widget.size + 24,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
@@ -165,8 +165,8 @@ class _PizzaSliceLoaderState extends State<PizzaSliceLoader>
   /// 🌟 Issiq pishgan pitsa atrofidagi yumshoq yog'du
   Widget _buildAmbientGlow() {
     return Container(
-      width: widget.size + 24,
-      height: widget.size + 24,
+      width: widget.size + 16,
+      height: widget.size + 16,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: RadialGradient(

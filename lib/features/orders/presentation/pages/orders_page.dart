@@ -22,11 +22,19 @@ class OrdersPage extends StatefulWidget {
 class _OrdersPageState extends State<OrdersPage> {
   bool _isLoading = true;
   String? _token;
+  late final OrderCubit _orderCubit;
 
   @override
   void initState() {
     super.initState();
+    _orderCubit = getIt<OrderCubit>();
     _checkAuth();
+  }
+
+  @override
+  void dispose() {
+    _orderCubit.close();
+    super.dispose();
   }
 
   Future<void> _checkAuth() async {
@@ -36,6 +44,9 @@ class _OrdersPageState extends State<OrdersPage> {
         _token = token;
         _isLoading = false;
       });
+      if (token != null && token.isNotEmpty) {
+        _orderCubit.getOrders();
+      }
     }
   }
 
@@ -74,35 +85,81 @@ class _OrdersPageState extends State<OrdersPage> {
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : (_token == null || _token!.isEmpty)
               ? _buildGuestView(context, isDark)
-              : BlocProvider(
-                  create: (context) => getIt<OrderCubit>()..getOrders(),
+              : BlocProvider.value(
+                  value: _orderCubit,
                   child: BlocBuilder<OrderCubit, OrderState>(
                     builder: (context, state) {
                       if (state is OrderLoading) {
                         return const Center(child: CircularProgressIndicator(color: AppColors.primary));
                       } else if (state is OrderFailure) {
-                        return Center(child: Text(state.message, style: AppTextStyles.bodyMedium));
+                        return RefreshIndicator(
+                          color: AppColors.primary,
+                          onRefresh: () => _orderCubit.getOrders(silent: true),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) => SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(state.message.tr(), style: AppTextStyles.bodyMedium),
+                                      const SizedBox(height: 12),
+                                      ElevatedButton.icon(
+                                        onPressed: () => _orderCubit.getOrders(),
+                                        icon: const Icon(Icons.refresh_rounded),
+                                        label: Text('common.retry'.tr()),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.primary,
+                                          foregroundColor: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
                       } else if (state is OrderLoaded) {
                         if (state.orders.isEmpty) {
-                          return Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(AppIcons.noOrders, size: 64, color: AppColors.neutral200),
-                                const SizedBox(height: 16),
-                                Text('orders.empty'.tr(), style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400)),
-                              ],
+                          return RefreshIndicator(
+                            color: AppColors.primary,
+                            onRefresh: () => _orderCubit.getOrders(silent: true),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) => SingleChildScrollView(
+                                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(AppIcons.noOrders, size: 64, color: AppColors.neutral200),
+                                        const SizedBox(height: 16),
+                                        Text('orders.empty'.tr(), style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           );
                         }
 
-                        return ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                          itemCount: state.orders.length,
-                          itemBuilder: (context, index) {
-                            final order = state.orders[index];
-                            return OrderCard(order: order);
-                          },
+                        return RefreshIndicator(
+                          color: AppColors.primary,
+                          onRefresh: () => _orderCubit.getOrders(silent: true),
+                          child: ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                            itemCount: state.orders.length,
+                            itemBuilder: (context, index) {
+                              final order = state.orders[index];
+                              return OrderCard(order: order);
+                            },
+                          ),
                         );
                       }
                       return const SizedBox();
@@ -212,7 +269,18 @@ class OrderCard extends StatelessWidget {
         boxShadow: AppColors.softShadow(isDark),
       ),
       child: InkWell(
-        onTap: () => context.push('/order/${order.id}', extra: order),
+        onTap: () async {
+          final cubit = context.read<OrderCubit>();
+          final updatedOrder = await context.push<OrderEntity>(
+            '/order/${order.id}',
+            extra: order,
+          );
+          if (updatedOrder != null) {
+            cubit.updateOrder(updatedOrder);
+          }
+          // Read-after-write consistency: sync full list in background
+          cubit.getOrders(silent: true);
+        },
         borderRadius: BorderRadius.circular(20),
         child: Padding(
           padding: const EdgeInsets.all(16),

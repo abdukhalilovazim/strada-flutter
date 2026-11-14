@@ -31,13 +31,33 @@ class OrderCubit extends Cubit<OrderState> {
 
   OrderCubit(this._getOrdersUseCase) : super(OrderInitial());
 
-  Future<void> getOrders() async {
-    emit(OrderLoading());
+  Future<void> getOrders({bool silent = false}) async {
+    if (!silent || state is! OrderLoaded) {
+      emit(OrderLoading());
+    }
     final result = await _getOrdersUseCase();
     if (isClosed) return;
     result.fold(
-      (f) => emit(OrderFailure(f.messageKey)),
+      (f) {
+        if (!silent || state is! OrderLoaded) {
+          emit(OrderFailure(f.messageKey));
+        }
+      },
       (orders) => emit(OrderLoaded(orders)),
     );
+  }
+
+  /// ⚡ 0ms Instant State Update: Detail sahifasidan yangilangan status
+  /// qaytganda buyurtmalar ro'yxatida uni darhol yangilash (In Progress -> Canceled)
+  void updateOrder(OrderEntity updatedOrder) {
+    if (state is OrderLoaded) {
+      final currentList = (state as OrderLoaded).orders;
+      final index = currentList.indexWhere((o) => o.id == updatedOrder.id);
+      if (index != -1) {
+        final newList = List<OrderEntity>.from(currentList);
+        newList[index] = updatedOrder;
+        emit(OrderLoaded(newList));
+      }
+    }
   }
 }

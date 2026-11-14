@@ -108,8 +108,8 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                           // 🌟 Markazdagi nafis orqa nur (ambient glow)
                           Center(
                             child: Container(
-                              width: 240,
-                              height: 240,
+                              width: 170,
+                              height: 170,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(
@@ -132,11 +132,11 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  // 🍕 Nafis va silliq Strada Pizza loader
+                                  // 🍕 Nafis va silliq Strada Pizza loader (Ixcham o'lcham)
                                   const PizzaSliceLoader(
-                                    size: 200,
+                                    size: 130,
                                   ),
-                                  const SizedBox(height: 24),
+                                  const SizedBox(height: 20),
 
                                   // Brend nomi
                                   Text(

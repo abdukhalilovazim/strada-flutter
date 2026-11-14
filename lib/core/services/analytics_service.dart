@@ -22,6 +22,7 @@ class AnalyticsService {
           crashReporting: true,
           sessionsAutoTrackingEnabled: true,
           appOpenTrackingEnabled: true,
+          locationTracking: false,
         ));
         _isInitialized = true;
         if (kDebugMode) {
