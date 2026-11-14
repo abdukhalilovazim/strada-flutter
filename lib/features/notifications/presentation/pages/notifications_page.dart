@@ -358,10 +358,9 @@ class _NotificationsView extends StatelessWidget {
               onPressed: () => context.pop(),
             ),
             actions: [
-              // 1. Telegram
-              _buildHeaderSocialIcon(
-                icon: Icons.send_rounded,
-                color: const Color(0xFF2AABEE),
+              // 1. Telegram (Original Logo)
+              _buildHeaderSocialButton(
+                assetPath: 'assets/icons/telegram_logo.png',
                 tooltip: 'Telegram',
                 onTap: () {
                   HapticFeedback.lightImpact();
@@ -370,18 +369,9 @@ class _NotificationsView extends StatelessWidget {
               ),
               const SizedBox(width: 8),
 
-              // 2. Instagram
-              _buildHeaderSocialIcon(
-                icon: Icons.camera_alt_rounded,
-                gradient: const LinearGradient(
-                  colors: [
-                    Color(0xFF833AB4),
-                    Color(0xFFFD1D1D),
-                    Color(0xFFF77737),
-                  ],
-                  begin: Alignment.bottomLeft,
-                  end: Alignment.topRight,
-                ),
+              // 2. Instagram (Original Logo)
+              _buildHeaderSocialButton(
+                assetPath: 'assets/icons/instagram_logo.png',
                 tooltip: 'Instagram',
                 onTap: () {
                   HapticFeedback.lightImpact();
@@ -477,26 +467,41 @@ class _NotificationsView extends StatelessWidget {
                 child: isLoading
                     ? const Center(child: CircularProgressIndicator.adaptive())
                     : RefreshIndicator(
+                        color: AppColors.primary,
                         onRefresh: () => context.read<NotificationsCubit>().refresh(),
-                        child: ListView(
-                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                          padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-                          children: [
-                            if (filteredList.isEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 60),
-                                child: _buildEmptyState(context, isDark),
+                        child: filteredList.isEmpty
+                            ? LayoutBuilder(
+                                builder: (context, constraints) {
+                                  return SingleChildScrollView(
+                                    physics: const AlwaysScrollableScrollPhysics(
+                                      parent: BouncingScrollPhysics(),
+                                    ),
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        minHeight: constraints.maxHeight,
+                                      ),
+                                      child: Center(
+                                        child: _buildEmptyState(context, isDark),
+                                      ),
+                                    ),
+                                  );
+                                },
                               )
-                            else
-                              ...List.generate(filteredList.length, (index) {
-                                final item = filteredList[index];
-                                return Padding(
-                                  padding: EdgeInsets.only(bottom: index == filteredList.length - 1 ? 0 : 10),
-                                  child: _buildNotificationCard(context, item, isDark),
-                                );
-                              }),
-                          ],
-                        ),
+                            : ListView.separated(
+                                physics: const AlwaysScrollableScrollPhysics(
+                                  parent: BouncingScrollPhysics(),
+                                ),
+                                padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+                                itemCount: filteredList.length,
+                                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                                itemBuilder: (context, index) {
+                                  return _buildNotificationCard(
+                                    context,
+                                    filteredList[index],
+                                    isDark,
+                                  );
+                                },
+                              ),
                       ),
               ),
             ],
@@ -797,10 +802,8 @@ class _NotificationsView extends StatelessWidget {
     }
   }
 
-  Widget _buildHeaderSocialIcon({
-    required IconData icon,
-    Color? color,
-    Gradient? gradient,
+  Widget _buildHeaderSocialButton({
+    required String assetPath,
     required String tooltip,
     required VoidCallback onTap,
   }) {
@@ -809,28 +812,15 @@ class _NotificationsView extends StatelessWidget {
         message: tooltip,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(9),
-          child: Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: color,
-              gradient: gradient,
-              borderRadius: BorderRadius.circular(9),
-              boxShadow: [
-                BoxShadow(
-                  color: (color ?? const Color(0xFFFD1D1D)).withValues(alpha: 0.25),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1.5),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 15,
-              ),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: Image.asset(
+              assetPath,
+              width: 26,
+              height: 26,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
             ),
           ),
         ),
