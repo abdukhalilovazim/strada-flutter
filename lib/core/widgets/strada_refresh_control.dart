@@ -156,6 +156,7 @@ class _StradaRefreshIndicatorViewState extends State<StradaRefreshIndicatorView>
 
     return Container(
       height: pulled,
+      color: isDark ? AppColors.darkSurface : Colors.white,
       alignment: Alignment.center,
       child: Opacity(
         opacity: opacity,

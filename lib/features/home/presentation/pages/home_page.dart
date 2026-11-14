@@ -39,7 +39,7 @@ class _HomePageState extends State<HomePage> {
   bool _hasSearchText = false;
   bool _isSearchActive = false;
   bool _isProgrammaticScroll = false;
-  String? _activeCategorySlug;
+  final ValueNotifier<String?> _activeCategoryNotifier = ValueNotifier<String?>(null);
 
   @override
   void initState() {
@@ -54,9 +54,55 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  List<ProductEntity> _getProductsForCategory(
+    CategoryEntity category,
+    List<ProductEntity> allProducts,
+  ) {
+    final slug = category.slug;
+    final id = category.id;
+    final isSetCategory = slug == 'set-menus' || id == 999999;
+
+    return allProducts.where((p) {
+      if (isSetCategory) {
+        return p.isSet || p.category?.slug == 'set-menus' || p.category?.id == 999999;
+      }
+      if (p.isSet) return false;
+      return p.category?.slug == slug || (id != 0 && p.category?.id == id);
+    }).toList();
+  }
+
+  double _calculateCategoryOffset(String slug, HomeLoaded state, double screenWidth) {
+    if (state.categories.isEmpty) return 0.0;
+    if (state.categories.first.slug == slug) return 0.0;
+
+    final sliderHeight = state.sliders.isNotEmpty
+        ? ((screenWidth * 0.85) / _HomeSliderBanner.aspectRatio + 8.0)
+        : 0.0;
+
+    final cardWidth = (screenWidth - 32 - 14) / 2;
+    final cardHeight = cardWidth / 0.68;
+
+    double offset = sliderHeight;
+    bool isFirstRendered = true;
+
+    for (final cat in state.categories) {
+      if (cat.slug == slug) break;
+
+      final products = _getProductsForCategory(cat, state.fullProducts);
+      if (products.isEmpty) continue;
+
+      final rows = (products.length + 1) ~/ 2;
+      final headerHeight = isFirstRendered ? 14.0 : 87.0;
+      final gridHeight = (rows * cardHeight) + (rows > 1 ? (rows - 1) * 14.0 : 0.0);
+      offset += headerHeight + gridHeight;
+      isFirstRendered = false;
+    }
+
+    return offset;
+  }
+
   void _onVerticalScroll() {
-    if (_isProgrammaticScroll) return;
-    if (!_scrollController.hasClients) return;
+    if (_isProgrammaticScroll || !_scrollController.hasClients) return;
 
     final state = context.read<HomeCubit>().state;
     if (state is! HomeLoaded || state.searchQuery.isNotEmpty) return;
@@ -68,34 +114,34 @@ class _HomePageState extends State<HomePage> {
         ? ((screenWidth * 0.85) / _HomeSliderBanner.aspectRatio + 8.0)
         : 0.0;
 
-    double accumulatedHeight = sliderHeight;
-    String? matchedSlug;
-
     final cardWidth = (screenWidth - 32 - 14) / 2;
     final cardHeight = cardWidth / 0.68;
-    final rowHeight = cardHeight + 14;
+
+    double accumulated = sliderHeight;
+    String? matchedSlug;
+    bool isFirstRendered = true;
 
     for (final cat in state.categories) {
-      final count = state.fullProducts.where((p) => p.category?.slug == cat.slug).length;
-      if (count == 0) continue;
+      final products = _getProductsForCategory(cat, state.fullProducts);
+      if (products.isEmpty) continue;
 
-      final rows = (count + 1) ~/ 2;
-      final sectionHeight = 60.0 + (rows * rowHeight);
+      final rows = (products.length + 1) ~/ 2;
+      final headerHeight = isFirstRendered ? 14.0 : 87.0;
+      final gridHeight = (rows * cardHeight) + (rows > 1 ? (rows - 1) * 14.0 : 0.0);
+      final sectionHeight = headerHeight + gridHeight;
 
-      if (currentOffset >= accumulatedHeight - 40 && currentOffset < accumulatedHeight + sectionHeight - 40) {
+      if (currentOffset >= accumulated - 35 && currentOffset < accumulated + sectionHeight - 35) {
         matchedSlug = cat.slug;
         break;
       }
-      accumulatedHeight += sectionHeight;
+      accumulated += sectionHeight;
+      isFirstRendered = false;
     }
 
     matchedSlug ??= state.categories.firstOrNull?.slug;
 
-    if (matchedSlug != null && matchedSlug != _activeCategorySlug) {
-      setState(() {
-        _activeCategorySlug = matchedSlug;
-      });
-      context.read<HomeCubit>().selectCategory(matchedSlug);
+    if (matchedSlug != null && matchedSlug != _activeCategoryNotifier.value) {
+      _activeCategoryNotifier.value = matchedSlug;
     }
   }
 
@@ -104,39 +150,10 @@ class _HomePageState extends State<HomePage> {
     if (state is! HomeLoaded || !_scrollController.hasClients) return;
 
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final sliderHeight = state.sliders.isNotEmpty
-        ? ((screenWidth * 0.85) / _HomeSliderBanner.aspectRatio + 8.0)
-        : 0.0;
-
-    double targetOffset = 0.0;
-
-    // Agar birinchi kategoriya bo'lsa, eng tepaga qaytarish
-    if (state.categories.isNotEmpty && state.categories.first.slug == slug) {
-      targetOffset = 0.0;
-    } else {
-      targetOffset = sliderHeight;
-      final cardWidth = (screenWidth - 32 - 14) / 2;
-      final cardHeight = cardWidth / 0.68;
-      final rowHeight = cardHeight + 14;
-
-      for (final cat in state.categories) {
-        if (cat.slug == slug) {
-          break;
-        }
-        final count = state.fullProducts.where((p) => p.category?.slug == cat.slug).length;
-        if (count == 0) continue;
-
-        final rows = (count + 1) ~/ 2;
-        final sectionHeight = 60.0 + (rows * rowHeight);
-        targetOffset += sectionHeight;
-      }
-    }
+    final targetOffset = _calculateCategoryOffset(slug, state, screenWidth);
 
     _isProgrammaticScroll = true;
-    setState(() {
-      _activeCategorySlug = slug;
-    });
-    context.read<HomeCubit>().selectCategory(slug);
+    _activeCategoryNotifier.value = slug;
 
     final maxScroll = _scrollController.position.maxScrollExtent;
     final clampedTarget = targetOffset.clamp(0.0, maxScroll);
@@ -188,6 +205,7 @@ class _HomePageState extends State<HomePage> {
     _searchController.dispose();
     _searchFocusNode.dispose();
     _scrollController.dispose();
+    _activeCategoryNotifier.dispose();
     super.dispose();
   }
 
@@ -547,18 +565,22 @@ class _HomePageState extends State<HomePage> {
     slivers.add(_buildSliderBanner(state.sliders, state.isSlidersLoading));
 
     // 2. Yopishqoq (Sticky) Kategoriya tanlash paneli
-    final activeSlug = _activeCategorySlug ?? state.selectedCategory ?? state.categories.firstOrNull?.slug;
     slivers.add(
       SliverPersistentHeader(
         pinned: true,
         delegate: _StickyCategoryHeaderDelegate(
-          child: _HomeCategoryBar(
-            categories: state.categories,
-            selectedSlug: activeSlug,
-            onSelect: (slug) {
-              if (slug != null) {
-                _scrollToCategory(slug);
-              }
+          child: ValueListenableBuilder<String?>(
+            valueListenable: _activeCategoryNotifier,
+            builder: (context, activeSlug, _) {
+              return _HomeCategoryBar(
+                categories: state.categories,
+                selectedSlug: activeSlug ?? state.categories.firstOrNull?.slug,
+                onSelect: (slug) {
+                  if (slug != null) {
+                    _scrollToCategory(slug);
+                  }
+                },
+              );
             },
           ),
           height: 52.0,
@@ -567,29 +589,49 @@ class _HomePageState extends State<HomePage> {
     );
 
     // 3. Uzluksiz barcha kategoriyalar va ularning mahsulotlari (Continuous Catalog)
+    bool isFirstCategorySection = true;
+
     for (final category in state.categories) {
-      final categoryProducts = state.fullProducts
-          .where((p) => p.category?.slug == category.slug)
-          .toList();
+      final categoryProducts = _getProductsForCategory(category, state.fullProducts);
 
       if (categoryProducts.isEmpty) continue;
 
-      // Kategoriya sarlavhasi
-      slivers.add(
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 26, 16, 12),
-            child: Text(
-              category.title,
-              style: AppTextStyles.h3.copyWith(
-                fontWeight: FontWeight.w900,
-                fontSize: 20,
-                color: isDark ? Colors.white : AppColors.neutral900,
+      if (isFirstCategorySection) {
+        // Eng birinchi kategoriya sarlavhasi chiqmaydi (yuqoridagi chip ko'rsatib turadi)
+        slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 14)));
+        isFirstCategorySection = false;
+      } else {
+        // Qolgan kategoriyalar uchun: full row line (ajratuvchi chiziq) + align start sarlavha
+        slivers.add(
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 28, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: isDark
+                        ? AppColors.neutral800
+                        : AppColors.neutral200.withValues(alpha: 0.8),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    category.title,
+                    style: AppTextStyles.h3.copyWith(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 20,
+                      color: isDark ? Colors.white : AppColors.neutral900,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ),
-      );
+        );
+      }
 
       // Kategoriya mahsulotlar panjarasi
       slivers.add(
@@ -663,7 +705,7 @@ class _HomePageState extends State<HomePage> {
         });
       },
       child: Scaffold(
-        backgroundColor: isDark ? AppColors.darkBackground : AppColors.surface,
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
         appBar: _buildAppBar(context),
         body: GestureDetector(
           onTap: () {
