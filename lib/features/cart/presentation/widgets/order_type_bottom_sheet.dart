@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pizza_strada/core/models/saved_address_model.dart';
@@ -44,11 +45,6 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
           _branches = list
               .map((e) => CheckoutBranch.fromJson(e))
               .toList();
-
-          final cubit = context.read<CheckoutCubit>();
-          if (_branches.isNotEmpty && cubit.state.branchId == null) {
-            cubit.setBranch(_branches.first.id, branchTitle: _branches.first.title);
-          }
         });
       }
     } catch (_) {
@@ -139,85 +135,95 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final screenHeight = MediaQuery.of(context).size.height;
+    // Har ikkala tabda (Доставка / Самовывоз) bir xil va barqaror balandlik
+    final sheetHeight = (screenHeight * 0.60).clamp(490.0, 560.0);
 
     return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
-      ),
+      height: sheetHeight,
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: SafeArea(
         top: false,
         child: BlocBuilder<CheckoutCubit, CheckoutState>(
           builder: (context, state) {
             final isDelivery = state.isDelivery;
+            final hasAddress = state.address != null && state.address!.trim().isNotEmpty;
+            final selectedSavedIndex = _savedAddresses.indexWhere((item) =>
+                item.address.trim().toLowerCase() == state.address?.trim().toLowerCase() ||
+                (state.lat != null &&
+                    state.lng != null &&
+                    (state.lat! - item.lat).abs() < 0.0001 &&
+                    (state.lng! - item.lng).abs() < 0.0001));
 
-            return SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-              // Drag Handle
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.neutral700 : AppColors.neutral300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
+            final effectiveSavedIndex = _isPickedFromMap ? -1 : selectedSavedIndex;
+            final isMapSelected = _isPickedFromMap || (hasAddress && effectiveSavedIndex == -1);
 
-              // Title
-              Text(
-                'checkout.delivery_type'.tr(),
-                textAlign: TextAlign.center,
-                style: AppTextStyles.h3.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.textTheme.headlineMedium?.color,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Delivery / Pickup Segment Selector Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTypeButton(
-                      context,
-                      title: 'checkout.delivery'.tr(),
-                      icon: Icons.delivery_dining_rounded,
-                      isSelected: isDelivery,
-                      onTap: () {
-                        context.read<CheckoutCubit>().setDeliveryType(true);
-                      },
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Drag Handle
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.neutral700 : AppColors.neutral300,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildTypeButton(
-                      context,
-                      title: 'checkout.pickup'.tr(),
-                      icon: Icons.storefront_rounded,
-                      isSelected: !isDelivery,
-                      onTap: () {
-                        context.read<CheckoutCubit>().setDeliveryType(false);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
+                ),
+                const SizedBox(height: 14),
 
-              // Delivery Mode Content
-              if (isDelivery) ...[
+                // Title
                 Text(
-                  'checkout.delivery_location'.tr(),
+                  'checkout.delivery_type'.tr(),
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.h3.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.textTheme.headlineMedium?.color,
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Delivery / Pickup Segment Selector Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTypeButton(
+                        context,
+                        title: 'checkout.delivery'.tr(),
+                        icon: Icons.delivery_dining_rounded,
+                        isSelected: isDelivery,
+                        onTap: () {
+                          context.read<CheckoutCubit>().setDeliveryType(true);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildTypeButton(
+                        context,
+                        title: 'checkout.pickup'.tr(),
+                        icon: Icons.storefront_rounded,
+                        isSelected: !isDelivery,
+                        onTap: () {
+                          context.read<CheckoutCubit>().setDeliveryType(false);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Section Title
+                Text(
+                  isDelivery
+                      ? 'checkout.delivery_location'.tr()
+                      : 'checkout.select_branch'.tr(),
                   style: AppTextStyles.labelMedium.copyWith(
                     fontWeight: FontWeight.bold,
                     color: isDark ? AppColors.neutral300 : AppColors.neutral700,
@@ -225,311 +231,206 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
                 ),
                 const SizedBox(height: 10),
 
-                // 1. Xaritadan tanlash
-                () {
-                  final hasAddress = state.address != null && state.address!.trim().isNotEmpty;
-                  final selectedSavedIndex = _savedAddresses.indexWhere((item) =>
-                      item.address.trim().toLowerCase() == state.address?.trim().toLowerCase() ||
-                      (state.lat != null &&
-                          state.lng != null &&
-                          (state.lat! - item.lat).abs() < 0.0001 &&
-                          (state.lng! - item.lng).abs() < 0.0001));
-
-                  final effectiveSavedIndex = _isPickedFromMap ? -1 : selectedSavedIndex;
-                  final isMapSelected = _isPickedFromMap || (hasAddress && effectiveSavedIndex == -1);
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      InkWell(
-                        onTap: () => _pickDeliveryLocation(useMyLocation: false),
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: isMapSelected
-                                ? (isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight)
-                                : (isDark ? AppColors.darkCard : AppColors.neutral50),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isMapSelected
-                                  ? AppColors.primary
-                                  : (isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8)),
-                              width: isMapSelected ? 1.5 : 1.0,
+                // Scrollable Content Area (Fixed Height Container: never resizes bottom sheet)
+                Expanded(
+                  child: isDelivery
+                      ? ListView(
+                          physics: const BouncingScrollPhysics(),
+                          children: [
+                            // 1. Xaritadan tanlash
+                            _buildOptionCard(
+                              context,
+                              title: 'checkout.pick_on_map'.tr(),
+                              subtitle: isMapSelected && hasAddress
+                                  ? state.address!
+                                  : 'map.pick_on_map_subtitle'.tr(),
+                              icon: Icons.map_outlined,
+                              isSelected: isMapSelected,
+                              onTap: () => _pickDeliveryLocation(useMyLocation: false),
                             ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: isMapSelected
-                                      ? AppColors.primary.withValues(alpha: 0.15)
-                                      : (isDark ? AppColors.neutral700 : AppColors.neutral200.withValues(alpha: 0.6)),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Icon(
-                                  Icons.map_outlined,
-                                  color: isMapSelected ? AppColors.primary : AppColors.neutral500,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      isMapSelected && hasAddress
-                                          ? '1. Xaritadan tanlangan manzil'
-                                          : '1. ${'checkout.pick_on_map'.tr()}',
-                                      style: AppTextStyles.labelMedium.copyWith(
-                                        fontWeight: FontWeight.w800,
-                                        color: isDark ? Colors.white : AppColors.neutral900,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      isMapSelected && hasAddress
-                                          ? state.address!
-                                          : 'Xaritada belgilash yoki GPS orqali',
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        color: isMapSelected && hasAddress
-                                            ? (isDark ? AppColors.neutral200 : AppColors.neutral700)
-                                            : (isDark ? AppColors.neutral400 : AppColors.neutral500),
-                                        fontSize: 12,
-                                        fontWeight: isMapSelected && hasAddress ? FontWeight.w600 : FontWeight.normal,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Icon(
-                                isMapSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                                color: isMapSelected ? AppColors.primary : AppColors.neutral400,
-                                size: 20,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
 
-                      if (_isLoadingAddresses && _savedAddresses.isEmpty) ...[
-                        const SizedBox(height: 8),
-                        const Padding(
-                          padding: EdgeInsets.all(12.0),
-                          child: Center(
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
-                            ),
-                          ),
-                        ),
-                      ],
-
-                      if (_savedAddresses.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        ..._savedAddresses.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final item = entry.value;
-                          final isSelected = !isMapSelected && effectiveSavedIndex == index;
-
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: InkWell(
-                              onTap: () {
-                                setState(() {
-                                  _isPickedFromMap = false;
-                                });
-                                context.read<CheckoutCubit>().setAddressAndCalculateDelivery(
-                                      item.lat,
-                                      item.lng,
-                                      item.address,
-                                    );
-                                context.read<CheckoutCubit>().setAddressDetails(
-                                      apartment: item.apartment,
-                                      floor: item.floor,
-                                      entrance: item.entrance,
-                                      doorPhone: null,
-                                    );
-                              },
-                              borderRadius: BorderRadius.circular(16),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? (isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight)
-                                      : (isDark ? AppColors.darkCard : AppColors.neutral50),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? AppColors.primary
-                                        : (isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8)),
-                                    width: isSelected ? 1.5 : 1.0,
+                            // Loading indicator
+                            if (_isLoadingAddresses && _savedAddresses.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.all(12.0),
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
                                   ),
                                 ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 36,
-                                      height: 36,
-                                      decoration: BoxDecoration(
-                                        color: isSelected
-                                            ? AppColors.primary.withValues(alpha: 0.15)
-                                            : (isDark ? AppColors.neutral700 : AppColors.neutral200.withValues(alpha: 0.6)),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Icon(
-                                        Icons.location_on_rounded,
-                                        color: isSelected ? AppColors.primary : AppColors.neutral500,
-                                        size: 20,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            '#${index + 2} ${item.label.isNotEmpty && item.label != item.address ? item.label : item.address}',
-                                            style: AppTextStyles.labelMedium.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                              color: isDark ? Colors.white : AppColors.neutral900,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          if (item.detailsSummary.isNotEmpty ||
-                                              (item.label.isNotEmpty && item.label != item.address)) ...[
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              [
-                                                if (item.label.isNotEmpty && item.label != item.address) item.address,
-                                                if (item.detailsSummary.isNotEmpty) item.detailsSummary,
-                                              ].join(' • '),
-                                              style: AppTextStyles.bodySmall.copyWith(
-                                                color: isDark ? AppColors.neutral400 : AppColors.neutral500,
-                                                fontSize: 12,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Icon(
-                                      isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                                      color: isSelected ? AppColors.primary : AppColors.neutral400,
-                                      size: 20,
-                                    ),
-                                  ],
-                                ),
                               ),
-                            ),
-                          );
-                        }),
-                      ],
-                    ],
-                  );
-                }(),
-              ] else ...[
-                // Pickup Mode Branch Picker
-                Text(
-                  'checkout.select_branch'.tr(),
-                  style: AppTextStyles.labelMedium.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? AppColors.neutral300 : AppColors.neutral700,
-                  ),
+
+                            // Saqlangan manzillar (raqamlarsiz, toza format)
+                            ..._savedAddresses.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final item = entry.value;
+                              final isSelected = !isMapSelected && effectiveSavedIndex == index;
+
+                              final title = item.label.isNotEmpty && item.label != item.address
+                                  ? item.label
+                                  : item.address;
+                              final subtitle = item.detailsSummary.isNotEmpty
+                                  ? item.detailsSummary
+                                  : (item.label.isNotEmpty && item.label != item.address
+                                      ? item.address
+                                      : 'checkout.saved_address'.tr());
+
+                              return _buildOptionCard(
+                                context,
+                                title: title,
+                                subtitle: subtitle,
+                                icon: Icons.location_on_rounded,
+                                isSelected: isSelected,
+                                onTap: () {
+                                  setState(() {
+                                    _isPickedFromMap = false;
+                                  });
+                                  context.read<CheckoutCubit>().setAddressAndCalculateDelivery(
+                                        item.lat,
+                                        item.lng,
+                                        item.address,
+                                      );
+                                  context.read<CheckoutCubit>().setAddressDetails(
+                                        apartment: item.apartment,
+                                        floor: item.floor,
+                                        entrance: item.entrance,
+                                        doorPhone: null,
+                                      );
+                                },
+                              );
+                            }),
+                          ],
+                        )
+                      : (_isLoadingBranches
+                          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                          : ListView.builder(
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: _branches.length,
+                              itemBuilder: (context, index) {
+                                final branch = _branches[index];
+                                final isSelected = state.branchId == branch.id;
+
+                                return _buildOptionCard(
+                                  context,
+                                  title: branch.title,
+                                  subtitle: 'checkout.pickup_branch_hint'.tr(),
+                                  icon: Icons.storefront_rounded,
+                                  isSelected: isSelected,
+                                  onTap: () {
+                                    context.read<CheckoutCubit>().setBranch(branch.id, branchTitle: branch.title);
+                                  },
+                                );
+                              },
+                            )),
                 ),
-                const SizedBox(height: 8),
-                if (_isLoadingBranches)
-                  const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
-                  )
-                else
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _branches.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final branch = _branches[index];
-                      final isSelected = state.branchId == branch.id;
 
-                      return InkWell(
-                        onTap: () {
-                          context.read<CheckoutCubit>().setBranch(branch.id, branchTitle: branch.title);
-                        },
-                        borderRadius: BorderRadius.circular(14),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? (isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight)
-                                : (isDark ? AppColors.darkCard : AppColors.neutral50),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : (isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8)),
-                              width: isSelected ? 1.5 : 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.storefront_rounded,
-                                color: isSelected ? AppColors.primary : AppColors.neutral500,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      branch.title,
-                                      style: AppTextStyles.labelMedium.copyWith(
-                                        color: isSelected
-                                            ? AppColors.primary
-                                            : theme.textTheme.bodyMedium?.color,
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (isSelected)
-                                const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 20),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-              ],
-              const SizedBox(height: 24),
+                const SizedBox(height: 12),
 
-              // Confirm button
-              AppButton(
-                text: 'checkout.confirm'.tr(),
-                onTap: () => Navigator.pop(context),
-              ),
+                // Confirm button (always pinned at the bottom)
+                AppButton(
+                  text: 'checkout.confirm'.tr(),
+                  onTap: () => Navigator.pop(context),
+                ),
               ],
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
-    ),
-  );
+    );
+  }
+
+  Widget _buildOptionCard(
+    BuildContext context, {
+    required String title,
+    String? subtitle,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? (isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight)
+                : (isDark ? AppColors.darkCard : const Color(0xFFF8F9FA)),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.primary
+                  : (isDark ? AppColors.darkBorder : const Color(0xFFEDF2F7)),
+              width: isSelected ? 1.5 : 1.0,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primary.withValues(alpha: 0.15)
+                      : (isDark ? AppColors.neutral700 : AppColors.neutral200.withValues(alpha: 0.6)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  color: isSelected ? AppColors.primary : AppColors.neutral500,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTextStyles.labelMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : AppColors.neutral900,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (subtitle != null && subtitle.trim().isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                color: isSelected ? AppColors.primary : AppColors.neutral400,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildTypeButton(

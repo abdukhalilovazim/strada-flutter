@@ -435,9 +435,7 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              isMapSelected && hasAddress
-                                  ? '1. Xaritadan tanlangan manzil'
-                                  : '1. ${'checkout.pick_on_map'.tr()}',
+                              'checkout.pick_on_map'.tr(),
                               style: AppTextStyles.labelMedium.copyWith(
                                 fontWeight: FontWeight.w800,
                                 color: isDark ? Colors.white : AppColors.neutral900,
@@ -447,7 +445,7 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                             Text(
                               isMapSelected && hasAddress
                                   ? state.address!
-                                  : 'Xaritada belgilash yoki GPS orqali',
+                                  : 'map.pick_on_map_subtitle'.tr(),
                               style: AppTextStyles.bodySmall.copyWith(
                                 color: isMapSelected && hasAddress
                                     ? (isDark ? AppColors.neutral200 : AppColors.neutral700)
@@ -577,7 +575,7 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '#${index + 2} ${item.label.isNotEmpty && item.label != item.address ? item.label : item.address}',
+                                    item.label.isNotEmpty && item.label != item.address ? item.label : item.address,
                                     style: AppTextStyles.labelMedium.copyWith(
                                       fontWeight: FontWeight.w700,
                                       color: isDark ? Colors.white : AppColors.neutral900,

@@ -301,9 +301,11 @@ class CouponDetailPage extends StatelessWidget {
                 child: ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
                   itemCount: deal.items.length,
                   separatorBuilder: (context, index) => Divider(
                     height: 1,
+                    thickness: 1,
                     color: isDark ? AppColors.darkBorder : AppColors.neutral100,
                   ),
                   itemBuilder: (context, index) {
@@ -311,7 +313,7 @@ class CouponDetailPage extends StatelessWidget {
                     final cleanVariant = VariantLocalizationHelper.localize(item.variantTitle);
 
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       child: Row(
                         children: [
                           ClipRRect(
@@ -341,7 +343,8 @@ class CouponDetailPage extends StatelessWidget {
                                     color: isDark ? Colors.white : AppColors.neutral900,
                                   ),
                                 ),
-                                if (cleanVariant.isNotEmpty)
+                                if (cleanVariant.isNotEmpty) ...[
+                                  const SizedBox(height: 2),
                                   Text(
                                     cleanVariant,
                                     style: AppTextStyles.bodySmall.copyWith(
@@ -349,6 +352,7 @@ class CouponDetailPage extends StatelessWidget {
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
+                                ],
                               ],
                             ),
                           ),
@@ -373,7 +377,28 @@ class CouponDetailPage extends StatelessWidget {
                   },
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
+            ],
+
+            // ── Description Section ──
+            if (deal.description.isNotEmpty) ...[
+              Text(
+                'promotions.description'.tr(),
+                style: AppTextStyles.h4.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  color: isDark ? Colors.white : AppColors.neutral900,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                deal.description,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: isDark ? AppColors.neutral300 : AppColors.neutral700,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 16),
             ],
           ],
         ),

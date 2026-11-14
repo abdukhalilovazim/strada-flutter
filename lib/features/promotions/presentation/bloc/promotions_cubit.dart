@@ -47,10 +47,26 @@ class PromotionsCubit extends Cubit<PromotionsState> {
   Future<void> loadPromotions({bool forceRefresh = false}) async {
     if (!forceRefresh && state is PromotionsLoaded) return;
 
+    // 1. Agar forceRefresh bo'lmasa, darhol keshdagi ma'lumotni chiqaramiz (0ms instant rendering)
+    if (!forceRefresh) {
+      try {
+        final cachedPayload = await _dataSource.getCachedPromotions();
+        if (cachedPayload != null &&
+            (cachedPayload.deals.isNotEmpty || cachedPayload.discountProducts.isNotEmpty)) {
+          emit(PromotionsLoaded(
+            deals: cachedPayload.deals,
+            discountProducts: cachedPayload.discountProducts,
+          ));
+        }
+      } catch (_) {}
+    }
+
+    // 2. Agar keshda ham ma'lumot bo'lmasa, spinner ko'rsatamiz
     if (state is! PromotionsLoaded) {
       emit(PromotionsLoading());
     }
 
+    // 3. Tarmoq orqali eng so'nggi ma'lumotlarni yangilaymiz (Background stale-while-revalidate)
     try {
       final payload = await _dataSource.getPromotions();
       emit(PromotionsLoaded(
@@ -58,8 +74,10 @@ class PromotionsCubit extends Cubit<PromotionsState> {
         discountProducts: payload.discountProducts,
       ));
     } catch (e) {
-      emit(PromotionsFailure(e.toString()));
+      // Agar keshdan allaqachon ma'lumot ko'rsatilgan bo'lsa, xatolik bilan ekranni buzmaymiz (offline graceful degradation)
+      if (state is! PromotionsLoaded) {
+        emit(PromotionsFailure(e.toString()));
+      }
     }
   }
 }
-
