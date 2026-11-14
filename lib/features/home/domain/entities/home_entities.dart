@@ -121,54 +121,6 @@ class ProductEntity extends Equatable {
   List<Object?> get props => [id, slug, title, description, thumbnail, photo, price, oldPrice, category, variants, values, badges, searchKeywords];
 }
 
-/// Story slide entity
-class StorySlideEntity extends Equatable {
-  final int id;
-  final String imageUrl;
-  final int durationSeconds;
-
-  const StorySlideEntity({
-    required this.id,
-    required this.imageUrl,
-    this.durationSeconds = 5,
-  });
-
-  @override
-  List<Object?> get props => [id, imageUrl, durationSeconds];
-}
-
-/// Stories entity (Instagram / Strada Pizza uslubidagi storislar)
-class StoryEntity extends Equatable {
-  final int id;
-  final String previewImage;
-  final List<StorySlideEntity> slides;
-  final bool isViewed;
-
-  const StoryEntity({
-    required this.id,
-    required this.previewImage,
-    required this.slides,
-    this.isViewed = false,
-  });
-
-  StoryEntity copyWith({
-    int? id,
-    String? previewImage,
-    List<StorySlideEntity>? slides,
-    bool? isViewed,
-  }) {
-    return StoryEntity(
-      id: id ?? this.id,
-      previewImage: previewImage ?? this.previewImage,
-      slides: slides ?? this.slides,
-      isViewed: isViewed ?? this.isViewed,
-    );
-  }
-
-  @override
-  List<Object?> get props => [id, previewImage, slides, isViewed];
-}
-
 /// Banner slider entity (Eski slider modeli bilan orqaga moslik uchun)
 class SliderEntity extends Equatable {
   final int id;

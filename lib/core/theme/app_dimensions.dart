@@ -67,7 +67,6 @@ class AppDim {
   static const double categoryBarHeight  = 52.0;
   static const double bottomBarHeight    = 64.0;
   static const double floatingCartHeight = 56.0;
-  static const double storyAvatarSize    = 72.0;
 
   /// Quantity Stepper
   static const double stepperHeightSm    = 32.0;

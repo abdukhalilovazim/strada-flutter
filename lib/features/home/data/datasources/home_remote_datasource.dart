@@ -7,7 +7,6 @@ abstract class HomeRemoteDataSource {
   Future<List<ProductModel>> getProducts({int? categoryId, String? categorySlug});
   Future<SettingsModel> getSettings();
   Future<List<SliderModel>> getSliders();
-  Future<List<StoryModel>> getStories();
 }
 
 @LazySingleton(as: HomeRemoteDataSource)
@@ -67,41 +66,6 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
           .map(SliderModel.fromJson)
           .where((s) => s.imageUrl.isNotEmpty)
           .toList();
-    } catch (_) {
-      return const [];
-    }
-  }
-
-  @override
-  Future<List<StoryModel>> getStories() async {
-    try {
-      final response = await _client.get('stories');
-      final List items;
-      if (response is List) {
-        items = response;
-      } else if (response is Map && response['data'] is List) {
-        items = response['data'] as List;
-      } else if (response is Map && response['stories'] is List) {
-        items = response['stories'] as List;
-      } else {
-        items = const [];
-      }
-
-      final stories = <StoryModel>[];
-      for (final item in items) {
-        if (item is Map) {
-          try {
-            final model = StoryModel.fromJson(Map<String, dynamic>.from(item));
-            if (model.previewImage.isNotEmpty || model.slides.isNotEmpty) {
-              stories.add(model);
-            }
-          } catch (e) {
-            // Log but don't break the entire list
-          }
-        }
-      }
-
-      return stories;
     } catch (_) {
       return const [];
     }

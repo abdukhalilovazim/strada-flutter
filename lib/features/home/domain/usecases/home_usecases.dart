@@ -32,10 +32,3 @@ class GetSlidersUseCase {
   GetSlidersUseCase(this._repository);
   Future<Either<Failure, List<SliderEntity>>> call() => _repository.getSliders();
 }
-
-@lazySingleton
-class GetStoriesUseCase {
-  final HomeRepository _repository;
-  GetStoriesUseCase(this._repository);
-  Future<Either<Failure, List<StoryEntity>>> call() => _repository.getStories();
-}

@@ -36,12 +36,13 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _hasSearchText = false;
+  bool _isSearchActive = false;
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
-    _searchFocusNode.addListener(() => setState(() {}));
+    _searchFocusNode.addListener(_onFocusChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<HomeCubit>().loadSliders();
@@ -56,9 +57,35 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _onFocusChanged() {
+    setState(() {
+      if (!_searchFocusNode.hasFocus) {
+        // Keyboard yopilganda: agar matn bo'sh bo'lsa -> butunlay yo'qoladi
+        if (_searchController.text.trim().isEmpty) {
+          _isSearchActive = false;
+          _hasSearchText = false;
+        }
+        // Agar matn yozilgan bo'lsa -> _isSearchActive true bo'lib footerda qoladi
+      }
+    });
+  }
+
+  void _openSearch() {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _isSearchActive = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _searchFocusNode.requestFocus();
+      }
+    });
+  }
+
   @override
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
+    _searchFocusNode.removeListener(_onFocusChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -90,6 +117,15 @@ class _HomePageState extends State<HomePage> {
         },
       ),
       actions: [
+        IconButton(
+          icon: Icon(
+            Icons.search_rounded,
+            color: isDark ? Colors.white : AppColors.neutral900,
+            size: 24,
+          ),
+          tooltip: 'home.search_hint'.tr(),
+          onPressed: _openSearch,
+        ),
         IconButton(
           icon: Builder(
             builder: (context) {
@@ -147,82 +183,107 @@ class _HomePageState extends State<HomePage> {
         ),
         const SizedBox(width: 8),
       ],
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(52),
-        child: Container(
-          color: isDark ? AppColors.darkSurface : Colors.white,
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: SizedBox(
-            height: 44,
-            child: TextField(
-              key: const Key('home_search_input'),
-              controller: _searchController,
-              focusNode: _searchFocusNode,
-              autocorrect: false,
-              enableSuggestions: false,
-              textInputAction: TextInputAction.search,
-              onChanged: (val) {
-                context.read<HomeCubit>().search(val);
-              },
-              onSubmitted: (val) {
-                context.read<HomeCubit>().search(val);
-                _searchFocusNode.unfocus();
-              },
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: isDark ? Colors.white : AppColors.neutral900,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+    );
+  }
+
+  Widget _buildFloatingSearchInput(BuildContext context, bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        border: Border(
+          top: BorderSide(
+            color: isDark ? AppColors.darkBorder : const Color(0xFFE9ECEF),
+            width: 1,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: SafeArea(
+        top: false,
+        bottom: !_searchFocusNode.hasFocus,
+        child: SizedBox(
+          height: 44,
+          child: TextField(
+            key: const Key('home_search_input'),
+            controller: _searchController,
+            focusNode: _searchFocusNode,
+            autocorrect: false,
+            enableSuggestions: false,
+            textInputAction: TextInputAction.search,
+            onChanged: (val) {
+              context.read<HomeCubit>().search(val);
+            },
+            onSubmitted: (val) {
+              context.read<HomeCubit>().search(val);
+              _searchFocusNode.unfocus();
+            },
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: isDark ? Colors.white : AppColors.neutral900,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+            decoration: InputDecoration(
+              hintText: 'home.search_hint'.tr(),
+              hintStyle: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.neutral400,
+                fontSize: 13.5,
               ),
-              decoration: InputDecoration(
-                hintText: 'home.search_hint'.tr(),
-                hintStyle: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.neutral400,
-                  fontSize: 13.5,
+              prefixIcon: const Icon(
+                Icons.search_rounded,
+                size: 20,
+                color: AppColors.primary,
+              ),
+              suffixIcon: IconButton(
+                icon: const Icon(
+                  Icons.close_rounded,
+                  size: 20,
+                  color: AppColors.neutral500,
                 ),
-                prefixIcon: IconButton(
-                  icon: Icon(
-                    Icons.search_rounded,
-                    size: 20,
-                    color: _searchFocusNode.hasFocus ? AppColors.primary : AppColors.neutral500,
-                  ),
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    _searchFocusNode.requestFocus();
-                  },
+                tooltip: _hasSearchText ? 'Tozalash' : 'Yopish',
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  if (_hasSearchText) {
+                    _searchController.clear();
+                    context.read<HomeCubit>().search('');
+                    setState(() => _hasSearchText = false);
+                  } else {
+                    _searchFocusNode.unfocus();
+                    setState(() {
+                      _isSearchActive = false;
+                      _hasSearchText = false;
+                    });
+                  }
+                },
+              ),
+              filled: true,
+              fillColor: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: isDark ? AppColors.darkBorder : const Color(0xFFE9ECEF),
+                  width: 1,
                 ),
-                suffixIcon: _hasSearchText
-                    ? IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.neutral500),
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          _searchController.clear();
-                          context.read<HomeCubit>().search('');
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: isDark ? AppColors.darkBorder : const Color(0xFFE9ECEF),
-                    width: 1,
-                  ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: isDark ? AppColors.darkBorder : const Color(0xFFE9ECEF),
+                  width: 1,
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: isDark ? AppColors.darkBorder : const Color(0xFFE9ECEF),
-                    width: 1,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: AppColors.primary,
-                    width: 1.5,
-                  ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 1.5,
                 ),
               ),
             ),
@@ -396,90 +457,128 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: _buildAppBar(context),
-      body: BlocBuilder<HomeCubit, HomeState>(
-        builder: (context, state) {
-          if (state is HomeLoading) {
-            return _buildHomeShimmer(context, isDark);
-          }
-
-          if (state is HomeFailure) {
-            return CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              slivers: [
-                StradaSliverRefreshControl(
-                  onRefresh: () async {
-                    try {
-                      context.read<NotificationsCubit>().refresh();
-                    } catch (_) {}
-                    await context.read<HomeCubit>().init(forceRefresh: true);
-                    if (context.mounted) {
-                      context.read<HomeCubit>().loadSliders();
+    return PopScope(
+      canPop: !_isSearchActive && !_hasSearchText,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (_searchFocusNode.hasFocus) {
+          _searchFocusNode.unfocus();
+        }
+        if (_hasSearchText) {
+          _searchController.clear();
+          context.read<HomeCubit>().search('');
+        }
+        setState(() {
+          _isSearchActive = false;
+          _hasSearchText = false;
+        });
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.surface,
+        appBar: _buildAppBar(context),
+        body: GestureDetector(
+          onTap: () {
+            if (_searchFocusNode.hasFocus) {
+              _searchFocusNode.unfocus();
+            }
+          },
+          behavior: HitTestBehavior.translucent,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: BlocBuilder<HomeCubit, HomeState>(
+                  builder: (context, state) {
+                    if (state is HomeLoading) {
+                      return _buildHomeShimmer(context, isDark);
                     }
-                  },
-                ),
-                SliverFillRemaining(
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(AppIcons.wifiOff, size: 48, color: AppColors.neutral400),
-                        const SizedBox(height: 12),
-                        Text(
-                          state.message,
-                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
-                          textAlign: TextAlign.center,
+
+                    if (state is HomeFailure) {
+                      return CustomScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
                         ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => context.read<HomeCubit>().init(),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        slivers: [
+                          StradaSliverRefreshControl(
+                            onRefresh: () async {
+                              try {
+                                context.read<NotificationsCubit>().refresh();
+                              } catch (_) {}
+                              await context.read<HomeCubit>().init(forceRefresh: true);
+                              if (context.mounted) {
+                                context.read<HomeCubit>().loadSliders();
+                              }
+                            },
                           ),
-                          child: Text('common.retry'.tr()),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            );
-          }
-
-          if (state is HomeLoaded) {
-            return CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              slivers: [
-                StradaSliverRefreshControl(
-                  onRefresh: () async {
-                    try {
-                      context.read<NotificationsCubit>().refresh();
-                    } catch (_) {}
-                    await context.read<HomeCubit>().init(forceRefresh: true);
-                    if (context.mounted) {
-                      context.read<HomeCubit>().loadSliders();
+                          SliverFillRemaining(
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(AppIcons.wifiOff, size: 48, color: AppColors.neutral400),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    state.message,
+                                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral600),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton(
+                                    onPressed: () => context.read<HomeCubit>().init(),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    child: Text('common.retry'.tr()),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
                     }
+
+                    if (state is HomeLoaded) {
+                      return CustomScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
+                        ),
+                        slivers: [
+                          StradaSliverRefreshControl(
+                            onRefresh: () async {
+                              try {
+                                context.read<NotificationsCubit>().refresh();
+                              } catch (_) {}
+                              await context.read<HomeCubit>().init(forceRefresh: true);
+                              if (context.mounted) {
+                                context.read<HomeCubit>().loadSliders();
+                              }
+                            },
+                          ),
+                          if (state.searchQuery.isEmpty) ...[
+                            _buildSliderBanner(state.sliders, state.isSlidersLoading),
+                            _buildCategoryBar(state.categories, state.selectedCategory),
+                          ],
+                          _buildProductGrid(state.products),
+                        ],
+                      );
+                    }
+
+                    return const SizedBox.shrink();
                   },
                 ),
-                if (state.searchQuery.isEmpty) ...[
-                  _buildSliderBanner(state.sliders, state.isSlidersLoading),
-                  _buildCategoryBar(state.categories, state.selectedCategory),
-                ],
-                _buildProductGrid(state.products),
-              ],
-            );
-          }
-
-          return const SizedBox.shrink();
-        },
+              ),
+              if (_isSearchActive || _hasSearchText)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: _buildFloatingSearchInput(context, isDark),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
