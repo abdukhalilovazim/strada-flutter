@@ -396,7 +396,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
       // ── Bottom Bar: Stepper (qizil pill) + Savatga qo'shish ──
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurface : Colors.white,
           border: Border(

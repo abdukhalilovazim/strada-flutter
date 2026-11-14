@@ -52,6 +52,15 @@ class OrderEntity {
     this.canReorder = false,
     this.reorderMessage,
   });
+
+  /// Bog'lanish (filial yoki kuryer) telefoni (details ichidan dinamik aniqlanadi)
+  String? get contactPhone {
+    if (phone != null && phone!.isNotEmpty) return phone;
+    for (final d in details) {
+      if (d.phone != null && d.phone!.isNotEmpty) return d.phone;
+    }
+    return null;
+  }
 }
 
 /// 📋 Backend tomonidan to'liq boshqariladigan Key-Value qatori

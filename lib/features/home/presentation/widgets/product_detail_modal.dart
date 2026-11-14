@@ -185,7 +185,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
 
                 // ── 2. Ma'lumotlar bloki ──
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

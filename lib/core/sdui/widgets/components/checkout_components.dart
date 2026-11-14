@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/models/saved_address_model.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/secure_storage.dart';
@@ -1735,6 +1736,8 @@ class SDUISubmitOrderCtaComponent extends StatelessWidget {
       return;
     }
 
+    if (!context.mounted) return;
+
     // 0. Restoran ochiq/yopiqligi (canOrder) tekshiruvi
     if (!checkoutState.canOrder) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1791,7 +1794,11 @@ class SDUISubmitOrderCtaComponent extends StatelessWidget {
         }
         return;
       }
-    } else {
+    }
+
+    if (!context.mounted) return;
+
+    if (!checkoutState.isDelivery) {
       // 3. Olib ketish rejimi tekshiruvi
       if (checkoutState.branchId == null || checkoutState.branchId!.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1896,9 +1903,19 @@ class SDUISubmitOrderCtaComponent extends StatelessWidget {
           // Savatni tozalash va holatni tiklash
           context.read<CartCubit>().clear();
           final orderData = state.successData!;
-          final orderId = orderData['id']?.toString();
+          final orderId = orderData['id']?.toString() ?? orderData['order_id']?.toString();
+          final paymentUrl = orderData['payment_url']?.toString();
           context.read<CheckoutCubit>().resetAfterOrder();
 
+          // 1. Agar payment_url mavjud bo'lsa (Cash emas, Payme/Click), darhol to'lov sahifasiga o'tamiz
+          if (paymentUrl != null && paymentUrl.trim().isNotEmpty) {
+            final uri = Uri.tryParse(paymentUrl.trim());
+            if (uri != null) {
+              launchUrl(uri, mode: LaunchMode.externalApplication).catchError((_) => false);
+            }
+          }
+
+          // 2. Ilovada esa buyurtma tafsiloti sahifasiga o'tib qo'yamiz (to'lov tugab qaytganda shu sahifa ochiq bo'ladi)
           if (orderId != null && orderId.isNotEmpty) {
             context.go('/order/$orderId', extra: orderData);
           } else {

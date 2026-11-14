@@ -286,10 +286,10 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
 
     if (isRejected) {
       return Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF231818) : const Color(0xFFFFF8F8),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isDark ? const Color(0xFF4A2525) : const Color(0xFFFFD7D7),
             width: 1.2,
@@ -297,8 +297,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -308,8 +308,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
             Row(
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 34,
+                  height: 34,
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF4C1D1D) : const Color(0xFFFEE2E2),
                     shape: BoxShape.circle,
@@ -318,29 +318,29 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     child: Icon(
                       Icons.cancel_outlined,
                       color: Color(0xFFDC2626),
-                      size: 24,
+                      size: 20,
                     ),
                   ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'orders.status_rejected_title'.tr(),
-                        style: AppTextStyles.h3.copyWith(
-                          fontSize: 17,
+                        style: AppTextStyles.labelMedium.copyWith(
+                          fontSize: 14.5,
                           fontWeight: FontWeight.w800,
                           color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFB91C1C),
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 1),
                       Text(
                         'orders.status_rejected_subtitle'.tr(),
                         style: AppTextStyles.bodySmall.copyWith(
                           color: isDark ? AppColors.neutral400 : AppColors.neutral500,
-                          fontSize: 12.5,
+                          fontSize: 11.5,
                         ),
                       ),
                     ],
@@ -349,13 +349,13 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
               ],
             ),
             if (o.comment != null && o.comment!.trim().isNotEmpty) ...[
-              const SizedBox(height: 14),
+              const SizedBox(height: 8),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.darkSurface : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isDark ? AppColors.neutral800 : const Color(0xFFF1F3F5),
                     width: 1,
@@ -366,14 +366,14 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                   children: [
                     const Icon(
                       Icons.info_outline_rounded,
-                      size: 16,
+                      size: 14,
                       color: Color(0xFFDC2626),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         o.comment!.trim(),
-                        style: AppTextStyles.bodySmall.copyWith(
+                        style: AppTextStyles.bodyExtraSmall.copyWith(
                           fontWeight: FontWeight.w600,
                           color: isDark ? AppColors.neutral300 : AppColors.neutral800,
                         ),
@@ -383,25 +383,20 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                 ),
               ),
             ],
-            const SizedBox(height: 16),
-            Divider(
-              height: 1,
-              color: isDark ? AppColors.neutral800 : const Color(0xFFF1F3F5),
-            ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 38,
               child: ElevatedButton.icon(
                 onPressed: () {
                   HapticFeedback.lightImpact();
                   context.go('/home');
                 },
-                icon: const Icon(Icons.restaurant_menu_rounded, size: 18),
+                icon: const Icon(Icons.restaurant_menu_rounded, size: 16),
                 label: Text(
                   'orders.back_to_menu'.tr(),
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -409,7 +404,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
               ),
             ),
@@ -420,7 +416,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
 
     final isPickup = o.type?.toLowerCase().contains('pickup') == true ||
         o.type?.toLowerCase().contains('olib') == true ||
-        (o.address == null || o.address!.isEmpty);
+        o.type?.toLowerCase().contains('samovyvoz') == true;
 
     final steps = [
       {'title': 'orders.status_approved'.tr(), 'icon': Icons.receipt_long_rounded},
@@ -433,10 +429,10 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     ];
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCard : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
         ),
@@ -893,10 +889,10 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
 
             // 3. Products List
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkCard : Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
                 ),
@@ -909,17 +905,18 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     'orders.items'.tr(),
                     style: AppTextStyles.labelLarge.copyWith(
                       fontWeight: FontWeight.w800,
-                      fontSize: 15,
+                      fontSize: 14.5,
                       color: isDark ? Colors.white : AppColors.neutral900,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 10),
                   ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
                     itemCount: o.products.length,
                     separatorBuilder: (_, __) => Divider(
-                      height: 24,
+                      height: 16,
                       color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
                     ),
                     itemBuilder: (_, i) {
@@ -927,10 +924,10 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                       return Row(
                         children: [
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(10),
                             child: SizedBox(
-                              width: 56,
-                              height: 56,
+                              width: 48,
+                              height: 48,
                               child: (item.image.isNotEmpty && item.image.startsWith('http'))
                                   ? CachedNetworkImage(
                                       imageUrl: item.image,
@@ -943,7 +940,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                                   : const PizzaImagePlaceholder(fit: BoxFit.cover),
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -956,7 +953,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                                     color: isDark ? Colors.white : AppColors.neutral900,
                                   ),
                                 ),
-                                if (item.variantName != null && VariantLocalizationHelper.localize(item.variantName).isNotEmpty)
+                                if (item.variantName != null && VariantLocalizationHelper.localize(item.variantName).isNotEmpty) ...[
+                                  const SizedBox(height: 2),
                                   Text(
                                     VariantLocalizationHelper.localize(item.variantName),
                                     style: AppTextStyles.bodyExtraSmall.copyWith(
@@ -964,6 +962,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                                       fontSize: 11.5,
                                     ),
                                   ),
+                                ],
                               ],
                             ),
                           ),
@@ -975,6 +974,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: isDark ? AppColors.neutral400 : AppColors.neutral600,
                                   fontWeight: FontWeight.w600,
+                                  fontSize: 12,
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -983,6 +983,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                                 style: AppTextStyles.labelSmall.copyWith(
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.w800,
+                                  fontSize: 13.5,
                                 ),
                               ),
                             ],
@@ -994,32 +995,32 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
-            // 4. Order Details Card (Backend boshqaruvidagi Key-Value ro'yxati)
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.darkCard : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
-                ),
-                boxShadow: AppColors.softShadow(isDark),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'orders.order_info'.tr(), 
-                    style: AppTextStyles.labelLarge.copyWith(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
-                      color: isDark ? Colors.white : AppColors.neutral900,
-                    ),
+            // 4. Order Details Card (Backend boshqaruvidagi dinamik Key-Value ro'yxati)
+            if (o.details.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkCard : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
                   ),
-                  const SizedBox(height: 16),
-                  if (o.details.isNotEmpty) ...[
+                  boxShadow: AppColors.softShadow(isDark),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'orders.order_info'.tr(), 
+                      style: AppTextStyles.labelLarge.copyWith(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14.5,
+                        color: isDark ? Colors.white : AppColors.neutral900,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     ...o.details.asMap().entries.map((entry) {
                       final i = entry.key;
                       final item = entry.value;
@@ -1036,11 +1037,11 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                             isBold: item.bold,
                           ),
                           if (hasMap) ...[
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 8),
                             _MapLinkRow(
                               onTap: () => _openMap(
-                                lat: item.latitude ?? o.latitude,
-                                lng: item.longitude ?? o.longitude,
+                                lat: item.latitude,
+                                lng: item.longitude,
                                 address: item.value,
                                 mapUrl: item.mapUrl,
                               ),
@@ -1048,166 +1049,100 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                           ],
                           if (!isLast)
                             Divider(
-                              height: 24,
+                              height: 16,
                               color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
                             ),
                         ],
                       );
                     }),
-                  ] else ...[
-                    if (o.address != null && o.address!.isNotEmpty) ...[
-                      _DetailRow(
-                        label: 'checkout.address'.tr(),
-                        value: o.address!,
-                      ),
-                      if (o.latitude != null && o.latitude != 0 && o.longitude != null && o.longitude != 0) ...[
-                        const SizedBox(height: 10),
-                        _MapLinkRow(
-                          onTap: () => _openMap(lat: o.latitude, lng: o.longitude, address: o.address),
-                        ),
-                      ],
-                      Divider(
-                        height: 24,
-                        color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
-                      ),
-                    ],
-                    if (o.branch != null && o.branch!.isNotEmpty) ...[
-                      _DetailRow(
-                        label: 'orders.branch'.tr(),
-                        value: o.branch!,
-                      ),
-                      Divider(
-                        height: 24,
-                        color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
-                      ),
-                    ],
-                    if (o.phone != null && o.phone!.isNotEmpty) ...[
-                      _DetailRow(
-                        label: 'checkout.recipient_phone'.tr(),
-                        value: NumberFormatter.formatPhone(o.phone!),
-                      ),
-                      Divider(
-                        height: 24,
-                        color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
-                      ),
-                    ],
-                    if (o.paymentMethodText != null && o.paymentMethodText!.isNotEmpty) ...[
-                      _DetailRow(label: 'checkout.payment'.tr(), value: o.paymentMethodText!),
-                      if (o.comment != null && o.comment!.isNotEmpty)
-                        Divider(
-                          height: 24,
-                          color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
-                        ),
-                    ],
-                    if (o.comment != null && o.comment!.isNotEmpty)
-                      _DetailRow(label: 'checkout.comment'.tr(), value: o.comment!),
                   ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 5. Totals Card (Backend boshqaruvidagi hisob-kitoblar)
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.darkCard : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
                 ),
-                boxShadow: AppColors.softShadow(isDark),
               ),
-              child: Column(
-                children: [
-                  if (o.priceDetails.isNotEmpty) ...[
-                    ...o.priceDetails.asMap().entries.map((entry) {
-                      final i = entry.key;
-                      final item = entry.value;
-                      final isLast = i == o.priceDetails.length - 1;
+              const SizedBox(height: 14),
+            ],
 
-                      if (item.bold) {
-                        return Column(
-                          children: [
-                            Divider(
-                              height: 32,
-                              color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  item.key,
-                                  style: AppTextStyles.labelLarge.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 16,
-                                    color: isDark ? Colors.white : AppColors.neutral900,
-                                  ),
-                                ),
-                                Text(
-                                  item.value,
-                                  style: AppTextStyles.h3.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
-                      }
+            // 5. Totals Card (Backend boshqaruvidagi dinamik hisob-kitoblar)
+            if (o.priceDetails.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkCard : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
+                  ),
+                  boxShadow: AppColors.softShadow(isDark),
+                ),
+                child: Column(
+                  children: o.priceDetails.asMap().entries.map((entry) {
+                    final i = entry.key;
+                    final item = entry.value;
+                    final isLast = i == o.priceDetails.length - 1;
 
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              item.key,
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                    if (item.bold) {
+                      return Column(
+                        children: [
+                          Divider(
+                            height: 20,
+                            color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                item.key,
+                                style: AppTextStyles.labelLarge.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15.5,
+                                  color: isDark ? Colors.white : AppColors.neutral900,
+                                ),
                               ),
-                            ),
-                            Text(
-                              item.value,
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: item.isDiscount
-                                    ? AppColors.success
-                                    : (isDark ? Colors.white : AppColors.neutral900),
-                                fontWeight: item.isDiscount ? FontWeight.w700 : FontWeight.w600,
+                              Text(
+                                item.value,
+                                style: AppTextStyles.h3.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 17,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
+                        ],
                       );
-                    }),
-                  ] else ...[
-                    _PriceRow(label: 'cart.subtotal'.tr(), price: o.subtotalPrice),
-                    if (o.deliveryPrice > 0)
-                       Padding(
-                         padding: const EdgeInsets.only(top: 12),
-                         child: _PriceRow(label: 'cart.delivery'.tr(), price: o.deliveryPrice),
-                       ),
-                    if (o.discountAmount > 0)
-                       Padding(
-                         padding: const EdgeInsets.only(top: 12),
-                         child: _PriceRow(label: 'cart.discount'.tr(), price: o.discountAmount, isNegative: true),
-                       ),
-                    Divider(
-                      height: 32,
-                      color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
-                    ),
-                    _PriceRow(label: 'cart.total'.tr(), price: o.totalPrice, isTotal: true),
-                  ],
-                ],
+                    }
+
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            item.key,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                            ),
+                          ),
+                          Text(
+                            item.value,
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: item.isDiscount
+                                  ? AppColors.success
+                                  : (isDark ? Colors.white : AppColors.neutral900),
+                              fontWeight: item.isDiscount ? FontWeight.w700 : FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
     ),
-      bottomNavigationBar: (showPayNow || o.status == 6 || (o.phone != null && o.phone!.isNotEmpty))
+      bottomNavigationBar: (showPayNow || o.canReorder || (o.status != 6 && o.status != 1 && o.contactPhone != null && o.contactPhone!.isNotEmpty))
           ? Container(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               decoration: BoxDecoration(
@@ -1265,13 +1200,14 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                       );
                     }
 
-                    if (o.status != 6 && o.status != 1 && o.phone != null && o.phone!.isNotEmpty) {
+                    final contactPhone = o.contactPhone;
+                    if (o.status != 6 && o.status != 1 && contactPhone != null && contactPhone.isNotEmpty) {
                       return SizedBox(
                         height: 50,
                         width: double.infinity,
                         child: OutlinedButton.icon(
                           onPressed: () async {
-                            final uri = Uri.tryParse('tel:${o.phone}');
+                            final uri = Uri.tryParse('tel:$contactPhone');
                             if (uri != null && await canLaunchUrl(uri)) {
                               await launchUrl(uri);
                             }
@@ -1496,57 +1432,6 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       ),
     );
     context.go('/cart');
-  }
-}
-
-class _PriceRow extends StatelessWidget {
-  final String label;
-  final double price;
-  final bool isNegative;
-  final bool isTotal;
-
-  const _PriceRow({
-    required this.label,
-    required this.price,
-    this.isNegative = false,
-    this.isTotal = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: isTotal
-              ? AppTextStyles.labelLarge.copyWith(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                  color: isDark ? Colors.white : AppColors.neutral900,
-                )
-              : AppTextStyles.bodyMedium.copyWith(
-                  color: isDark ? AppColors.neutral400 : AppColors.neutral500,
-                  fontSize: 13.5,
-                ),
-        ),
-        Text(
-          "${isNegative ? '- ' : ''}${NumberFormatter.formatSum(price)} ${'common.currency'.tr()}",
-          style: isTotal
-              ? AppTextStyles.h4.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 17,
-                )
-              : AppTextStyles.labelSmall.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13.5,
-                  color: isDark ? Colors.white : AppColors.neutral900,
-                ),
-        ),
-      ],
-    );
   }
 }
 
