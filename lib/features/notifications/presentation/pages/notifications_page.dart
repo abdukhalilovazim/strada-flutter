@@ -360,7 +360,7 @@ class _NotificationsView extends StatelessWidget {
             actions: [
               // 1. Telegram (Original Logo)
               _buildHeaderSocialButton(
-                assetPath: 'assets/icons/telegram_logo.png',
+                assetPath: 'assets/icons/telegram_logo.webp',
                 tooltip: 'Telegram',
                 onTap: () {
                   HapticFeedback.lightImpact();
@@ -371,7 +371,7 @@ class _NotificationsView extends StatelessWidget {
 
               // 2. Instagram (Original Logo)
               _buildHeaderSocialButton(
-                assetPath: 'assets/icons/instagram_logo.png',
+                assetPath: 'assets/icons/instagram_logo.webp',
                 tooltip: 'Instagram',
                 onTap: () {
                   HapticFeedback.lightImpact();
