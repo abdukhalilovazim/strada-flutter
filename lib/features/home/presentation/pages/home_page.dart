@@ -35,18 +35,118 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
   bool _hasSearchText = false;
   bool _isSearchActive = false;
+  bool _isProgrammaticScroll = false;
+  String? _activeCategorySlug;
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
     _searchFocusNode.addListener(_onFocusChanged);
+    _scrollController.addListener(_onVerticalScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<HomeCubit>().loadSliders();
       }
+    });
+  }
+
+  void _onVerticalScroll() {
+    if (_isProgrammaticScroll) return;
+    if (!_scrollController.hasClients) return;
+
+    final state = context.read<HomeCubit>().state;
+    if (state is! HomeLoaded || state.searchQuery.isNotEmpty) return;
+
+    final currentOffset = _scrollController.offset;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+
+    final sliderHeight = state.sliders.isNotEmpty
+        ? ((screenWidth * 0.85) / _HomeSliderBanner.aspectRatio + 8.0)
+        : 0.0;
+
+    double accumulatedHeight = sliderHeight;
+    String? matchedSlug;
+
+    final cardWidth = (screenWidth - 32 - 14) / 2;
+    final cardHeight = cardWidth / 0.68;
+    final rowHeight = cardHeight + 14;
+
+    for (final cat in state.categories) {
+      final count = state.fullProducts.where((p) => p.category?.slug == cat.slug).length;
+      if (count == 0) continue;
+
+      final rows = (count + 1) ~/ 2;
+      final sectionHeight = 60.0 + (rows * rowHeight);
+
+      if (currentOffset >= accumulatedHeight - 40 && currentOffset < accumulatedHeight + sectionHeight - 40) {
+        matchedSlug = cat.slug;
+        break;
+      }
+      accumulatedHeight += sectionHeight;
+    }
+
+    matchedSlug ??= state.categories.firstOrNull?.slug;
+
+    if (matchedSlug != null && matchedSlug != _activeCategorySlug) {
+      setState(() {
+        _activeCategorySlug = matchedSlug;
+      });
+      context.read<HomeCubit>().selectCategory(matchedSlug);
+    }
+  }
+
+  void _scrollToCategory(String slug) {
+    final state = context.read<HomeCubit>().state;
+    if (state is! HomeLoaded || !_scrollController.hasClients) return;
+
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final sliderHeight = state.sliders.isNotEmpty
+        ? ((screenWidth * 0.85) / _HomeSliderBanner.aspectRatio + 8.0)
+        : 0.0;
+
+    double targetOffset = 0.0;
+
+    // Agar birinchi kategoriya bo'lsa, eng tepaga qaytarish
+    if (state.categories.isNotEmpty && state.categories.first.slug == slug) {
+      targetOffset = 0.0;
+    } else {
+      targetOffset = sliderHeight;
+      final cardWidth = (screenWidth - 32 - 14) / 2;
+      final cardHeight = cardWidth / 0.68;
+      final rowHeight = cardHeight + 14;
+
+      for (final cat in state.categories) {
+        if (cat.slug == slug) {
+          break;
+        }
+        final count = state.fullProducts.where((p) => p.category?.slug == cat.slug).length;
+        if (count == 0) continue;
+
+        final rows = (count + 1) ~/ 2;
+        final sectionHeight = 60.0 + (rows * rowHeight);
+        targetOffset += sectionHeight;
+      }
+    }
+
+    _isProgrammaticScroll = true;
+    setState(() {
+      _activeCategorySlug = slug;
+    });
+    context.read<HomeCubit>().selectCategory(slug);
+
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final clampedTarget = targetOffset.clamp(0.0, maxScroll);
+
+    _scrollController.animateTo(
+      clampedTarget,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOutCubic,
+    ).then((_) {
+      _isProgrammaticScroll = false;
     });
   }
 
@@ -60,12 +160,10 @@ class _HomePageState extends State<HomePage> {
   void _onFocusChanged() {
     setState(() {
       if (!_searchFocusNode.hasFocus) {
-        // Keyboard yopilganda: agar matn bo'sh bo'lsa -> butunlay yo'qoladi
         if (_searchController.text.trim().isEmpty) {
           _isSearchActive = false;
           _hasSearchText = false;
         }
-        // Agar matn yozilgan bo'lsa -> _isSearchActive true bo'lib footerda qoladi
       }
     });
   }
@@ -86,8 +184,10 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
     _searchFocusNode.removeListener(_onFocusChanged);
+    _scrollController.removeListener(_onVerticalScroll);
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -304,20 +404,51 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildCategoryBar(List<CategoryEntity> categories, String? selectedSlug) {
-    if (categories.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+  Widget _buildProductCardItem(BuildContext context, ProductEntity product) {
+    return RepaintBoundary(
+      child: BlocBuilder<CartCubit, CartState>(
+        builder: (context, cartState) {
+          final matchingItems = cartState.items.where((ci) => ci.product.slug == product.slug).toList();
+          final quantity = matchingItems.fold<int>(0, (sum, ci) => sum + ci.quantity);
+          final firstCartItem = matchingItems.firstOrNull;
 
-    return SliverPersistentHeader(
-      pinned: true,
-      delegate: _StickyCategoryHeaderDelegate(
-        child: _HomeCategoryBar(
-          categories: categories,
-          selectedSlug: selectedSlug,
-          onSelect: (slug) {
-            context.read<HomeCubit>().selectCategory(slug);
-          },
-        ),
-        height: 52.0,
+          return ProductCard(
+            product: product,
+            quantityInCart: quantity,
+            onTap: () {
+              if (product.isSet) {
+                context.push('/set/${product.slug}', extra: product);
+                return;
+              }
+              final hasMultiple = product.variants.where((v) => VariantLocalizationHelper.localize(v.title).isNotEmpty).length > 1;
+              if (hasMultiple) {
+                ProductDetailModal.show(context, product);
+              } else {
+                context.push('/product/${product.slug}', extra: product);
+              }
+            },
+            onAdd: () {
+              if (product.isSet) {
+                context.push('/set/${product.slug}', extra: product);
+                return;
+              }
+              final hasMultiple = product.variants.where((v) => VariantLocalizationHelper.localize(v.title).isNotEmpty).length > 1;
+              if (hasMultiple) {
+                ProductDetailModal.show(context, product);
+              } else {
+                context.read<CartCubit>().addToCart(
+                      product,
+                      variant: product.variants.firstOrNull,
+                    );
+              }
+            },
+            onRemove: () {
+              if (firstCartItem != null) {
+                context.read<CartCubit>().updateQuantity(firstCartItem, -1);
+              }
+            },
+          );
+        },
       ),
     );
   }
@@ -381,59 +512,109 @@ class _HomePageState extends State<HomePage> {
           childAspectRatio: 0.68,
         ),
         delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final product = products[index];
-            return RepaintBoundary(
-              child: BlocBuilder<CartCubit, CartState>(
-                builder: (context, cartState) {
-                  final matchingItems = cartState.items.where((ci) => ci.product.slug == product.slug).toList();
-                  final quantity = matchingItems.fold<int>(0, (sum, ci) => sum + ci.quantity);
-                  final firstCartItem = matchingItems.firstOrNull;
-
-                  return ProductCard(
-                    product: product,
-                    quantityInCart: quantity,
-                    onTap: () {
-                      if (product.isSet) {
-                        context.push('/set/${product.slug}', extra: product);
-                        return;
-                      }
-                      final hasMultiple = product.variants.where((v) => VariantLocalizationHelper.localize(v.title).isNotEmpty).length > 1;
-                      if (hasMultiple) {
-                        ProductDetailModal.show(context, product);
-                      } else {
-                        context.push('/product/${product.slug}', extra: product);
-                      }
-                    },
-                    onAdd: () {
-                      if (product.isSet) {
-                        context.push('/set/${product.slug}', extra: product);
-                        return;
-                      }
-                      final hasMultiple = product.variants.where((v) => VariantLocalizationHelper.localize(v.title).isNotEmpty).length > 1;
-                      if (hasMultiple) {
-                        ProductDetailModal.show(context, product);
-                      } else {
-                        context.read<CartCubit>().addToCart(
-                              product,
-                              variant: product.variants.firstOrNull,
-                            );
-                      }
-                    },
-                    onRemove: () {
-                      if (firstCartItem != null) {
-                        context.read<CartCubit>().updateQuantity(firstCartItem, -1);
-                      }
-                    },
-                  );
-                },
-              ),
-            );
-          },
+          (context, index) => _buildProductCardItem(context, products[index]),
           childCount: products.length,
         ),
       ),
     );
+  }
+
+  List<Widget> _buildContinuousCatalogSlivers(
+    BuildContext context,
+    HomeLoaded state,
+    bool isDark,
+  ) {
+    final slivers = <Widget>[
+      StradaSliverRefreshControl(
+        onRefresh: () async {
+          try {
+            context.read<NotificationsCubit>().refresh();
+          } catch (_) {}
+          await context.read<HomeCubit>().init(forceRefresh: true);
+          if (context.mounted) {
+            context.read<HomeCubit>().loadSliders();
+          }
+        },
+      ),
+    ];
+
+    if (state.searchQuery.isNotEmpty) {
+      slivers.add(_buildProductGrid(state.products));
+      return slivers;
+    }
+
+    // 1. Promo Sliders Banner
+    slivers.add(_buildSliderBanner(state.sliders, state.isSlidersLoading));
+
+    // 2. Yopishqoq (Sticky) Kategoriya tanlash paneli
+    final activeSlug = _activeCategorySlug ?? state.selectedCategory ?? state.categories.firstOrNull?.slug;
+    slivers.add(
+      SliverPersistentHeader(
+        pinned: true,
+        delegate: _StickyCategoryHeaderDelegate(
+          child: _HomeCategoryBar(
+            categories: state.categories,
+            selectedSlug: activeSlug,
+            onSelect: (slug) {
+              if (slug != null) {
+                _scrollToCategory(slug);
+              }
+            },
+          ),
+          height: 52.0,
+        ),
+      ),
+    );
+
+    // 3. Uzluksiz barcha kategoriyalar va ularning mahsulotlari (Continuous Catalog)
+    for (final category in state.categories) {
+      final categoryProducts = state.fullProducts
+          .where((p) => p.category?.slug == category.slug)
+          .toList();
+
+      if (categoryProducts.isEmpty) continue;
+
+      // Kategoriya sarlavhasi
+      slivers.add(
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 26, 16, 12),
+            child: Text(
+              category.title,
+              style: AppTextStyles.h3.copyWith(
+                fontWeight: FontWeight.w900,
+                fontSize: 20,
+                color: isDark ? Colors.white : AppColors.neutral900,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Kategoriya mahsulotlar panjarasi
+      slivers.add(
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 14,
+              crossAxisSpacing: 14,
+              childAspectRatio: 0.68,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _buildProductCardItem(context, categoryProducts[index]),
+              childCount: categoryProducts.length,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Pastki bo'sh joy (navigation bar va float tugmalar uchun)
+    slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 100)));
+
+    return slivers;
   }
 
   Widget _buildHomeShimmer(BuildContext context, bool isDark) {
@@ -549,27 +730,11 @@ class _HomePageState extends State<HomePage> {
 
                     if (state is HomeLoaded) {
                       return CustomScrollView(
+                        controller: _scrollController,
                         physics: const AlwaysScrollableScrollPhysics(
                           parent: BouncingScrollPhysics(),
                         ),
-                        slivers: [
-                          StradaSliverRefreshControl(
-                            onRefresh: () async {
-                              try {
-                                context.read<NotificationsCubit>().refresh();
-                              } catch (_) {}
-                              await context.read<HomeCubit>().init(forceRefresh: true);
-                              if (context.mounted) {
-                                context.read<HomeCubit>().loadSliders();
-                              }
-                            },
-                          ),
-                          if (state.searchQuery.isEmpty) ...[
-                            _buildSliderBanner(state.sliders, state.isSlidersLoading),
-                            _buildCategoryBar(state.categories, state.selectedCategory),
-                          ],
-                          _buildProductGrid(state.products),
-                        ],
+                        slivers: _buildContinuousCatalogSlivers(context, state, isDark),
                       );
                     }
 
@@ -797,7 +962,7 @@ class _SliderBannerCard extends StatelessWidget {
 }
 
 /// 🏷️ Native Sticky Category Bar
-class _HomeCategoryBar extends StatelessWidget {
+class _HomeCategoryBar extends StatefulWidget {
   final List<CategoryEntity> categories;
   final String? selectedSlug;
   final ValueChanged<String?> onSelect;
@@ -807,6 +972,42 @@ class _HomeCategoryBar extends StatelessWidget {
     required this.selectedSlug,
     required this.onSelect,
   });
+
+  @override
+  State<_HomeCategoryBar> createState() => _HomeCategoryBarState();
+}
+
+class _HomeCategoryBarState extends State<_HomeCategoryBar> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void didUpdateWidget(covariant _HomeCategoryBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedSlug != widget.selectedSlug && widget.selectedSlug != null) {
+      _scrollToActiveChip();
+    }
+  }
+
+  void _scrollToActiveChip() {
+    if (!_scrollController.hasClients) return;
+    final index = widget.categories.indexWhere((c) => c.slug == widget.selectedSlug);
+    if (index >= 0) {
+      final screenWidth = MediaQuery.sizeOf(context).width;
+      final targetOffset = (index * 96.0) - (screenWidth / 2) + 48.0;
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      _scrollController.animateTo(
+        targetOffset.clamp(0.0, maxScroll),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -824,23 +1025,24 @@ class _HomeCategoryBar extends StatelessWidget {
       ),
       height: 52,
       child: ListView.builder(
+        controller: _scrollController,
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: categories.length,
+        itemCount: widget.categories.length,
         itemBuilder: (ctx, i) {
-          final cat = categories[i];
-          final isSelected = selectedSlug == cat.slug;
+          final cat = widget.categories[i];
+          final isSelected = widget.selectedSlug == cat.slug;
 
           return Center(
             child: Padding(
-              padding: EdgeInsets.only(right: i == categories.length - 1 ? 0 : 8),
+              padding: EdgeInsets.only(right: i == widget.categories.length - 1 ? 0 : 8),
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
                     HapticFeedback.selectionClick();
-                    onSelect(cat.slug);
+                    widget.onSelect(cat.slug);
                   },
                   borderRadius: BorderRadius.circular(20),
                   child: AnimatedContainer(

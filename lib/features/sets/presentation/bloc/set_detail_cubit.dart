@@ -92,12 +92,15 @@ class SetDetailCubit extends Cubit<SetDetailState> {
         final setModel = SetDetailModel.fromJson(rawData);
         final initialSelections = <int, List<SetGroupItemModel>>{};
 
-        // Faqat FIXED (majburiy beriladigan) mahsulotlarni boshida tanlab qo'yamiz
+        // Boshlang'ich tanlovlarni o'rnatamiz
         for (final group in setModel.groups) {
           if (group.selectionType == 'FIXED') {
-            initialSelections[group.id] = group.items.where((i) => i.isFixed).toList();
+            final fixed = group.items.where((i) => i.isFixed).toList();
+            initialSelections[group.id] = fixed.isNotEmpty ? fixed : List<SetGroupItemModel>.from(group.items);
+          } else if (group.selectionType == 'SINGLE_CHOICE' && group.items.length == 1) {
+            // Agar yagona variant bo'lsa, avtomatik tanlab beramiz
+            initialSelections[group.id] = [group.items.first];
           } else {
-            // SINGLE_CHOICE va MULTIPLE_CHOICE boshida bo'sh turadi (foydalanuvchi majburiy o'zi tanlaydi)
             initialSelections[group.id] = [];
           }
         }
@@ -117,6 +120,8 @@ class SetDetailCubit extends Cubit<SetDetailState> {
 
   void toggleItem(SetGroupModel group, SetGroupItemModel item) {
     if (state is! SetDetailLoaded) return;
+    if (group.selectionType == 'FIXED') return; // O'zgarmas taomlar qulflangan
+
     final loaded = state as SetDetailLoaded;
     final currentMap = Map<int, List<SetGroupItemModel>>.from(loaded.selections);
     final currentList = List<SetGroupItemModel>.from(currentMap[group.id] ?? []);

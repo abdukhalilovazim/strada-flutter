@@ -97,7 +97,7 @@ class HomeCubit extends Cubit<HomeState> {
       final productsResult = await productsFuture;
       final slidersResult = await slidersFuture;
 
-      final categories = categoriesResult.getOrElse(() => const []);
+      var categories = categoriesResult.getOrElse(() => const []);
       final products = productsResult.getOrElse(() => const []);
       final sliders = slidersResult.getOrElse(() => const []);
 
@@ -106,17 +106,25 @@ class HomeCubit extends Cubit<HomeState> {
         return;
       }
 
+      // Agar Set-menyu mavjud bo'lsa, har doim 3-kategoriya o'rnida (index 2) bo'lishini ta'minlaymiz
+      final setIndex = categories.indexWhere(
+        (c) => c.slug == 'set-menus' || c.id == 999999,
+      );
+      if (setIndex != -1 && categories.length > 2) {
+        final mutableCategories = List<CategoryEntity>.from(categories);
+        final setCat = mutableCategories.removeAt(setIndex);
+        mutableCategories.insert(2, setCat);
+        categories = mutableCategories;
+      }
+
       final defaultSlug = categories.isNotEmpty ? categories.first.slug : null;
-      final initialProducts = defaultSlug != null
-          ? products.where((p) => p.category?.slug == defaultSlug).toList()
-          : products;
 
       emit(HomeLoaded(
         sliders: sliders,
         isSlidersLoading: false,
         categories: categories,
         fullProducts: products,
-        products: initialProducts,
+        products: products,
         selectedCategory: defaultSlug,
       ));
     } catch (e) {
@@ -155,13 +163,7 @@ class HomeCubit extends Cubit<HomeState> {
 
     List<ProductEntity> filtered;
     if (lower.isEmpty) {
-      if (currentState.selectedCategory != null && currentState.selectedCategory != 'all') {
-        filtered = currentState.fullProducts
-            .where((p) => p.category?.slug == currentState.selectedCategory)
-            .toList();
-      } else {
-        filtered = currentState.fullProducts;
-      }
+      filtered = currentState.fullProducts;
     } else {
       filtered = currentState.fullProducts.where((p) {
         final matchTitle = p.title.toLowerCase().contains(lower);
@@ -181,33 +183,10 @@ class HomeCubit extends Cubit<HomeState> {
   Future<void> selectCategory(String? slug) async {
     final currentState = state;
     if (currentState is! HomeLoaded) return;
-
-    String? nextCategorySlug = slug;
-    List<ProductEntity> filteredProducts;
-
-    if (slug == null || slug.isEmpty || slug == 'all' || currentState.selectedCategory == slug) {
-      nextCategorySlug = null;
-      filteredProducts = currentState.fullProducts;
-    } else {
-      filteredProducts = currentState.fullProducts
-          .where((p) => p.category?.slug == slug)
-          .toList();
-    }
-
-    if (currentState.searchQuery.isNotEmpty) {
-      final lower = currentState.searchQuery.toLowerCase();
-      filteredProducts = filteredProducts.where((p) {
-        final matchTitle = p.title.toLowerCase().contains(lower);
-        final matchDesc = p.description?.toLowerCase().contains(lower) ?? false;
-        final matchKeywords = p.searchKeywords?.toLowerCase().contains(lower) ?? false;
-        final matchSlug = p.slug.toLowerCase().contains(lower);
-        return matchTitle || matchDesc || matchKeywords || matchSlug;
-      }).toList();
-    }
+    if (currentState.selectedCategory == slug) return;
 
     emit(currentState.copyWith(
-      products: filteredProducts,
-      selectedCategory: nextCategorySlug,
+      selectedCategory: slug,
     ));
   }
 }
