@@ -35,6 +35,7 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _hasSearchText = false;
+  bool _isSearchOpen = false;
 
   @override
   void initState() {
@@ -55,6 +56,27 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _openSearch() {
+    HapticFeedback.lightImpact();
+    setState(() => _isSearchOpen = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _searchFocusNode.requestFocus();
+      }
+    });
+  }
+
+  void _closeSearch() {
+    HapticFeedback.lightImpact();
+    _searchFocusNode.unfocus();
+    _searchController.clear();
+    context.read<HomeCubit>().search('');
+    setState(() {
+      _isSearchOpen = false;
+      _hasSearchText = false;
+    });
+  }
+
   @override
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
@@ -65,6 +87,82 @@ class _HomePageState extends State<HomePage> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (_isSearchOpen) {
+      return AppBar(
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: isDark ? Colors.white : AppColors.neutral900,
+          ),
+          onPressed: _closeSearch,
+        ),
+        titleSpacing: 0,
+        title: SizedBox(
+          height: 42,
+          child: TextField(
+            key: const Key('home_search_input'),
+            controller: _searchController,
+            focusNode: _searchFocusNode,
+            autofocus: true,
+            autocorrect: false,
+            enableSuggestions: false,
+            textInputAction: TextInputAction.search,
+            onChanged: (val) {
+              context.read<HomeCubit>().search(val);
+            },
+            onSubmitted: (val) {
+              context.read<HomeCubit>().search(val);
+              _searchFocusNode.unfocus();
+            },
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: isDark ? Colors.white : AppColors.neutral900,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+            decoration: InputDecoration(
+              hintText: 'home.search_hint'.tr(),
+              hintStyle: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.neutral400,
+                fontSize: 13.5,
+              ),
+              prefixIcon: const Icon(
+                Icons.search_rounded,
+                size: 20,
+                color: AppColors.primary,
+              ),
+              suffixIcon: _hasSearchText
+                  ? IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.neutral500),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        _searchController.clear();
+                        context.read<HomeCubit>().search('');
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close_rounded, color: AppColors.neutral500, size: 22),
+            onPressed: _closeSearch,
+          ),
+          const SizedBox(width: 8),
+        ],
+      );
+    }
 
     return AppBar(
       backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
@@ -89,6 +187,15 @@ class _HomePageState extends State<HomePage> {
         },
       ),
       actions: [
+        IconButton(
+          icon: Icon(
+            Icons.search_rounded,
+            color: isDark ? Colors.white : AppColors.neutral900,
+            size: 24,
+          ),
+          tooltip: 'home.search_hint'.tr(),
+          onPressed: _openSearch,
+        ),
         IconButton(
           icon: Builder(
             builder: (context) {
@@ -146,88 +253,6 @@ class _HomePageState extends State<HomePage> {
         ),
         const SizedBox(width: 8),
       ],
-    );
-  }
-
-  Widget _buildSearchBar(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return SliverToBoxAdapter(
-      child: Container(
-        color: isDark ? AppColors.darkSurface : Colors.white,
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-        child: SizedBox(
-          height: 50,
-          child: TextField(
-            key: const Key('home_search_input'),
-            controller: _searchController,
-            focusNode: _searchFocusNode,
-            autocorrect: false,
-            enableSuggestions: false,
-            spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
-            textInputAction: TextInputAction.search,
-            onChanged: (val) {
-              context.read<HomeCubit>().search(val);
-            },
-            onSubmitted: (val) {
-              context.read<HomeCubit>().search(val);
-              _searchFocusNode.unfocus();
-            },
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: isDark ? Colors.white : AppColors.neutral900,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-            decoration: InputDecoration(
-              hintText: 'home.search_hint'.tr(),
-              hintStyle: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.neutral400,
-                fontSize: 13.5,
-              ),
-              prefixIcon: Icon(
-                Icons.search_rounded,
-                size: 22,
-                color: _searchFocusNode.hasFocus ? AppColors.primary : AppColors.neutral400,
-              ),
-              suffixIcon: _hasSearchText
-                  ? IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.neutral500),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        _searchController.clear();
-                        context.read<HomeCubit>().search('');
-                        _searchFocusNode.unfocus();
-                      },
-                    )
-                  : null,
-              filled: true,
-              fillColor: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(
-                  color: isDark ? AppColors.darkBorder : Colors.transparent,
-                  width: 1.2,
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(
-                  color: isDark ? AppColors.darkBorder : Colors.transparent,
-                  width: 1.2,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(
-                  color: AppColors.primary,
-                  width: 1.5,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 

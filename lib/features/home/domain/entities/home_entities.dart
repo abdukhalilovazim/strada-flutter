@@ -72,6 +72,7 @@ class ProductEntity extends Equatable {
   final List<VariantEntity> variants;
   final List<KeyValueEntity> values;
   final List<ProductBadgeEntity> badges;
+  final String? searchKeywords;
 
   const ProductEntity({
     this.id = 0,
@@ -86,6 +87,7 @@ class ProductEntity extends Equatable {
     required this.variants,
     required this.values,
     this.badges = const [],
+    this.searchKeywords,
   });
 
   /// Real discount saved amount (e.g. 73 000 - 61 000 = 12 000)
@@ -116,7 +118,7 @@ class ProductEntity extends Equatable {
   String get validImageUrl => hasValidImage ? (thumbnail.isNotEmpty ? thumbnail : photo) : '';
 
   @override
-  List<Object?> get props => [id, slug, title, description, thumbnail, photo, price, oldPrice, category, variants, values, badges];
+  List<Object?> get props => [id, slug, title, description, thumbnail, photo, price, oldPrice, category, variants, values, badges, searchKeywords];
 }
 
 /// Story slide entity

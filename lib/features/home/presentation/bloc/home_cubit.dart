@@ -166,7 +166,9 @@ class HomeCubit extends Cubit<HomeState> {
       filtered = currentState.fullProducts.where((p) {
         final matchTitle = p.title.toLowerCase().contains(lower);
         final matchDesc = p.description?.toLowerCase().contains(lower) ?? false;
-        return matchTitle || matchDesc;
+        final matchKeywords = p.searchKeywords?.toLowerCase().contains(lower) ?? false;
+        final matchSlug = p.slug.toLowerCase().contains(lower);
+        return matchTitle || matchDesc || matchKeywords || matchSlug;
       }).toList();
     }
 
@@ -197,7 +199,9 @@ class HomeCubit extends Cubit<HomeState> {
       filteredProducts = filteredProducts.where((p) {
         final matchTitle = p.title.toLowerCase().contains(lower);
         final matchDesc = p.description?.toLowerCase().contains(lower) ?? false;
-        return matchTitle || matchDesc;
+        final matchKeywords = p.searchKeywords?.toLowerCase().contains(lower) ?? false;
+        final matchSlug = p.slug.toLowerCase().contains(lower);
+        return matchTitle || matchDesc || matchKeywords || matchSlug;
       }).toList();
     }
 
