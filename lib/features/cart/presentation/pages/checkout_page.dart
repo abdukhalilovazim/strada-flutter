@@ -196,9 +196,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
       if (state.apartment != null && state.apartment!.trim().isNotEmpty) {
         addressDetails.add('Xonadon: ${state.apartment!.trim()}');
       }
-      if (state.doorPhone != null && state.doorPhone!.trim().isNotEmpty) {
-        addressDetails.add('Domofon: ${state.doorPhone!.trim()}');
-      }
     }
     final addressExtra = addressDetails.isNotEmpty ? addressDetails.join(', ') : null;
 

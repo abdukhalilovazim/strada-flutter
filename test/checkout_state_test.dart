@@ -22,7 +22,6 @@ void main() {
       expect(comment, contains('Podyezd: 2'));
       expect(comment, contains('Qavat: 4'));
       expect(comment, contains('Xonadon: 18'));
-      expect(comment, contains('Domofon: 18K'));
       expect(comment, contains('Qoshiq va salfetka kerak emas'));
       expect(comment, contains('Izoh: Qo\'ng\'iroq qilmang'));
     });
@@ -53,7 +52,7 @@ void main() {
       expect(state.doorPhone, '12');
       expect(state.noUtensils, isFalse);
       expect(state.courierNote, 'Kuryer tez kelsin');
-      expect(state.fullComment, 'Podyezd: 1, Qavat: 3, Xonadon: 12, Domofon: 12, Izoh: Kuryer tez kelsin');
+      expect(state.fullComment, 'Podyezd: 1, Qavat: 3, Xonadon: 12, Izoh: Kuryer tez kelsin');
     });
   });
 }

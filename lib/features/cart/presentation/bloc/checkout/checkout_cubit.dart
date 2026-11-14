@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pizza_strada/core/models/saved_address_model.dart';
 import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:pizza_strada/core/services/analytics_service.dart';
 import 'package:pizza_strada/core/storage/secure_storage.dart';
@@ -276,6 +277,25 @@ class CheckoutCubit extends Cubit<CheckoutState> {
           isDelivery: state.isDelivery,
           itemsCount: products.length,
         );
+
+        // Buyurtma muvaffaqiyatli topshirilganda, faqat yetkazib berish bo'lsa manzilni saqlaymiz
+        if (state.isDelivery && state.address != null && state.address!.trim().isNotEmpty) {
+          SecureStorage.saveAddress(
+            SavedAddressModel(
+              id: 'order_${orderId}_${DateTime.now().millisecondsSinceEpoch}',
+              label: state.address!.trim(),
+              address: state.address!.trim(),
+              lat: state.lat ?? 0.0,
+              lng: state.lng ?? 0.0,
+              apartment: state.apartment,
+              floor: state.floor,
+              entrance: state.entrance,
+              doorphone: state.doorPhone,
+              comment: state.comment,
+            ),
+          );
+        }
+
         emit(state.copyWith(
           isSubmitting: false,
           successData: data,

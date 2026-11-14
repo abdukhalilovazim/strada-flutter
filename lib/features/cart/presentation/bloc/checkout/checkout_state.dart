@@ -128,9 +128,6 @@ class CheckoutState extends Equatable {
     if (apartment != null && apartment!.trim().isNotEmpty) {
       parts.add('Xonadon: ${apartment!.trim()}');
     }
-    if (doorPhone != null && doorPhone!.trim().isNotEmpty) {
-      parts.add('Domofon: ${doorPhone!.trim()}');
-    }
     if (noUtensils) {
       parts.add('Qoshiq va salfetka kerak emas');
     }

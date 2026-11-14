@@ -128,7 +128,6 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
   final _entranceController = TextEditingController();
   final _floorController = TextEditingController();
   final _apartmentController = TextEditingController();
-  final _doorPhoneController = TextEditingController();
 
   List<SavedAddressModel> _savedAddresses = [];
   int _branchCount = 3;
@@ -142,7 +141,6 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
     _entranceController.text = cubitState.entrance ?? '';
     _floorController.text = cubitState.floor ?? '';
     _apartmentController.text = cubitState.apartment ?? '';
-    _doorPhoneController.text = cubitState.doorPhone ?? '';
     _loadSavedAddressesAndBranches();
   }
 
@@ -206,7 +204,7 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
       entrance: _entranceController.text.trim(),
       floor: _floorController.text.trim(),
       apartment: _apartmentController.text.trim(),
-      doorPhone: _doorPhoneController.text.trim(),
+      doorPhone: null,
     );
   }
 
@@ -215,7 +213,6 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
     _entranceController.dispose();
     _floorController.dispose();
     _apartmentController.dispose();
-    _doorPhoneController.dispose();
     super.dispose();
   }
 
@@ -306,16 +303,6 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
               lng,
               trimmed,
             );
-        await SecureStorage.saveAddress(
-          SavedAddressModel(
-            id: 'local_${DateTime.now().millisecondsSinceEpoch}',
-            label: trimmed,
-            address: trimmed,
-            lat: lat,
-            lng: lng,
-          ),
-        );
-        _loadSavedAddressesAndBranches();
       }
     }
   }
@@ -342,7 +329,8 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                 (state.lat! - item.lat).abs() < 0.0001 &&
                 (state.lng! - item.lng).abs() < 0.0001));
 
-        final isMapSelected = _isPickedFromMap || (hasAddress && selectedSavedIndex == -1);
+        final effectiveSavedIndex = _isPickedFromMap ? -1 : selectedSavedIndex;
+        final isMapSelected = _isPickedFromMap || (hasAddress && effectiveSavedIndex == -1);
 
         return Container(
           margin: const EdgeInsets.fromLTRB(16, 6, 16, 6),
@@ -526,7 +514,7 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                 ...displayedSaved.asMap().entries.map((entry) {
                   final index = entry.key;
                   final item = entry.value;
-                  final isSelected = !isMapSelected && selectedSavedIndex == index;
+                  final isSelected = !isMapSelected && effectiveSavedIndex == index;
 
                   return Padding(
                     padding: const EdgeInsets.only(top: 8),
@@ -540,6 +528,15 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                               item.lat,
                               item.lng,
                               item.address,
+                            );
+                        _entranceController.text = item.entrance ?? '';
+                        _floorController.text = item.floor ?? '';
+                        _apartmentController.text = item.apartment ?? '';
+                        context.read<CheckoutCubit>().setAddressDetails(
+                              apartment: item.apartment,
+                              floor: item.floor,
+                              entrance: item.entrance,
+                              doorPhone: null,
                             );
                       },
                       borderRadius: BorderRadius.circular(16),
@@ -580,7 +577,7 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${index + 2}. ${item.label.isNotEmpty && item.label != item.address ? item.label : item.address}',
+                                    '#${index + 2} ${item.label.isNotEmpty && item.label != item.address ? item.label : item.address}',
                                     style: AppTextStyles.labelMedium.copyWith(
                                       fontWeight: FontWeight.w700,
                                       color: isDark ? Colors.white : AppColors.neutral900,
@@ -588,10 +585,14 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  if (item.label.isNotEmpty && item.label != item.address) ...[
+                                  if (item.detailsSummary.isNotEmpty ||
+                                      (item.label.isNotEmpty && item.label != item.address)) ...[
                                     const SizedBox(height: 2),
                                     Text(
-                                      item.address,
+                                      [
+                                        if (item.label.isNotEmpty && item.label != item.address) item.address,
+                                        if (item.detailsSummary.isNotEmpty) item.detailsSummary,
+                                      ].join(' • '),
                                       style: AppTextStyles.bodySmall.copyWith(
                                         color: isDark ? AppColors.neutral400 : AppColors.neutral500,
                                         fontSize: 12,
@@ -617,7 +618,7 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                 }),
               ],
 
-              // ── 2x2 Grid (Podyezd, Qavat, Xonadon, Domofon - ixtiyoriy) ──
+              // ── 3-ustunli qator: Podyezd, Qavat, Xonadon (ixtiyoriy) ──
               const SizedBox(height: 14),
               Row(
                 children: [
@@ -628,7 +629,7 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                     controller: _entranceController,
                     isDark: isDark,
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   _buildMiniInput(
                     context: context,
                     label: 'checkout.floor'.tr(),
@@ -636,24 +637,12 @@ class _SDUIAddressSelectorComponentState extends State<SDUIAddressSelectorCompon
                     controller: _floorController,
                     isDark: isDark,
                   ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
+                  const SizedBox(width: 8),
                   _buildMiniInput(
                     context: context,
                     label: 'checkout.apartment'.tr(),
                     icon: Icons.home_outlined,
                     controller: _apartmentController,
-                    isDark: isDark,
-                  ),
-                  const SizedBox(width: 10),
-                  _buildMiniInput(
-                    context: context,
-                    label: 'checkout.doorphone'.tr(),
-                    icon: Icons.dialpad_outlined,
-                    controller: _doorPhoneController,
                     isDark: isDark,
                   ),
                 ],

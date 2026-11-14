@@ -33,6 +33,21 @@ class SavedAddressModel {
     return parsed < 1000000000;
   }
 
+  /// Podyezd, qavat, xonadon qisqacha ma'lumoti
+  String get detailsSummary {
+    final parts = <String>[];
+    if (entrance != null && entrance!.trim().isNotEmpty) {
+      parts.add('${entrance!.trim()}-podyezd');
+    }
+    if (floor != null && floor!.trim().isNotEmpty) {
+      parts.add('${floor!.trim()}-qavat');
+    }
+    if (apartment != null && apartment!.trim().isNotEmpty) {
+      parts.add('${apartment!.trim()}-xonadon');
+    }
+    return parts.join(', ');
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'label': label,
@@ -40,6 +55,9 @@ class SavedAddressModel {
         'lat': lat,
         'lng': lng,
         'comment': comment,
+        'apartment': apartment,
+        'floor': floor,
+        'entrance': entrance,
       };
 
   factory SavedAddressModel.fromJson(Map<String, dynamic> json) {
@@ -53,11 +71,29 @@ class SavedAddressModel {
           '${json['entrance']}-podyezd',
         if (json['floor'] != null && json['floor'].toString().isNotEmpty)
           '${json['floor']}-qavat',
-        if (json['doorphone'] != null && json['doorphone'].toString().isNotEmpty)
-          'Domofon: ${json['doorphone']}',
       ];
       if (oldParts.isNotEmpty) {
         resolvedComment = oldParts.join(', ');
+      }
+    }
+
+    String? apt = json['apartment']?.toString();
+    String? flr = json['floor']?.toString();
+    String? ent = json['entrance']?.toString();
+
+    // Agar alohida maydonlar bo'lmasa, comment ichidan tiklab olamiz
+    if (resolvedComment != null && resolvedComment.isNotEmpty) {
+      if (apt == null || apt.isEmpty) {
+        final m = RegExp(r'(\d+)-xonadon|Xonadon:\s*([^\s,]+)', caseSensitive: false).firstMatch(resolvedComment);
+        if (m != null) apt = m.group(1) ?? m.group(2);
+      }
+      if (ent == null || ent.isEmpty) {
+        final m = RegExp(r'(\d+)-podyezd|Podyezd:\s*([^\s,]+)', caseSensitive: false).firstMatch(resolvedComment);
+        if (m != null) ent = m.group(1) ?? m.group(2);
+      }
+      if (flr == null || flr.isEmpty) {
+        final m = RegExp(r'(\d+)-qavat|Qavat:\s*([^\s,]+)', caseSensitive: false).firstMatch(resolvedComment);
+        if (m != null) flr = m.group(1) ?? m.group(2);
       }
     }
 
@@ -72,10 +108,10 @@ class SavedAddressModel {
           double.tryParse(json['longitude']?.toString() ?? '') ??
           0.0,
       comment: resolvedComment,
-      apartment: json['apartment']?.toString(),
-      floor: json['floor']?.toString(),
-      entrance: json['entrance']?.toString(),
-      doorphone: json['doorphone']?.toString(),
+      apartment: apt,
+      floor: flr,
+      entrance: ent,
+      doorphone: null,
     );
   }
 }

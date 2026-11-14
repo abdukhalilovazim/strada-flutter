@@ -2,6 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pizza_strada/core/models/saved_address_model.dart';
+import 'package:pizza_strada/core/network/api_client.dart';
 import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
@@ -22,10 +24,15 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
   List<CheckoutBranch> _branches = [];
   bool _isLoadingBranches = false;
 
+  List<SavedAddressModel> _savedAddresses = [];
+  bool _isLoadingAddresses = false;
+  bool _isPickedFromMap = false;
+
   @override
   void initState() {
     super.initState();
     _fetchBranches();
+    _fetchSavedAddresses();
   }
 
   Future<void> _fetchBranches() async {
@@ -45,7 +52,6 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
         });
       }
     } catch (_) {
-      // Clear branches on error so no hardcoded data is shown
       if (mounted) {
         setState(() {
           _branches = [];
@@ -53,6 +59,52 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
       }
     } finally {
       if (mounted) setState(() => _isLoadingBranches = false);
+    }
+  }
+
+  Future<void> _fetchSavedAddresses() async {
+    setState(() => _isLoadingAddresses = true);
+    final addressMap = <String, SavedAddressModel>{};
+    try {
+      final localList = await SecureStorage.getSavedAddresses();
+      for (final a in localList) {
+        final key = a.address.trim().toLowerCase();
+        if (key.isNotEmpty) addressMap[key] = a;
+      }
+      if (mounted && addressMap.isNotEmpty) {
+        setState(() {
+          _savedAddresses = addressMap.values.toList();
+        });
+      }
+
+      final token = await SecureStorage.getToken();
+      if (token != null && token.isNotEmpty) {
+        final response = await ApiClient().get('addresses');
+        final dynamic rawAddresses = (response is Map && response['data'] != null)
+            ? response['data']
+            : response;
+
+        if (rawAddresses is List) {
+          for (final item in rawAddresses) {
+            if (item is Map<String, dynamic>) {
+              final serverAddr = SavedAddressModel.fromJson(item);
+              if (serverAddr.address.trim().isNotEmpty) {
+                final key = serverAddr.address.trim().toLowerCase();
+                addressMap[key] = serverAddr;
+                await SecureStorage.saveAddress(serverAddr);
+              }
+            }
+          }
+        }
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) {
+        setState(() {
+          _savedAddresses = addressMap.values.toList();
+          _isLoadingAddresses = false;
+        });
+      }
     }
   }
 
@@ -71,6 +123,9 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
       final lng = (result['lng'] as num?)?.toDouble();
       final address = result['address'] as String?;
       if (address != null && address.isNotEmpty) {
+        setState(() {
+          _isPickedFromMap = true;
+        });
         context.read<CheckoutCubit>().setAddressAndCalculateDelivery(
               lat ?? 0.0,
               lng ?? 0.0,
@@ -161,86 +216,229 @@ class _OrderTypeBottomSheetState extends State<OrderTypeBottomSheet> {
 
               // Delivery Mode Content
               if (isDelivery) ...[
-                if (state.address != null && state.address!.trim().isNotEmpty) ...[
-                  // Tanlangan manzil
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.darkCard : AppColors.neutral50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
+                Text(
+                  'checkout.delivery_location'.tr(),
+                  style: AppTextStyles.labelMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? AppColors.neutral300 : AppColors.neutral700,
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // 1. Xaritadan tanlash
+                () {
+                  final hasAddress = state.address != null && state.address!.trim().isNotEmpty;
+                  final selectedSavedIndex = _savedAddresses.indexWhere((item) =>
+                      item.address.trim().toLowerCase() == state.address?.trim().toLowerCase() ||
+                      (state.lat != null &&
+                          state.lng != null &&
+                          (state.lat! - item.lat).abs() < 0.0001 &&
+                          (state.lng! - item.lng).abs() < 0.0001));
+
+                  final effectiveSavedIndex = _isPickedFromMap ? -1 : selectedSavedIndex;
+                  final isMapSelected = _isPickedFromMap || (hasAddress && effectiveSavedIndex == -1);
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      InkWell(
+                        onTap: () => _pickDeliveryLocation(useMyLocation: false),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.12),
-                            shape: BoxShape.circle,
+                            color: isMapSelected
+                                ? (isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight)
+                                : (isDark ? AppColors.darkCard : AppColors.neutral50),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isMapSelected
+                                  ? AppColors.primary
+                                  : (isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8)),
+                              width: isMapSelected ? 1.5 : 1.0,
+                            ),
                           ),
-                          child: const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 20),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Row(
                             children: [
-                              Text(
-                                'checkout.address'.tr(),
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: isMapSelected
+                                      ? AppColors.primary.withValues(alpha: 0.15)
+                                      : (isDark ? AppColors.neutral700 : AppColors.neutral200.withValues(alpha: 0.6)),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  Icons.map_outlined,
+                                  color: isMapSelected ? AppColors.primary : AppColors.neutral500,
+                                  size: 20,
                                 ),
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                state.address!,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTextStyles.labelMedium.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: theme.textTheme.bodyLarge?.color,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      isMapSelected && hasAddress
+                                          ? '1. Xaritadan tanlangan manzil'
+                                          : '1. ${'checkout.pick_on_map'.tr()}',
+                                      style: AppTextStyles.labelMedium.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                        color: isDark ? Colors.white : AppColors.neutral900,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      isMapSelected && hasAddress
+                                          ? state.address!
+                                          : 'Xaritada belgilash yoki GPS orqali',
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: isMapSelected && hasAddress
+                                            ? (isDark ? AppColors.neutral200 : AppColors.neutral700)
+                                            : (isDark ? AppColors.neutral400 : AppColors.neutral500),
+                                        fontSize: 12,
+                                        fontWeight: isMapSelected && hasAddress ? FontWeight.w600 : FontWeight.normal,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
                                 ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                isMapSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                                color: isMapSelected ? AppColors.primary : AppColors.neutral400,
+                                size: 20,
                               ),
                             ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-
-                // Xaritadan manzil tanlash tugmasi
-                InkWell(
-                  onTap: () => _pickDeliveryLocation(useMyLocation: false),
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.darkCard : const Color(0xFFF8F9FA),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: isDark ? AppColors.darkBorder : const Color(0xFFEDF2F7),
                       ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.map_rounded, color: AppColors.primary, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          'checkout.pick_on_map'.tr(),
-                          style: AppTextStyles.labelMedium.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: theme.textTheme.bodyLarge?.color,
+
+                      if (_isLoadingAddresses && _savedAddresses.isEmpty) ...[
+                        const SizedBox(height: 8),
+                        const Padding(
+                          padding: EdgeInsets.all(12.0),
+                          child: Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                            ),
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                ),
+
+                      if (_savedAddresses.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        ..._savedAddresses.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final item = entry.value;
+                          final isSelected = !isMapSelected && effectiveSavedIndex == index;
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _isPickedFromMap = false;
+                                });
+                                context.read<CheckoutCubit>().setAddressAndCalculateDelivery(
+                                      item.lat,
+                                      item.lng,
+                                      item.address,
+                                    );
+                                context.read<CheckoutCubit>().setAddressDetails(
+                                      apartment: item.apartment,
+                                      floor: item.floor,
+                                      entrance: item.entrance,
+                                      doorPhone: null,
+                                    );
+                              },
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? (isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight)
+                                      : (isDark ? AppColors.darkCard : AppColors.neutral50),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : (isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.8)),
+                                    width: isSelected ? 1.5 : 1.0,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? AppColors.primary.withValues(alpha: 0.15)
+                                            : (isDark ? AppColors.neutral700 : AppColors.neutral200.withValues(alpha: 0.6)),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Icon(
+                                        Icons.location_on_rounded,
+                                        color: isSelected ? AppColors.primary : AppColors.neutral500,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '#${index + 2} ${item.label.isNotEmpty && item.label != item.address ? item.label : item.address}',
+                                            style: AppTextStyles.labelMedium.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                              color: isDark ? Colors.white : AppColors.neutral900,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          if (item.detailsSummary.isNotEmpty ||
+                                              (item.label.isNotEmpty && item.label != item.address)) ...[
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              [
+                                                if (item.label.isNotEmpty && item.label != item.address) item.address,
+                                                if (item.detailsSummary.isNotEmpty) item.detailsSummary,
+                                              ].join(' • '),
+                                              style: AppTextStyles.bodySmall.copyWith(
+                                                color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                                                fontSize: 12,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                                      color: isSelected ? AppColors.primary : AppColors.neutral400,
+                                      size: 20,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
+                    ],
+                  );
+                }(),
               ] else ...[
                 // Pickup Mode Branch Picker
                 Text(

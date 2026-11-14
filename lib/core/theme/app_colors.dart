@@ -4,20 +4,20 @@ import 'package:flutter/material.dart';
 /// Built strictly following the ui-ux-design guidelines:
 /// 60-30-10 color rule, high contrast WCAG ratios, soft multi-stop shadows.
 class AppColors {
-  // Brand Primary (Appetizing Artisan Red)
-  static const primary          = Color(0xFFD70225);
-  static const primaryDark      = Color(0xFFA5001A);
-  static const primaryLight     = Color(0xFFFFF1F2);
+  // Brand Primary (pizzastrada.uz saytidagi olovrang-qizil #FF3E1D)
+  static const primary          = Color(0xFFFF3E1D);
+  static const primaryDark      = Color(0xFFE6381A);
+  static const primaryLight     = Color(0xFFFFF2EF);
   static const primaryGradient  = LinearGradient(
-    colors: [Color(0xFFE11D48), Color(0xFFD70225)],
+    colors: [Color(0xFFFF5722), Color(0xFFFF3E1D)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   // Dark Mode Primary
-  static const darkPrimary      = Color(0xFFF43F5E);
-  static const darkPrimaryDark  = Color(0xFFBE123C);
-  static const darkPrimaryLight = Color(0xFF38070F);
+  static const darkPrimary      = Color(0xFFFF4824);
+  static const darkPrimaryDark  = Color(0xFFE6381A);
+  static const darkPrimaryLight = Color(0xFF38120A);
 
   // Secondary (Fresh Basil Green / Savings)
   static const secondary        = Color(0xFF16A34A);

@@ -474,7 +474,7 @@ class _HomePageState extends State<HomePage> {
         });
       },
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: isDark ? AppColors.darkBackground : AppColors.surface,
         appBar: _buildAppBar(context),
         body: GestureDetector(
           onTap: () {
@@ -584,11 +584,13 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-/// 🎁 Promotional Slider Banner Carousel (Cheksiz aylanuvchi karusel)
+/// 🎁 Promotional Slider Banner Carousel (1024x204 - 5:1 panorama format)
 class _HomeSliderBanner extends StatefulWidget {
   final List<SliderEntity> sliders;
 
   const _HomeSliderBanner({required this.sliders});
+
+  static const double aspectRatio = 1024.0 / 204.0;
 
   @override
   State<_HomeSliderBanner> createState() => _HomeSliderBannerState();
@@ -608,9 +610,9 @@ class _HomeSliderBannerState extends State<_HomeSliderBanner> {
 
   void _setupController() {
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final cardWidth = (screenWidth * 0.62).clamp(200.0, 245.0);
-    const gap = 8.0;
-    final targetFraction = ((cardWidth + gap) / screenWidth).clamp(0.5, 0.85);
+    final cardWidth = screenWidth * 0.85;
+    const gap = 10.0;
+    final targetFraction = ((cardWidth + gap) / screenWidth).clamp(0.80, 0.90);
 
     if (_pageController == null || (_lastFraction - targetFraction).abs() > 0.01) {
       _pauseAutoScroll();
@@ -671,26 +673,33 @@ class _HomeSliderBannerState extends State<_HomeSliderBanner> {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final cardWidth = (screenWidth * 0.62).clamp(200.0, 245.0);
+    final cardWidth = screenWidth * 0.85;
+    final cardHeight = cardWidth / _HomeSliderBanner.aspectRatio;
 
     if (widget.sliders.length == 1) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      final singleWidth = screenWidth - 32;
+      final singleHeight = singleWidth / _HomeSliderBanner.aspectRatio;
+      return Container(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        padding: const EdgeInsets.fromLTRB(16, 2, 16, 6),
         child: SizedBox(
-          height: 88,
+          width: singleWidth,
+          height: singleHeight,
           child: _SliderBannerCard(
             slider: widget.sliders.first,
-            width: cardWidth,
+            width: singleWidth,
+            height: singleHeight,
             isDark: isDark,
           ),
         ),
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 4, bottom: 8),
+    return Container(
+      color: isDark ? AppColors.darkSurface : Colors.white,
+      padding: const EdgeInsets.only(top: 2, bottom: 6),
       child: SizedBox(
-        height: 88,
+        height: cardHeight,
         child: NotificationListener<ScrollNotification>(
           onNotification: (notification) {
             if (notification is ScrollStartNotification) {
@@ -711,12 +720,13 @@ class _HomeSliderBannerState extends State<_HomeSliderBanner> {
                 final sliderIndex = index % widget.sliders.length;
                 final slider = widget.sliders[sliderIndex];
                 return Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.only(right: 10),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: _SliderBannerCard(
                       slider: slider,
                       width: cardWidth,
+                      height: cardHeight,
                       isDark: isDark,
                     ),
                   ),
@@ -733,11 +743,13 @@ class _HomeSliderBannerState extends State<_HomeSliderBanner> {
 class _SliderBannerCard extends StatelessWidget {
   final SliderEntity slider;
   final double width;
+  final double height;
   final bool isDark;
 
   const _SliderBannerCard({
     required this.slider,
     required this.width,
+    required this.height,
     required this.isDark,
   });
 
@@ -751,17 +763,16 @@ class _SliderBannerCard extends StatelessWidget {
         }
       },
       borderRadius: BorderRadius.circular(12),
-      child: Container(
+      child: SizedBox(
         width: width,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
-        ),
+        height: height,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: CachedNetworkImage(
             imageUrl: slider.imageUrl,
-            fit: BoxFit.cover,
+            width: width,
+            height: height,
+            fit: BoxFit.fill,
             placeholder: (_, __) => Container(
               color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
             ),
@@ -900,25 +911,29 @@ class _HomeSliderShimmer extends StatelessWidget {
     final baseColor = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE8ECEF);
     final highlightColor = isDark ? const Color(0xFF3D3D3D) : const Color(0xFFF8F9FA);
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final cardWidth = (screenWidth * 0.62).clamp(200.0, 245.0);
+    final cardWidth = screenWidth * 0.85;
+    final cardHeight = cardWidth / _HomeSliderBanner.aspectRatio;
 
-    return Shimmer.fromColors(
-      baseColor: baseColor,
-      highlightColor: highlightColor,
-      child: Container(
-        height: 88,
-        margin: const EdgeInsets.only(top: 4, bottom: 8),
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: 2,
-          separatorBuilder: (_, __) => const SizedBox(width: 8),
-          itemBuilder: (ctx, i) => Container(
-            width: cardWidth,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: Colors.white,
+    return Container(
+      color: isDark ? AppColors.darkSurface : Colors.white,
+      padding: const EdgeInsets.only(top: 2, bottom: 6),
+      child: Shimmer.fromColors(
+        baseColor: baseColor,
+        highlightColor: highlightColor,
+        child: SizedBox(
+          height: cardHeight,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: 2,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (ctx, i) => Container(
+              width: cardWidth,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.white,
+              ),
             ),
           ),
         ),
