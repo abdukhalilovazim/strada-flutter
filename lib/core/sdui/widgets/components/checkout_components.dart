@@ -1828,9 +1828,20 @@ class SDUISubmitOrderCtaComponent extends StatelessWidget {
     // 4. Mahsulotlar va kuponlar ro'yxatini shakllantirish
     final regularProducts = <Map<String, dynamic>>[];
     final coupons = <Map<String, dynamic>>[];
+    final sets = <Map<String, dynamic>>[];
 
     for (final item in cartState.items) {
-      if (item.isCoupon) {
+      if (item.isSet) {
+        sets.add({
+          'set_id': item.setId ?? (item.product.id > 999999 ? item.product.id - 999999 : item.product.id),
+          'quantity': item.quantity,
+          'selections': item.setSelections?.map((sel) => {
+                'set_group_id': sel.setGroupId,
+                'product_variant_id': sel.productVariantId,
+              }).toList() ??
+              [],
+        });
+      } else if (item.isCoupon) {
         coupons.add({
           'coupon_id': item.couponId ?? (item.product.id > 900000 ? item.product.id - 900000 : item.product.id),
           'quantity': item.quantity,
@@ -1849,6 +1860,7 @@ class SDUISubmitOrderCtaComponent extends StatelessWidget {
     context.read<CheckoutCubit>().submitOrder(
       products: regularProducts,
       coupons: coupons,
+      sets: sets,
     );
   }
 

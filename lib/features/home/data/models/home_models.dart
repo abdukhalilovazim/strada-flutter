@@ -62,6 +62,7 @@ class ProductModel extends ProductEntity {
     required List<VariantModel> super.variants,
     required List<KeyValueModel> super.values,
     super.searchKeywords,
+    super.isSet = false,
   });
 
   static String _cleanImageUrl(String? url) {
@@ -109,6 +110,10 @@ class ProductModel extends ProductEntity {
       variants: (json['variants'] as List? ?? []).map((e) => VariantModel.fromJson(e as Map<String, dynamic>)).toList(),
       values: (json['values'] as List? ?? []).map((e) => KeyValueModel.fromJson(e as Map<String, dynamic>)).toList(),
       searchKeywords: json['search_keywords'] as String?,
+      isSet: json['is_set'] == true ||
+          json['is_set'] == 1 ||
+          json['is_set'] == '1' ||
+          (json['category'] is Map && (json['category']['slug'] == 'set-menus' || json['category']['id'] == 999999)),
     );
   }
 }

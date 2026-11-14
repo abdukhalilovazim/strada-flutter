@@ -5,6 +5,7 @@ import 'package:pizza_strada/core/services/smart_recommendation_engine.dart';
 import 'package:pizza_strada/features/cart/domain/entities/cart_item_entity.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/promotions/domain/entities/promotion_deal_entity.dart';
+import 'package:pizza_strada/features/sets/data/models/set_detail_model.dart';
 
 class CartState extends Equatable {
   final List<CartItemEntity> items;
@@ -53,13 +54,39 @@ class CartCubit extends Cubit<CartState> {
     emit(CartState(items: items));
   }
 
+  void addSetToCart(SetDetailModel set, List<SetSelectionItem> selections, {int quantity = 1}) {
+    final items = List<CartItemEntity>.from(state.items);
+    items.add(CartItemEntity(
+      product: ProductEntity(
+        id: 999999 + set.id,
+        slug: set.slug,
+        title: set.title,
+        description: set.description,
+        thumbnail: set.imageUrl,
+        photo: set.imageUrl,
+        price: set.price,
+        variants: const [],
+        values: const [],
+        isSet: true,
+      ),
+      quantity: quantity,
+      isSet: true,
+      setId: set.id,
+      setSelections: selections,
+    ));
+    emit(CartState(items: items));
+  }
+
   void removeFromCart(CartItemEntity item) {
     final items = List<CartItemEntity>.from(state.items);
     items.removeWhere((i) {
+      if (item.isSet) {
+        return i.isSet && i.setId == item.setId && i.setSelections == item.setSelections;
+      }
       if (item.isCoupon) {
         return i.isCoupon && i.couponId == item.couponId;
       }
-      return !i.isCoupon && i.product.slug == item.product.slug && i.variant?.id == item.variant?.id;
+      return !i.isCoupon && !i.isSet && i.product.slug == item.product.slug && i.variant?.id == item.variant?.id;
     });
     emit(CartState(items: items));
   }
@@ -67,10 +94,13 @@ class CartCubit extends Cubit<CartState> {
   void updateQuantity(CartItemEntity item, int delta) {
     final items = List<CartItemEntity>.from(state.items);
     final index = items.indexWhere((i) {
+      if (item.isSet) {
+        return i.isSet && i.setId == item.setId && i.setSelections == item.setSelections;
+      }
       if (item.isCoupon) {
         return i.isCoupon && i.couponId == item.couponId;
       }
-      return !i.isCoupon && i.product.slug == item.product.slug && i.variant?.id == item.variant?.id;
+      return !i.isCoupon && !i.isSet && i.product.slug == item.product.slug && i.variant?.id == item.variant?.id;
     });
 
     if (index != -1) {

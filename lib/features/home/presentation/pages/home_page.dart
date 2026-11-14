@@ -394,6 +394,10 @@ class _HomePageState extends State<HomePage> {
                     product: product,
                     quantityInCart: quantity,
                     onTap: () {
+                      if (product.isSet) {
+                        context.push('/set/${product.slug}', extra: product);
+                        return;
+                      }
                       final hasMultiple = product.variants.where((v) => VariantLocalizationHelper.localize(v.title).isNotEmpty).length > 1;
                       if (hasMultiple) {
                         ProductDetailModal.show(context, product);
@@ -402,6 +406,10 @@ class _HomePageState extends State<HomePage> {
                       }
                     },
                     onAdd: () {
+                      if (product.isSet) {
+                        context.push('/set/${product.slug}', extra: product);
+                        return;
+                      }
                       final hasMultiple = product.variants.where((v) => VariantLocalizationHelper.localize(v.title).isNotEmpty).length > 1;
                       if (hasMultiple) {
                         ProductDetailModal.show(context, product);

@@ -42,6 +42,7 @@ class ProfilePage extends StatelessWidget {
           SDUILoyaltyComponent(section: dummySection, onAction: (_) {}),
           SDUIProfileMenuGroupComponent(section: dummySection, onAction: (_) {}),
           SDUIAppSettingsComponent(section: dummySection, onAction: (_) {}),
+          SDUISocialMediaComponent(section: dummySection, onAction: (_) {}),
           SDUILogoutDeleteComponent(section: dummySection, onAction: (_) {}),
           SDUIAppVersionComponent(section: dummySection, onAction: (_) {}),
         ],

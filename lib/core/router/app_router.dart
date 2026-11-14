@@ -33,6 +33,7 @@ import 'package:pizza_strada/features/profile/presentation/pages/saved_addresses
 import 'package:pizza_strada/features/promotions/domain/entities/promotion_deal_entity.dart';
 import 'package:pizza_strada/features/promotions/presentation/pages/coupon_detail_page.dart';
 import 'package:pizza_strada/features/promotions/presentation/pages/promotions_page.dart';
+import 'package:pizza_strada/features/sets/presentation/pages/set_detail_page.dart';
 import 'package:pizza_strada/features/splash/presentation/pages/splash_page.dart';
 
 class _BottomNavItemDef {
@@ -524,6 +525,13 @@ final appRouter = GoRouter(
       builder: (_, s) {
         final deal = s.extra as PromotionDealEntity;
         return CouponDetailPage(deal: deal);
+      },
+    ),
+    GoRoute(
+      path: '/set/:slug',
+      builder: (context, s) {
+        final slug = s.pathParameters['slug'] ?? '';
+        return SetDetailPage(slug: slug);
       },
     ),
     GoRoute(

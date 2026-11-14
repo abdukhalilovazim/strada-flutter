@@ -231,6 +231,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   Future<void> submitOrder({
     required List<Map<String, dynamic>> products,
     List<Map<String, dynamic>>? coupons,
+    List<Map<String, dynamic>>? sets,
     String? commentOverride,
   }) async {
     if (!state.canOrder) {
@@ -259,6 +260,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       'promo_code': state.appliedPromoCode,
       'products': products,
       if (coupons != null && coupons.isNotEmpty) 'coupons': coupons,
+      if (sets != null && sets.isNotEmpty) 'sets': sets,
     };
 
     final result = await _orderRepository.createOrder(vars);

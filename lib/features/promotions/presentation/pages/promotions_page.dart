@@ -36,12 +36,6 @@ class _PromotionsPageState extends State<PromotionsPage> {
   }
 
   @override
-  void dispose() {
-    ScaffoldMessenger.maybeOf(context)?.clearSnackBars();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => PromotionsCubit()..loadPromotions(),

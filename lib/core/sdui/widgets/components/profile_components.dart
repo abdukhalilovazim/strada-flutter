@@ -978,3 +978,203 @@ class _SDUIAppVersionComponentState extends State<SDUIAppVersionComponent> {
   }
 }
 
+/// 🌐 Profil: Ijtimoiy tarmoqlar (Telegram, Instagram)
+class SDUISocialMediaComponent extends StatelessWidget {
+  final SDUISectionModel section;
+  final SDUIActionHandler onAction;
+
+  const SDUISocialMediaComponent({
+    super.key,
+    required this.section,
+    required this.onAction,
+  });
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      try {
+        await launchUrl(uri);
+      } catch (_) {}
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 8, top: 4),
+            child: Text(
+              'profile.social_title'.tr(),
+              style: AppTextStyles.labelMedium.copyWith(
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+                color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkCard : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isDark ? AppColors.darkBorder : AppColors.neutral200.withValues(alpha: 0.7),
+              ),
+              boxShadow: AppColors.softShadow(isDark),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Column(
+                children: [
+                  // 1. Telegram
+                  _buildSocialRow(
+                    context,
+                    title: 'profile.telegram_title'.tr(),
+                    subtitle: 'profile.telegram_subtitle'.tr(),
+                    handle: '@pizza_strada',
+                    icon: Icons.send_rounded,
+                    iconBgColor: const Color(0xFF2AABEE),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      _openUrl('https://t.me/pizza_strada');
+                    },
+                  ),
+
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    indent: 64,
+                    color: isDark ? AppColors.darkBorder : AppColors.neutral100,
+                  ),
+
+                  // 2. Instagram
+                  _buildSocialRow(
+                    context,
+                    title: 'profile.instagram_title'.tr(),
+                    subtitle: 'profile.instagram_subtitle'.tr(),
+                    handle: '@pizzastrada.uz',
+                    icon: Icons.camera_alt_rounded,
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFF833AB4),
+                        Color(0xFFFD1D1D),
+                        Color(0xFFF77737),
+                      ],
+                      begin: Alignment.bottomLeft,
+                      end: Alignment.topRight,
+                    ),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      _openUrl('https://www.instagram.com/pizzastrada.uz');
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSocialRow(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required String handle,
+    required IconData icon,
+    Color? iconBgColor,
+    Gradient? gradient,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  gradient: gradient,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 19,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTextStyles.labelMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: isDark ? Colors.white : AppColors.neutral900,
+                      ),
+                    ),
+                    const SizedBox(height: 1.5),
+                    Text(
+                      subtitle,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                        fontSize: 11.5,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkSurface : const Color(0xFFF1F3F5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  handle,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.neutral300 : AppColors.neutral700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: isDark ? AppColors.neutral500 : AppColors.neutral400,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+

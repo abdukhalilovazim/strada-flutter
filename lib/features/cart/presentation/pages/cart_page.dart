@@ -343,7 +343,37 @@ class _CartPageState extends State<CartPage> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      if (item.isCoupon) ...[
+                      if (item.isSet) ...[
+                        const SizedBox(height: 2),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.takeout_dining_rounded, size: 12, color: AppColors.primary),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Set menyu',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.primary,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (item.setSelections != null && item.setSelections!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            item.setSelections!.map((s) => s.variantTitle.isNotEmpty ? '${s.productTitle} (${s.variantTitle})' : s.productTitle).join(' • '),
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ] else if (item.isCoupon) ...[
                         const SizedBox(height: 2),
                         Row(
                           mainAxisSize: MainAxisSize.min,
