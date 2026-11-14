@@ -97,4 +97,58 @@ void main() {
     final state3 = cubit.state as HomeLoaded;
     expect(state3.products.length, 3);
   });
+
+  test('Multilingual search across Uzbek, Russian, and English works seamlessly', () {
+    final multiProducts = [
+      const ProductEntity(
+        slug: 'pepperoni-pizza',
+        title: 'Pepperoni',
+        description: 'Achchiq kolbasa bilan',
+        thumbnail: '',
+        photo: '',
+        price: 65000,
+        variants: [],
+        values: [],
+        searchKeywords: 'pepperoni pitsa пепперони пицца с острой колбасой spicy sausage pepperoni-pizza',
+      ),
+      const ProductEntity(
+        slug: 'cheese-burger',
+        title: 'Chizburger',
+        description: 'Eritilgan pishloq bilan',
+        thumbnail: '',
+        photo: '',
+        price: 38000,
+        variants: [],
+        values: [],
+        searchKeywords: 'chizburger чизбургер сырный бургер cheeseburger melted cheese cheese-burger',
+      ),
+    ];
+
+    cubit.emit(HomeLoaded(
+      sliders: const [],
+      categories: const [],
+      fullProducts: multiProducts,
+      products: multiProducts,
+    ));
+
+    // Search Russian: "пепперони"
+    cubit.search('пепперони');
+    expect((cubit.state as HomeLoaded).products.length, 1);
+    expect((cubit.state as HomeLoaded).products.first.slug, 'pepperoni-pizza');
+
+    // Search English: "cheese"
+    cubit.search('cheese');
+    expect((cubit.state as HomeLoaded).products.length, 1);
+    expect((cubit.state as HomeLoaded).products.first.slug, 'cheese-burger');
+
+    // Search Russian: "сырный"
+    cubit.search('сырный');
+    expect((cubit.state as HomeLoaded).products.length, 1);
+    expect((cubit.state as HomeLoaded).products.first.slug, 'cheese-burger');
+
+    // Search Uzbek: "pitsa"
+    cubit.search('pitsa');
+    expect((cubit.state as HomeLoaded).products.length, 1);
+    expect((cubit.state as HomeLoaded).products.first.slug, 'pepperoni-pizza');
+  });
 }

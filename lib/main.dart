@@ -7,6 +7,7 @@ import 'package:pizza_strada/core/di/injection.dart';
 import 'package:pizza_strada/core/router/app_router.dart';
 import 'package:pizza_strada/core/services/analytics_service.dart';
 import 'package:pizza_strada/core/services/deep_link_service.dart';
+import 'package:pizza_strada/core/services/push_notification_service.dart';
 import 'package:pizza_strada/core/theme/app_theme.dart';
 import 'package:pizza_strada/core/theme/theme_cubit.dart';
 import 'package:pizza_strada/core/utils/device_info_helper.dart';
@@ -52,9 +53,10 @@ void main() async {
   await EasyLocalization.ensureInitialized();
   await configureDependencies();
 
-  // Initialize AppMetrica analytics and Deep linking
+  // Initialize AppMetrica analytics, Deep linking, and Push Notifications
   await AnalyticsService.instance.init();
   await DeepLinkService.instance.init();
+  await PushNotificationService.instance.init();
 
   runApp(
     MultiBlocProvider(

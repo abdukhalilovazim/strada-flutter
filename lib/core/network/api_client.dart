@@ -38,11 +38,14 @@ class ApiClient {
         : 'uz';
     final isDark = SharedPrefs.getThemeMode() == ThemeMode.dark;
 
+    final fcmToken = SharedPrefs.getFcmToken();
     final headers = <String, String>{
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       if (token != null)
         'Authorization': token.startsWith('Bearer ') ? token : 'Bearer $token',
+      if (fcmToken != null && fcmToken.isNotEmpty)
+        'Firebase-Token': fcmToken,
       'language': lang,
       'Accept-Language': lang,
       'theme': isDark ? 'dark' : 'light',

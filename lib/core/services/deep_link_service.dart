@@ -191,7 +191,7 @@ class DeepLinkService {
     }
 
     // 2. Order details: /order/:id or /orders/:id
-    if (first == 'order' && segments.length > 1) {
+    if ((first == 'order' || first == 'orders') && segments.length > 1) {
       final id = segments[1];
       return '/order/$id';
     }
@@ -211,10 +211,17 @@ class DeepLinkService {
       return '/orders';
     }
 
-    // 6. Profile & Edit Profile: /profile, /profile/edit
+    // 6. Profile & Edit Profile: /profile, /profile/edit, /profile/:order_id
     if (first == 'profile') {
-      if (segments.length > 1 && segments[1].toLowerCase() == 'edit') {
-        return '/profile/edit';
+      if (segments.length > 1) {
+        final second = segments[1].toLowerCase();
+        if (second == 'edit') {
+          return '/profile/edit';
+        }
+        // Agar /profile/123 kabi buyurtma ID kelgan bo'lsa (veb-sayt formati), buyurtma sahifasiga yo'naltirish
+        if (int.tryParse(second) != null) {
+          return '/order/$second';
+        }
       }
       return '/profile';
     }
@@ -247,7 +254,7 @@ class DeepLinkService {
     return null;
   }
 
-  void _navigate(String targetPath) {
+  void navigate(String targetPath) {
     debugPrint('🚀 [DeepLink] Navigating to: $targetPath');
     final isShellTab = targetPath == '/home' ||
         targetPath == '/promotions' ||
@@ -260,6 +267,38 @@ class DeepLinkService {
     } else {
       appRouter.push(targetPath);
     }
+  }
+
+  void _navigate(String targetPath) => navigate(targetPath);
+
+  /// Push xabarnoma ma'lumotlari (FCM payload) orqali kerakli sahifaga o'tish
+  Future<void> handleNotificationData(Map<String, dynamic> data) async {
+    debugPrint('🔔 [DeepLinkService] Handling notification data: $data');
+
+    // 1. To'g'ridan-to'g'ri order_id orqali buyurtma tafsilotiga o'tish
+    final orderId = data['order_id'] ?? data['orderId'] ?? data['id'];
+    if (orderId != null && orderId.toString().trim().isNotEmpty) {
+      final cleanId = orderId.toString().trim();
+      navigate('/order/$cleanId');
+      return;
+    }
+
+    // 2. route orqali o'tish (/order/:id yoki boshqa yo'l)
+    final route = data['route'];
+    if (route != null && route.toString().trim().isNotEmpty) {
+      await handleStringLink(route.toString().trim());
+      return;
+    }
+
+    // 3. click_action orqali o'tish (https://app.pizzastrada.uz/order/123)
+    final clickAction = data['click_action'];
+    if (clickAction != null && clickAction.toString().trim().isNotEmpty) {
+      await handleStringLink(clickAction.toString().trim());
+      return;
+    }
+
+    // 4. Standart xabarnomalar ro'yxatiga o'tish
+    navigate('/notifications');
   }
 
   /// Dispose listener

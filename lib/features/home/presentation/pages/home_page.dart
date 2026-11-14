@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -35,7 +36,6 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _hasSearchText = false;
-  bool _isSearchOpen = false;
 
   @override
   void initState() {
@@ -56,27 +56,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _openSearch() {
-    HapticFeedback.lightImpact();
-    setState(() => _isSearchOpen = true);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _searchFocusNode.requestFocus();
-      }
-    });
-  }
-
-  void _closeSearch() {
-    HapticFeedback.lightImpact();
-    _searchFocusNode.unfocus();
-    _searchController.clear();
-    context.read<HomeCubit>().search('');
-    setState(() {
-      _isSearchOpen = false;
-      _hasSearchText = false;
-    });
-  }
-
   @override
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
@@ -87,82 +66,6 @@ class _HomePageState extends State<HomePage> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    if (_isSearchOpen) {
-      return AppBar(
-        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_rounded,
-            color: isDark ? Colors.white : AppColors.neutral900,
-          ),
-          onPressed: _closeSearch,
-        ),
-        titleSpacing: 0,
-        title: SizedBox(
-          height: 42,
-          child: TextField(
-            key: const Key('home_search_input'),
-            controller: _searchController,
-            focusNode: _searchFocusNode,
-            autofocus: true,
-            autocorrect: false,
-            enableSuggestions: false,
-            textInputAction: TextInputAction.search,
-            onChanged: (val) {
-              context.read<HomeCubit>().search(val);
-            },
-            onSubmitted: (val) {
-              context.read<HomeCubit>().search(val);
-              _searchFocusNode.unfocus();
-            },
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: isDark ? Colors.white : AppColors.neutral900,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-            decoration: InputDecoration(
-              hintText: 'home.search_hint'.tr(),
-              hintStyle: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.neutral400,
-                fontSize: 13.5,
-              ),
-              prefixIcon: const Icon(
-                Icons.search_rounded,
-                size: 20,
-                color: AppColors.primary,
-              ),
-              suffixIcon: _hasSearchText
-                  ? IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.neutral500),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        _searchController.clear();
-                        context.read<HomeCubit>().search('');
-                      },
-                    )
-                  : null,
-              filled: true,
-              fillColor: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.close_rounded, color: AppColors.neutral500, size: 22),
-            onPressed: _closeSearch,
-          ),
-          const SizedBox(width: 8),
-        ],
-      );
-    }
 
     return AppBar(
       backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
@@ -187,15 +90,6 @@ class _HomePageState extends State<HomePage> {
         },
       ),
       actions: [
-        IconButton(
-          icon: Icon(
-            Icons.search_rounded,
-            color: isDark ? Colors.white : AppColors.neutral900,
-            size: 24,
-          ),
-          tooltip: 'home.search_hint'.tr(),
-          onPressed: _openSearch,
-        ),
         IconButton(
           icon: Builder(
             builder: (context) {
@@ -253,6 +147,88 @@ class _HomePageState extends State<HomePage> {
         ),
         const SizedBox(width: 8),
       ],
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(52),
+        child: Container(
+          color: isDark ? AppColors.darkSurface : Colors.white,
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: SizedBox(
+            height: 44,
+            child: TextField(
+              key: const Key('home_search_input'),
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              autocorrect: false,
+              enableSuggestions: false,
+              textInputAction: TextInputAction.search,
+              onChanged: (val) {
+                context.read<HomeCubit>().search(val);
+              },
+              onSubmitted: (val) {
+                context.read<HomeCubit>().search(val);
+                _searchFocusNode.unfocus();
+              },
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isDark ? Colors.white : AppColors.neutral900,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              decoration: InputDecoration(
+                hintText: 'home.search_hint'.tr(),
+                hintStyle: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.neutral400,
+                  fontSize: 13.5,
+                ),
+                prefixIcon: IconButton(
+                  icon: Icon(
+                    Icons.search_rounded,
+                    size: 20,
+                    color: _searchFocusNode.hasFocus ? AppColors.primary : AppColors.neutral500,
+                  ),
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    _searchFocusNode.requestFocus();
+                  },
+                ),
+                suffixIcon: _hasSearchText
+                    ? IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.neutral500),
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          _searchController.clear();
+                          context.read<HomeCubit>().search('');
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: isDark ? AppColors.darkBorder : const Color(0xFFE9ECEF),
+                    width: 1,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: isDark ? AppColors.darkBorder : const Color(0xFFE9ECEF),
+                    width: 1,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: AppColors.primary,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -395,7 +371,6 @@ class _HomePageState extends State<HomePage> {
     return CustomScrollView(
       physics: const NeverScrollableScrollPhysics(),
       slivers: [
-        SliverToBoxAdapter(child: _buildSearchBar(context)),
         const SliverToBoxAdapter(child: _HomeSliderShimmer()),
         const SliverToBoxAdapter(child: _HomeCategoriesShimmer()),
         SliverPadding(
@@ -494,7 +469,6 @@ class _HomePageState extends State<HomePage> {
                     }
                   },
                 ),
-                _buildSearchBar(context),
                 if (state.searchQuery.isEmpty) ...[
                   _buildSliderBanner(state.sliders, state.isSlidersLoading),
                   _buildCategoryBar(state.categories, state.selectedCategory),
@@ -511,38 +485,146 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-/// 🎁 Promotional Slider Banner Carousel (Search bar ostidagi bannerlar karuseli)
-class _HomeSliderBanner extends StatelessWidget {
+/// 🎁 Promotional Slider Banner Carousel (Cheksiz aylanuvchi karusel)
+class _HomeSliderBanner extends StatefulWidget {
   final List<SliderEntity> sliders;
 
   const _HomeSliderBanner({required this.sliders});
 
   @override
+  State<_HomeSliderBanner> createState() => _HomeSliderBannerState();
+}
+
+class _HomeSliderBannerState extends State<_HomeSliderBanner> {
+  PageController? _pageController;
+  Timer? _autoScrollTimer;
+  static const int _kInfiniteMultiplier = 10000;
+  double _lastFraction = 0.0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _setupController();
+  }
+
+  void _setupController() {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final cardWidth = (screenWidth * 0.62).clamp(200.0, 245.0);
+    const gap = 8.0;
+    final targetFraction = ((cardWidth + gap) / screenWidth).clamp(0.5, 0.85);
+
+    if (_pageController == null || (_lastFraction - targetFraction).abs() > 0.01) {
+      _pauseAutoScroll();
+      _pageController?.dispose();
+
+      _lastFraction = targetFraction;
+      final initialPage = widget.sliders.length > 1
+          ? (_kInfiniteMultiplier ~/ 2) - ((_kInfiniteMultiplier ~/ 2) % widget.sliders.length)
+          : 0;
+
+      _pageController = PageController(
+        initialPage: initialPage,
+        viewportFraction: targetFraction,
+      );
+
+      _startAutoScroll();
+    }
+  }
+
+  void _startAutoScroll() {
+    if (widget.sliders.length <= 1) return;
+    _autoScrollTimer?.cancel();
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted || _pageController == null || !_pageController!.hasClients) return;
+      _pageController!.nextPage(
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOutCubic,
+      );
+    });
+  }
+
+  void _pauseAutoScroll() {
+    _autoScrollTimer?.cancel();
+    _autoScrollTimer = null;
+  }
+
+  @override
+  void didUpdateWidget(covariant _HomeSliderBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.sliders.length != widget.sliders.length) {
+      _pauseAutoScroll();
+      _pageController?.dispose();
+      _pageController = null;
+      _setupController();
+    }
+  }
+
+  @override
+  void dispose() {
+    _pauseAutoScroll();
+    _pageController?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (sliders.isEmpty) return const SizedBox.shrink();
+    if (widget.sliders.isEmpty) return const SizedBox.shrink();
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final cardWidth = (screenWidth * 0.72).clamp(240.0, 300.0);
+    final cardWidth = (screenWidth * 0.62).clamp(200.0, 245.0);
+
+    if (widget.sliders.length == 1) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        child: SizedBox(
+          height: 88,
+          child: _SliderBannerCard(
+            slider: widget.sliders.first,
+            width: cardWidth,
+            isDark: isDark,
+          ),
+        ),
+      );
+    }
 
     return Padding(
-      padding: const EdgeInsets.only(top: 2, bottom: 10),
+      padding: const EdgeInsets.only(top: 4, bottom: 8),
       child: SizedBox(
-        height: 110,
-        child: ListView.separated(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          itemCount: sliders.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 10),
-          itemBuilder: (context, index) {
-            final slider = sliders[index];
-            return _SliderBannerCard(
-              slider: slider,
-              width: cardWidth,
-              isDark: isDark,
-            );
+        height: 88,
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (notification is ScrollStartNotification) {
+              _pauseAutoScroll();
+            } else if (notification is ScrollEndNotification) {
+              _startAutoScroll();
+            }
+            return false;
           },
+          child: Padding(
+            padding: const EdgeInsets.only(left: 16),
+            child: PageView.builder(
+              controller: _pageController,
+              padEnds: false,
+              clipBehavior: Clip.none,
+              physics: const BouncingScrollPhysics(),
+              itemBuilder: (context, index) {
+                final sliderIndex = index % widget.sliders.length;
+                final slider = widget.sliders[sliderIndex];
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: _SliderBannerCard(
+                      slider: slider,
+                      width: cardWidth,
+                      isDark: isDark,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         ),
       ),
     );
@@ -569,15 +651,15 @@ class _SliderBannerCard extends StatelessWidget {
           DeepLinkService.instance.handleStringLink(slider.link!);
         }
       },
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         width: width,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           child: CachedNetworkImage(
             imageUrl: slider.imageUrl,
             fit: BoxFit.cover,
@@ -719,24 +801,24 @@ class _HomeSliderShimmer extends StatelessWidget {
     final baseColor = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE8ECEF);
     final highlightColor = isDark ? const Color(0xFF3D3D3D) : const Color(0xFFF8F9FA);
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final cardWidth = (screenWidth * 0.72).clamp(240.0, 300.0);
+    final cardWidth = (screenWidth * 0.62).clamp(200.0, 245.0);
 
     return Shimmer.fromColors(
       baseColor: baseColor,
       highlightColor: highlightColor,
       child: Container(
-        height: 110,
-        margin: const EdgeInsets.only(top: 2, bottom: 10),
+        height: 88,
+        margin: const EdgeInsets.only(top: 4, bottom: 8),
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           physics: const NeverScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemCount: 2,
-          separatorBuilder: (_, __) => const SizedBox(width: 10),
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
           itemBuilder: (ctx, i) => Container(
             width: cardWidth,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
               color: Colors.white,
             ),
           ),
