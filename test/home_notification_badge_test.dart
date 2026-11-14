@@ -36,8 +36,8 @@ void main() {
       GetNotificationsUseCase(repo),
       MarkAllNotificationsReadUseCase(repo),
       MarkNotificationReadUseCase(repo),
-      repo.list,
     );
+    await cubit.loadNotifications();
 
     Widget buildTestWidget() {
       return BlocProvider<NotificationsCubit>.value(

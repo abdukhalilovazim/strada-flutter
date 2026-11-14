@@ -94,7 +94,6 @@ void main() {
       GetNotificationsUseCase(mockRepo),
       MarkAllNotificationsReadUseCase(mockRepo),
       MarkNotificationReadUseCase(mockRepo),
-      mockRepo.notifications,
     );
   });
 

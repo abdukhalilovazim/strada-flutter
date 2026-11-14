@@ -3,16 +3,34 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pizza_strada/core/router/app_router.dart';
 import 'package:pizza_strada/core/services/analytics_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-/// Deep Link Service handling both cold-start links and background stream links.
-/// Supports custom schemes (`pizzastrada://`, `strada://`) and Universal/App Links (`https://pizzastrada.uz`).
+/// Deep Link Service handling cold-start links, background stream links,
+/// and in-app clicks (e.g. slider banners, push notifications, promo buttons).
+/// Primary Deeplink Domain: `app.pizzastrada.uz`
+/// Supports:
+/// - Universal / App Links: `https://app.pizzastrada.uz/*`
+/// - Custom Schemes: `strada://*`, `pizzastrada://*`
 class DeepLinkService {
   static final DeepLinkService instance = DeepLinkService._();
   DeepLinkService._();
 
+  static const String primaryDomain = 'app.pizzastrada.uz';
+  static const List<String> supportedHosts = [
+    'app.pizzastrada.uz',
+    'pizzastrada.uz',
+    'www.pizzastrada.uz',
+  ];
+
   late final AppLinks _appLinks;
   StreamSubscription<Uri>? _linkSubscription;
   bool _isInitialized = false;
+
+  /// Helper to generate a full universal link URL for app.pizzastrada.uz
+  static String buildUrl(String path) {
+    final cleanPath = path.startsWith('/') ? path : '/$path';
+    return 'https://$primaryDomain$cleanPath';
+  }
 
   /// Initialize deep link listener
   Future<void> init() async {
@@ -42,7 +60,56 @@ class DeepLinkService {
     );
 
     _isInitialized = true;
-    debugPrint('✅ [DeepLinkService] Initialized and listening for links');
+    debugPrint('✅ [DeepLinkService] Initialized and listening for $primaryDomain');
+  }
+
+  /// Direct method to handle any string link from banners, notifications, buttons, etc.
+  Future<void> handleStringLink(String rawLink) async {
+    var text = rawLink.trim().replaceAll('"', '').replaceAll("'", '');
+    if (text.isEmpty) return;
+
+    debugPrint('🔗 [DeepLinkService] Handling link: $text');
+
+    // 1. Phone call (tel:+998...)
+    if (text.startsWith('tel:')) {
+      final uri = Uri.tryParse(text);
+      if (uri != null && await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      }
+      return;
+    }
+
+    // 2. Normalize domain if written without https:// (e.g. app.pizzastrada.uz/product/margarita)
+    if (text.startsWith('app.pizzastrada.uz') || text.startsWith('pizzastrada.uz')) {
+      text = 'https://$text';
+    }
+
+    // 3. Relative route starting with / (e.g. /promotions, /product/margarita)
+    if (text.startsWith('/')) {
+      final targetPath = parsePathToRoute(text);
+      if (targetPath != null) {
+        _navigate(targetPath);
+        return;
+      }
+    }
+
+    // 4. Full URI (e.g. https://app.pizzastrada.uz/..., strada://...)
+    final uri = Uri.tryParse(text);
+    if (uri != null) {
+      final targetPath = parseUriToRoute(uri);
+      if (targetPath != null) {
+        _navigate(targetPath);
+        return;
+      }
+
+      // 5. External URL (http:// or https:// not matching app routes)
+      if (uri.scheme == 'http' || uri.scheme == 'https') {
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+        return;
+      }
+    }
   }
 
   /// Parse URI and navigate using appRouter
@@ -60,27 +127,44 @@ class DeepLinkService {
       // If cold start, allow initial router setup to finish before redirecting
       if (isColdStart) {
         Future.delayed(const Duration(milliseconds: 300), () {
-          appRouter.go(targetPath);
+          _navigate(targetPath);
         });
       } else {
-        appRouter.go(targetPath);
+        _navigate(targetPath);
       }
     } else {
       debugPrint('⚠️ [DeepLink] Unknown or unsupported URI format: $uri');
     }
   }
 
-  /// Maps custom URI scheme or HTTPS URL to GoRouter route path
+  /// Maps custom URI scheme or HTTPS URL (app.pizzastrada.uz) to GoRouter route path
   String? parseUriToRoute(Uri uri) {
-    String path = uri.path;
-
-    // Handle custom scheme: pizzastrada://product/peperoni or pizzastrada://cart
-    // In some cases with custom schemes, host becomes first segment: uri.host = "product", uri.path = "/peperoni"
+    // 1. Custom schemes: strada://... or pizzastrada://...
     if (uri.scheme == 'pizzastrada' || uri.scheme == 'strada') {
+      String path = uri.path;
       if (uri.host.isNotEmpty && !uri.host.contains('.')) {
         path = '/${uri.host}${uri.path}';
       }
+      return parsePathToRoute(path);
     }
+
+    // 2. Web App Links & Universal Links: app.pizzastrada.uz (or pizzastrada.uz)
+    final host = uri.host.toLowerCase();
+    if (supportedHosts.contains(host)) {
+      return parsePathToRoute(uri.path);
+    }
+
+    // 3. Fallback: if scheme is empty and looks like relative path
+    if (uri.scheme.isEmpty && uri.path.isNotEmpty) {
+      return parsePathToRoute(uri.path);
+    }
+
+    return null;
+  }
+
+  /// Parse path string (e.g. '/product/peperoni', '/promotions', '/cart')
+  String? parsePathToRoute(String rawPath) {
+    String path = rawPath.trim();
 
     // Normalize path
     if (!path.startsWith('/')) {
@@ -122,22 +206,60 @@ class DeepLinkService {
       return '/checkout';
     }
 
-    // 5. Orders: /orders
+    // 5. Orders history: /orders
     if (first == 'orders') {
       return '/orders';
     }
 
-    // 6. Profile: /profile
+    // 6. Profile & Edit Profile: /profile, /profile/edit
     if (first == 'profile') {
+      if (segments.length > 1 && segments[1].toLowerCase() == 'edit') {
+        return '/profile/edit';
+      }
       return '/profile';
     }
 
-    // 7. Home: /home
+    // 7. Promotions / Kuponlar: /promotions, /coupons
+    if (first == 'promotions' || first == 'coupons' || first == 'promo') {
+      return '/promotions';
+    }
+
+    // 8. Branches / Filiallar: /branches, /branch
+    if (first == 'branches' || first == 'branch') {
+      return '/branches';
+    }
+
+    // 9. Notifications: /notifications, /notification
+    if (first == 'notifications' || first == 'notification') {
+      return '/notifications';
+    }
+
+    // 10. Saved Addresses: /saved-addresses, /locations
+    if (first == 'saved-addresses' || first == 'addresses' || first == 'locations') {
+      return '/saved-addresses';
+    }
+
+    // 11. Home: /home
     if (first == 'home') {
       return '/home';
     }
 
     return null;
+  }
+
+  void _navigate(String targetPath) {
+    debugPrint('🚀 [DeepLink] Navigating to: $targetPath');
+    final isShellTab = targetPath == '/home' ||
+        targetPath == '/promotions' ||
+        targetPath == '/cart' ||
+        targetPath == '/orders' ||
+        targetPath == '/profile';
+
+    if (isShellTab) {
+      appRouter.go(targetPath);
+    } else {
+      appRouter.push(targetPath);
+    }
   }
 
   /// Dispose listener

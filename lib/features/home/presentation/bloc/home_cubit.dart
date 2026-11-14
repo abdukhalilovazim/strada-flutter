@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/domain/usecases/home_usecases.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class HomeState extends Equatable {
   const HomeState();
@@ -16,8 +15,7 @@ class HomeLoading extends HomeState {}
 
 class HomeLoaded extends HomeState {
   final List<SliderEntity> sliders;
-  final List<StoryEntity> stories;
-  final bool isStoriesLoading;
+  final bool isSlidersLoading;
   final List<CategoryEntity> categories;
   final List<ProductEntity> fullProducts;
   final List<ProductEntity> products;
@@ -26,8 +24,7 @@ class HomeLoaded extends HomeState {
 
   const HomeLoaded({
     this.sliders = const [],
-    this.stories = const [],
-    this.isStoriesLoading = false,
+    this.isSlidersLoading = false,
     required this.categories,
     required this.fullProducts,
     required this.products,
@@ -37,8 +34,7 @@ class HomeLoaded extends HomeState {
 
   HomeLoaded copyWith({
     List<SliderEntity>? sliders,
-    List<StoryEntity>? stories,
-    bool? isStoriesLoading,
+    bool? isSlidersLoading,
     List<CategoryEntity>? categories,
     List<ProductEntity>? fullProducts,
     List<ProductEntity>? products,
@@ -47,8 +43,7 @@ class HomeLoaded extends HomeState {
   }) {
     return HomeLoaded(
       sliders: sliders ?? this.sliders,
-      stories: stories ?? this.stories,
-      isStoriesLoading: isStoriesLoading ?? this.isStoriesLoading,
+      isSlidersLoading: isSlidersLoading ?? this.isSlidersLoading,
       categories: categories ?? this.categories,
       fullProducts: fullProducts ?? this.fullProducts,
       products: products ?? this.products,
@@ -60,8 +55,7 @@ class HomeLoaded extends HomeState {
   @override
   List<Object?> get props => [
         sliders,
-        stories,
-        isStoriesLoading,
+        isSlidersLoading,
         categories,
         fullProducts,
         products,
@@ -80,12 +74,12 @@ class HomeFailure extends HomeState {
 @injectable
 class HomeCubit extends Cubit<HomeState> {
   final GetCategoriesUseCase _getCategoriesUseCase;
-  final GetStoriesUseCase _getStoriesUseCase;
+  final GetSlidersUseCase _getSlidersUseCase;
   final GetProductsUseCase _getProductsUseCase;
 
   HomeCubit(
     this._getCategoriesUseCase,
-    this._getStoriesUseCase,
+    this._getSlidersUseCase,
     this._getProductsUseCase,
   ) : super(HomeInitial());
 
@@ -95,11 +89,17 @@ class HomeCubit extends Cubit<HomeState> {
     }
 
     try {
-      final categoriesResult = await _getCategoriesUseCase();
-      final productsResult = await _getProductsUseCase();
+      final categoriesFuture = _getCategoriesUseCase();
+      final productsFuture = _getProductsUseCase();
+      final slidersFuture = _getSlidersUseCase();
+
+      final categoriesResult = await categoriesFuture;
+      final productsResult = await productsFuture;
+      final slidersResult = await slidersFuture;
 
       final categories = categoriesResult.getOrElse(() => const []);
       final products = productsResult.getOrElse(() => const []);
+      final sliders = slidersResult.getOrElse(() => const []);
 
       if (categories.isEmpty && products.isEmpty) {
         emit(const HomeFailure('Katalog ma\'lumotlarini yuklab bo\'lmadi'));
@@ -111,12 +111,9 @@ class HomeCubit extends Cubit<HomeState> {
           ? products.where((p) => p.category?.slug == defaultSlug).toList()
           : products;
 
-      final existingStories = (state is HomeLoaded) ? (state as HomeLoaded).stories : const <StoryEntity>[];
-
       emit(HomeLoaded(
-        sliders: const [],
-        stories: existingStories,
-        isStoriesLoading: existingStories.isEmpty,
+        sliders: sliders,
+        isSlidersLoading: false,
         categories: categories,
         fullProducts: products,
         products: initialProducts,
@@ -127,67 +124,26 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  Future<void> loadStories() async {
+  Future<void> loadSliders() async {
     final currentState = state;
-    if (currentState is HomeLoaded && currentState.stories.isNotEmpty) {
-      return;
-    }
-
-    if (currentState is HomeLoaded) {
-      emit(currentState.copyWith(isStoriesLoading: true));
-    }
+    if (currentState is! HomeLoaded) return;
 
     try {
-      final storiesResult = await _getStoriesUseCase();
-      final rawStories = storiesResult.getOrElse(() => const []);
-
-      List<StoryEntity> stories = rawStories;
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        final viewedIds = prefs.getStringList('viewed_story_ids') ?? [];
-        stories = rawStories.map((story) {
-          final isViewed = viewedIds.contains(story.id.toString());
-          return story.copyWith(isViewed: isViewed);
-        }).toList();
-      } catch (_) {}
-
+      final slidersResult = await _getSlidersUseCase();
+      final sliders = slidersResult.getOrElse(() => const []);
       final stateNow = state;
       if (stateNow is HomeLoaded) {
         emit(stateNow.copyWith(
-          stories: stories,
-          isStoriesLoading: false,
+          sliders: sliders,
+          isSlidersLoading: false,
         ));
       }
     } catch (_) {
       final stateNow = state;
       if (stateNow is HomeLoaded) {
-        emit(stateNow.copyWith(isStoriesLoading: false));
+        emit(stateNow.copyWith(isSlidersLoading: false));
       }
     }
-  }
-
-  Future<void> markStoryViewed(int storyId) async {
-    final currentState = state;
-    if (currentState is! HomeLoaded) return;
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final viewedIds = prefs.getStringList('viewed_story_ids') ?? [];
-      final idStr = storyId.toString();
-      if (!viewedIds.contains(idStr)) {
-        viewedIds.add(idStr);
-        await prefs.setStringList('viewed_story_ids', viewedIds);
-      }
-    } catch (_) {}
-
-    final updatedStories = currentState.stories.map((story) {
-      if (story.id == storyId) {
-        return story.copyWith(isViewed: true);
-      }
-      return story;
-    }).toList();
-
-    emit(currentState.copyWith(stories: updatedStories));
   }
 
   void search(String query) {

@@ -63,7 +63,6 @@ void main() {
     cubit = HomeCubit(
       FakeCategoriesUseCase(),
       FakeSlidersUseCase(),
-      FakeStoriesUseCase(),
       FakeProductsUseCase(),
     );
   });

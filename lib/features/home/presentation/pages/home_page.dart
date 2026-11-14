@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pizza_strada/core/services/deep_link_service.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_icons.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
@@ -15,7 +16,6 @@ import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_s
 import 'package:pizza_strada/features/cart/presentation/widgets/order_type_bottom_sheet.dart';
 import 'package:pizza_strada/features/home/domain/entities/home_entities.dart';
 import 'package:pizza_strada/features/home/presentation/bloc/home_cubit.dart';
-import 'package:pizza_strada/features/home/presentation/pages/story_viewer_page.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/header_location_pill.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_card.dart';
 import 'package:pizza_strada/features/home/presentation/widgets/product_detail_modal.dart';
@@ -43,7 +43,7 @@ class _HomePageState extends State<HomePage> {
     _searchFocusNode.addListener(() => setState(() {}));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<HomeCubit>().loadStories();
+        context.read<HomeCubit>().loadSliders();
       }
     });
   }
@@ -231,35 +231,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildStories(List<StoryEntity> stories, bool isStoriesLoading) {
-    if (stories.isEmpty && isStoriesLoading) {
-      return const SliverToBoxAdapter(child: _HomeStoriesShimmer());
+  Widget _buildSliderBanner(List<SliderEntity> sliders, bool isSlidersLoading) {
+    if (sliders.isEmpty && isSlidersLoading) {
+      return const SliverToBoxAdapter(child: _HomeSliderShimmer());
     }
-    if (stories.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (sliders.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     return SliverToBoxAdapter(
-      child: _HomeStoriesBar(
-        stories: stories,
-        onStoryTap: (story, index) => _openStoryViewer(context, stories, index),
-      ),
-    );
-  }
-
-  void _openStoryViewer(BuildContext context, List<StoryEntity> stories, int index) {
-    HapticFeedback.lightImpact();
-    Navigator.of(context, rootNavigator: true).push(
-      PageRouteBuilder(
-        opaque: false,
-        fullscreenDialog: true,
-        barrierColor: Colors.black,
-        pageBuilder: (context, _, __) => StoryViewerPage(
-          stories: stories,
-          initialStoryIndex: index,
-        ),
-        transitionsBuilder: (context, animation, _, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-      ),
+      child: _HomeSliderBanner(sliders: sliders),
     );
   }
 
@@ -392,7 +371,7 @@ class _HomePageState extends State<HomePage> {
       physics: const NeverScrollableScrollPhysics(),
       slivers: [
         SliverToBoxAdapter(child: _buildSearchBar(context)),
-        const SliverToBoxAdapter(child: _HomeStoriesShimmer()),
+        const SliverToBoxAdapter(child: _HomeSliderShimmer()),
         const SliverToBoxAdapter(child: _HomeCategoriesShimmer()),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
@@ -439,7 +418,7 @@ class _HomePageState extends State<HomePage> {
                     } catch (_) {}
                     await context.read<HomeCubit>().init(forceRefresh: true);
                     if (context.mounted) {
-                      context.read<HomeCubit>().loadStories();
+                      context.read<HomeCubit>().loadSliders();
                     }
                   },
                 ),
@@ -486,13 +465,13 @@ class _HomePageState extends State<HomePage> {
                     } catch (_) {}
                     await context.read<HomeCubit>().init(forceRefresh: true);
                     if (context.mounted) {
-                      context.read<HomeCubit>().loadStories();
+                      context.read<HomeCubit>().loadSliders();
                     }
                   },
                 ),
                 _buildSearchBar(context),
                 if (state.searchQuery.isEmpty) ...[
-                  _buildStories(state.stories, state.isStoriesLoading),
+                  _buildSliderBanner(state.sliders, state.isSlidersLoading),
                   _buildCategoryBar(state.categories, state.selectedCategory),
                 ],
                 _buildProductGrid(state.products),
@@ -507,38 +486,36 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-/// 📱 Native Stories Bar (Instagram / Dodo Pizza uslubidagi Storislar)
-class _HomeStoriesBar extends StatelessWidget {
-  final List<StoryEntity> stories;
-  final void Function(StoryEntity story, int index) onStoryTap;
+/// 🎁 Promotional Slider Banner Carousel (Search bar ostidagi bannerlar karuseli)
+class _HomeSliderBanner extends StatelessWidget {
+  final List<SliderEntity> sliders;
 
-  const _HomeStoriesBar({
-    required this.stories,
-    required this.onStoryTap,
-  });
+  const _HomeSliderBanner({required this.sliders});
 
   @override
   Widget build(BuildContext context) {
-    if (stories.isEmpty) return const SizedBox.shrink();
+    if (sliders.isEmpty) return const SizedBox.shrink();
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final cardWidth = (screenWidth * 0.72).clamp(240.0, 300.0);
 
     return Padding(
-      padding: const EdgeInsets.only(top: 4, bottom: 8),
+      padding: const EdgeInsets.only(top: 2, bottom: 10),
       child: SizedBox(
-        height: 80,
+        height: 110,
         child: ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           scrollDirection: Axis.horizontal,
           physics: const BouncingScrollPhysics(),
-          itemCount: stories.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 12),
+          itemCount: sliders.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 10),
           itemBuilder: (context, index) {
-            final story = stories[index];
-            return _StoryItem(
-              story: story,
+            final slider = sliders[index];
+            return _SliderBannerCard(
+              slider: slider,
+              width: cardWidth,
               isDark: isDark,
-              onTap: () => onStoryTap(story, index),
             );
           },
         ),
@@ -547,67 +524,45 @@ class _HomeStoriesBar extends StatelessWidget {
   }
 }
 
-class _StoryItem extends StatelessWidget {
-  final StoryEntity story;
+class _SliderBannerCard extends StatelessWidget {
+  final SliderEntity slider;
+  final double width;
   final bool isDark;
-  final VoidCallback onTap;
 
-  const _StoryItem({
-    required this.story,
+  const _SliderBannerCard({
+    required this.slider,
+    required this.width,
     required this.isDark,
-    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final hasUnread = !story.isViewed;
-
     return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(37),
-      child: Center(
-        child: Container(
-          width: 72,
-          height: 72,
-          padding: const EdgeInsets.all(2.5),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: hasUnread
-                ? const LinearGradient(
-                    colors: [
-                      AppColors.primary,
-                      Color(0xFFFF7A00),
-                      Color(0xFFFFB800),
-                    ],
-                    begin: Alignment.bottomLeft,
-                    end: Alignment.topRight,
-                  )
-                : null,
-            border: !hasUnread
-                ? Border.all(
-                    color: isDark ? AppColors.darkBorder : AppColors.neutral300,
-                    width: 1.5,
-                  )
-                : null,
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(2.0),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isDark ? AppColors.darkSurface : Colors.white,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        if (slider.link != null && slider.link!.trim().isNotEmpty) {
+          DeepLinkService.instance.handleStringLink(slider.link!);
+        }
+      },
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        width: width,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: CachedNetworkImage(
+            imageUrl: slider.imageUrl,
+            fit: BoxFit.cover,
+            placeholder: (_, __) => Container(
+              color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
             ),
-            child: ClipOval(
-              child: CachedNetworkImage(
-                imageUrl: story.previewImage,
-                fit: BoxFit.cover,
-                placeholder: (_, __) => Container(
-                  color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
-                ),
-                errorWidget: (_, __, ___) => Container(
-                  color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
-                  child: const Icon(Icons.local_pizza_rounded, color: AppColors.primary, size: 28),
-                ),
-              ),
+            errorWidget: (_, __, ___) => Container(
+              color: isDark ? AppColors.darkCard : const Color(0xFFF1F3F5),
+              alignment: Alignment.center,
+              child: const Icon(Icons.image_outlined, color: AppColors.neutral400, size: 28),
             ),
           ),
         ),
@@ -729,50 +684,35 @@ class _StickyCategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
       oldDelegate.child != child || oldDelegate.height != height;
 }
 
-/// 💫 Stories Shimmer Skeleton
-class _HomeStoriesShimmer extends StatelessWidget {
-  const _HomeStoriesShimmer();
+/// 💫 Banner Slider Shimmer Skeleton
+class _HomeSliderShimmer extends StatelessWidget {
+  const _HomeSliderShimmer();
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final baseColor = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE8ECEF);
     final highlightColor = isDark ? const Color(0xFF3D3D3D) : const Color(0xFFF8F9FA);
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final cardWidth = (screenWidth * 0.72).clamp(240.0, 300.0);
 
     return Shimmer.fromColors(
       baseColor: baseColor,
       highlightColor: highlightColor,
       child: Container(
-        height: 104,
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        child: ListView.builder(
+        height: 110,
+        margin: const EdgeInsets.only(top: 2, bottom: 10),
+        child: ListView.separated(
           scrollDirection: Axis.horizontal,
           physics: const NeverScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: 6,
-          itemBuilder: (ctx, i) => Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  width: 52,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.white,
-                  ),
-                ),
-              ],
+          itemCount: 2,
+          separatorBuilder: (_, __) => const SizedBox(width: 10),
+          itemBuilder: (ctx, i) => Container(
+            width: cardWidth,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              color: Colors.white,
             ),
           ),
         ),

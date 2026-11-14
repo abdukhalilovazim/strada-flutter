@@ -37,13 +37,14 @@
                 <data android:scheme="strada"/>
             </intent-filter>
 
-            <!-- Deep linking intent filter: App Links -->
+            <!-- Deep linking intent filter: App Links (app.pizzastrada.uz) -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="app.pizzastrada.uz"/>
+                <data android:scheme="http" android:host="app.pizzastrada.uz"/>
                 <data android:scheme="https" android:host="pizzastrada.uz"/>
-                <data android:scheme="https" android:host="food.khalilovdev.uz"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
