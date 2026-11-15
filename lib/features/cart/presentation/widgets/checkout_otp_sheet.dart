@@ -111,7 +111,7 @@ class _CheckoutOtpSheetState extends State<CheckoutOtpSheet> {
     try {
       final authDs = getIt<AuthRemoteDataSource>();
       final res = await authDs.loginWithChannel(
-        fullName: widget.fullName.trim().isNotEmpty ? widget.fullName.trim() : 'Mijoz',
+        fullName: widget.fullName.trim().isNotEmpty ? widget.fullName.trim() : 'checkout.guest_customer'.tr(),
         phone: widget.phone,
         forceSms: forceS,
       );

@@ -181,13 +181,22 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       int? parsedType;
       String? parsedTypeString;
 
-      if (rawType is int) {
+      final isFreeDelivery = data?['is_free_delivery'] == true ||
+          rawType == 2 ||
+          rawType?.toString().toLowerCase() == 'free_delivery';
+
+      if (isFreeDelivery) {
+        parsedType = 2;
+        parsedTypeString = 'free_delivery';
+      } else if (rawType is int) {
         parsedType = rawType;
         parsedTypeString = rawType == 1 ? 'percent' : 'fixed';
       } else if (rawType != null) {
         final s = rawType.toString().toLowerCase().trim();
         parsedTypeString = s;
-        if (s == 'percent' || s == 'percentage' || s == '1') {
+        if (s == 'free_delivery' || s == 'delivery' || s == '2') {
+          parsedType = 2;
+        } else if (s == 'percent' || s == 'percentage' || s == '1') {
           parsedType = 1;
         } else if (s == 'fixed' || s == '0') {
           parsedType = 0;

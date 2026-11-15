@@ -51,11 +51,11 @@ class _SDUIProfileHeaderComponentState extends State<SDUIProfileHeaderComponent>
       setState(() {
         _isLoggedIn = hasAuth;
         if (hasAuth) {
-          _userName = (name != null && name.trim().isNotEmpty) ? name.trim() : 'Mijoz';
+          _userName = (name != null && name.trim().isNotEmpty) ? name.trim() : 'checkout.guest_customer'.tr();
           _userPhone = (phone != null && phone.trim().isNotEmpty) ? NumberFormatter.formatPhone(phone.trim()) : '';
         } else {
-          _userName = 'Kirish';
-          _userPhone = 'Profilga kirish uchun bosing';
+          _userName = 'auth.login_title'.tr();
+          _userPhone = 'profile.tap_to_login'.tr();
         }
       });
     }
@@ -63,7 +63,15 @@ class _SDUIProfileHeaderComponentState extends State<SDUIProfileHeaderComponent>
 
   String get _initials {
     final trimmed = _userName.trim();
-    if (trimmed.isEmpty || trimmed == 'Mijoz' || trimmed == 'checkout.guest_customer'.tr()) {
+    final guestLabel = 'checkout.guest_customer'.tr().toLowerCase();
+    final loginLabel = 'auth.login_title'.tr().toLowerCase();
+    if (trimmed.isEmpty ||
+        trimmed.toLowerCase() == 'mijoz' ||
+        trimmed.toLowerCase() == 'клиент' ||
+        trimmed.toLowerCase() == 'customer' ||
+        trimmed.toLowerCase() == 'kirish' ||
+        trimmed.toLowerCase() == guestLabel ||
+        trimmed.toLowerCase() == loginLabel) {
       return 'S';
     }
     final parts = trimmed.split(RegExp(r'\s+'));

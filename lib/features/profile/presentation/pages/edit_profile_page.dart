@@ -292,14 +292,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
         backgroundColor: isDark ? AppColors.darkCard : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'Manzilni o\'chirish',
+          'profile.delete_address_title'.tr(),
           style: AppTextStyles.h4.copyWith(
             fontWeight: FontWeight.w800,
             color: isDark ? Colors.white : AppColors.neutral900,
           ),
         ),
         content: Text(
-          'Ushbu manzilni ro\'yxatdan o\'chirishni xohlaysizmi?',
+          'profile.delete_address_confirm'.tr(),
           style: AppTextStyles.bodyMedium.copyWith(
             color: isDark ? AppColors.neutral300 : AppColors.neutral600,
           ),
@@ -417,7 +417,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   String get _initials {
     final name = _fullNameController.text.trim();
-    if (name.isEmpty || name == 'Mijoz') return 'S';
+    final guestLabel = 'checkout.guest_customer'.tr().toLowerCase();
+    if (name.isEmpty ||
+        name.toLowerCase() == 'mijoz' ||
+        name.toLowerCase() == 'клиент' ||
+        name.toLowerCase() == 'customer' ||
+        name.toLowerCase() == guestLabel) {
+      return 'S';
+    }
     final parts = name.split(RegExp(r'\s+'));
     if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
@@ -564,7 +571,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                       // Ism inputi
                       Text(
-                        'F.I.SH / Ism',
+                        'profile.full_name_label'.tr(),
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.neutral500,
                           fontWeight: FontWeight.w600,
@@ -582,7 +589,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           color: isDark ? Colors.white : AppColors.neutral900,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Ismingizni kiriting...',
+                          hintText: 'profile.enter_name'.tr(),
                           prefixIcon: const Icon(Icons.badge_outlined, color: AppColors.primary, size: 20),
                           filled: true,
                           fillColor: isDark ? AppColors.neutral800 : const Color(0xFFF8F9FA),
@@ -608,7 +615,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                       // Telefon inputi (O'zgarmas / Tasdiqlangan)
                       Text(
-                        'Telefon raqami (Asosiy)',
+                        'profile.main_phone'.tr(),
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.neutral500,
                           fontWeight: FontWeight.w600,
@@ -624,9 +631,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ),
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primary, size: 20),
-                          suffixIcon: const Tooltip(
-                            message: 'Tasdiqlangan telefon raqami',
-                            child: Icon(Icons.lock_outline_rounded, color: AppColors.neutral400, size: 18),
+                          suffixIcon: Tooltip(
+                            message: 'profile.verified_phone'.tr(),
+                            child: const Icon(Icons.lock_outline_rounded, color: AppColors.neutral400, size: 18),
                           ),
                           filled: true,
                           fillColor: isDark ? AppColors.neutral800.withValues(alpha: 0.5) : const Color(0xFFF1F3F5),
@@ -676,7 +683,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 child: Text(
                                   _selectedBirthDate != null
                                       ? DateFormat('dd.MM.yyyy').format(_selectedBirthDate!)
-                                      : 'Tug\'ilgan sanani belgilash (ixtiyoriy)',
+                                      : 'profile.birthdate_optional'.tr(),
                                   style: AppTextStyles.bodyMedium.copyWith(
                                     fontWeight: _selectedBirthDate != null ? FontWeight.w700 : FontWeight.w500,
                                     color: _selectedBirthDate != null
@@ -791,7 +798,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               Icon(Icons.map_outlined, size: 36, color: AppColors.neutral400),
                               const SizedBox(height: 8),
                               Text(
-                                'Hozircha saqlangan manzillar yo\'q',
+                                'profile.no_saved_addresses_yet'.tr(),
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: AppColors.neutral500,
                                   fontWeight: FontWeight.w600,

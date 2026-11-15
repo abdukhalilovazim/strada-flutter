@@ -105,8 +105,20 @@ class CheckoutState extends Equatable {
     return false;
   }
 
+  /// Chegirma turi bepul yetkazib berish ekanligini tekshirish
+  /// Backend PromoTypeEnum: FREE_DELIVERY = 2
+  bool get isFreeDeliveryPromo {
+    if (promoType == 2) return true;
+    if (promoTypeString != null) {
+      final s = promoTypeString!.toLowerCase().trim();
+      if (s == 'free_delivery' || s == 'delivery' || s == '2') return true;
+    }
+    return false;
+  }
+
   /// Subtotal hisobga olingan holda aniq chegirma summasini hisoblash
   double calculateDiscount(double subtotal) {
+    if (isFreeDeliveryPromo) return 0.0;
     if (promoValue == null || promoValue! <= 0) return 0.0;
     if (isPercentagePromo) {
       return (subtotal * (promoValue! / 100.0)).clamp(0.0, subtotal);

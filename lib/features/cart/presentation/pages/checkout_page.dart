@@ -201,7 +201,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     final cartState = context.watch<CartCubit>().state;
     final discount = state.calculateDiscount(cartState.subtotal);
-    final deliveryPrice = isDelivery ? state.deliveryPrice : 0.0;
+    final deliveryPrice = isDelivery ? (state.isFreeDeliveryPromo ? 0.0 : state.deliveryPrice) : 0.0;
     final subtotalAfterDiscount = (cartState.subtotal - discount).clamp(0.0, double.infinity);
     final total = subtotalAfterDiscount + deliveryPrice;
 
@@ -359,7 +359,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
           ),
 
           // 5. Promokod chegirmasi (agar bo'lsa)
-          if (discount > 0) ...[
+          if (state.isFreeDeliveryPromo) ...[
+            const SizedBox(height: 8),
+            _buildInfoRow(
+              label: '${'checkout.promo_discount'.tr()} (${state.appliedPromoCode}):',
+              valueWidget: Text(
+                'checkout.free'.tr(),
+                textAlign: TextAlign.end,
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: AppColors.success,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ] else if (discount > 0) ...[
             const SizedBox(height: 8),
             _buildInfoRow(
               label: state.isPercentagePromo

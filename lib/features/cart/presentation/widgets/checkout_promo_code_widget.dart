@@ -120,7 +120,31 @@ class _CheckoutPromoCodeWidgetState extends State<CheckoutPromoCodeWidget> {
                                     color: isDark ? Colors.white : AppColors.neutral900,
                                   ),
                                 ),
-                                if (checkoutState.isPercentagePromo && checkoutState.promoValue != null) ...[
+                                if (checkoutState.isFreeDeliveryPromo) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.success.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.local_shipping_rounded, size: 12, color: AppColors.success),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          'checkout.free'.tr(),
+                                          style: const TextStyle(
+                                            color: AppColors.success,
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ] else if (checkoutState.isPercentagePromo && checkoutState.promoValue != null) ...[
                                   const SizedBox(width: 6),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

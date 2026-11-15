@@ -91,7 +91,7 @@ class _OtpPageState extends State<OtpPage> {
 
   void _onResend(BuildContext ctx) {
     if (_canResend) {
-      final name = widget.fullName.trim().isNotEmpty ? widget.fullName.trim() : 'Mijoz';
+      final name = widget.fullName.trim().isNotEmpty ? widget.fullName.trim() : 'checkout.guest_customer'.tr();
       _authCubit.login(phone: widget.phone, fullName: name);
       _startTimer();
     }
