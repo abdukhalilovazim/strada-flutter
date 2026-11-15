@@ -75,7 +75,8 @@ jobs:
           flutter build appbundle \
             --release \
             --build-name=${{ steps.version.outputs.version }} \
-            --build-number=${{ steps.version.outputs.build_number }}
+            --build-number=${{ steps.version.outputs.build_number }} \
+            --android-skip-build-dependency-validation
 
       # 11. AAB faylini artifact sifatida saqlash (debug uchun)
       - name: 💾 Upload AAB artifact
