@@ -210,7 +210,23 @@ class OrderConfirmationSheet extends StatelessWidget {
                                           color: theme.textTheme.bodyLarge?.color,
                                         ),
                                       ),
-                                      if (item.variant != null)
+                                      if (item.isSet &&
+                                          item.setSelections != null &&
+                                          item.setSelections!.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 2),
+                                          child: Text(
+                                            item.setSelections!.map((s) {
+                                              final v = VariantLocalizationHelper.localize(s.variantTitle);
+                                              return v.isNotEmpty ? '${s.productTitle} ($v)' : s.productTitle;
+                                            }).join(' • '),
+                                            style: AppTextStyles.bodyExtraSmall.copyWith(
+                                              color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                                              fontSize: 10.5,
+                                            ),
+                                          ),
+                                        )
+                                      else if (item.variant != null)
                                         Text(
                                           VariantLocalizationHelper.localize(item.variant!.title),
                                           style: AppTextStyles.bodyExtraSmall.copyWith(

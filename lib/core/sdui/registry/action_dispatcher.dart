@@ -64,7 +64,7 @@ class SDUIActionDispatcher {
           Clipboard.setData(ClipboardData(text: code));
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Kupon kodi nusxalandi: $code'),
+              content: Text('promotions.coupon_copied'.tr(namedArgs: {'code': code})),
               backgroundColor: AppColors.primary,
               behavior: SnackBarBehavior.floating,
               duration: const Duration(seconds: 2),

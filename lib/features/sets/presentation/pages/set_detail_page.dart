@@ -655,7 +655,7 @@ class _SetDetailViewState extends State<_SetDetailView> {
                                           const SizedBox(width: 10),
                                           Expanded(
                                             child: Text(
-                                              'Iltimos, avval tanlang: ${uncompleted.join(", ")}',
+                                              'sets.please_select_first'.tr(namedArgs: {'items': uncompleted.join(', ')}),
                                               style: const TextStyle(fontWeight: FontWeight.w700),
                                             ),
                                           ),

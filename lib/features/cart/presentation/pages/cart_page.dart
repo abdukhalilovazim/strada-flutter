@@ -312,62 +312,52 @@ class _CartPageState extends State<CartPage> {
               ),
               boxShadow: AppColors.softShadow(isDark),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    width: 68,
-                    height: 68,
-                    child: _buildItemThumbnail(item, isDark),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        product.title,
-                        style: AppTextStyles.labelLarge.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14.5,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: SizedBox(
+                        width: 68,
+                        height: 68,
+                        child: _buildItemThumbnail(item, isDark),
                       ),
-                      if (item.isSet) ...[
-                        const SizedBox(height: 2),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.takeout_dining_rounded, size: 12, color: AppColors.primary),
-                            const SizedBox(width: 4),
-                            Text(
-                              'cart.set_menu'.tr(),
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.primary,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (item.setSelections != null && item.setSelections!.isNotEmpty) ...[
-                          const SizedBox(height: 2),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            item.setSelections!.map((s) => s.variantTitle.isNotEmpty ? '${s.productTitle} (${s.variantTitle})' : s.productTitle).join(' • '),
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: isDark ? AppColors.neutral400 : AppColors.neutral600,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w500,
+                            product.title,
+                            style: AppTextStyles.labelLarge.copyWith(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14.5,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      ] else if (item.isCoupon) ...[
+                          if (item.isSet) ...[
+                            const SizedBox(height: 2),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.takeout_dining_rounded, size: 12, color: AppColors.primary),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'cart.set_menu'.tr(),
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.primary,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ] else if (item.isCoupon) ...[
                         const SizedBox(height: 2),
                         Row(
                           mainAxisSize: MainAxisSize.min,
@@ -480,8 +470,103 @@ class _CartPageState extends State<CartPage> {
                 ),
               ],
             ),
-          ),
-        );
+            if (item.isSet &&
+                ((item.setSelections != null && item.setSelections!.isNotEmpty) ||
+                    (product.description != null && product.description!.trim().isNotEmpty))) ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF161922) : const Color(0xFFF9FAFB),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark
+                        ? AppColors.darkBorder.withValues(alpha: 0.6)
+                        : AppColors.neutral200.withValues(alpha: 0.8),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.takeout_dining_rounded, size: 13, color: AppColors.primary),
+                        const SizedBox(width: 5),
+                        Text(
+                          'cart.set_contents'.tr(),
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    if (item.setSelections != null && item.setSelections!.isNotEmpty)
+                      ...item.setSelections!.map((s) {
+                        final v = VariantLocalizationHelper.localize(s.variantTitle);
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 3.5),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                margin: const EdgeInsets.only(top: 5.5, right: 7),
+                                width: 4.5,
+                                height: 4.5,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              Expanded(
+                                child: RichText(
+                                  text: TextSpan(
+                                    text: s.productTitle,
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: isDark ? AppColors.neutral200 : AppColors.neutral800,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    children: [
+                                      if (v.isNotEmpty)
+                                        TextSpan(
+                                          text: ' ($v)',
+                                          style: AppTextStyles.bodySmall.copyWith(
+                                            color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      })
+                    else if (product.description != null && product.description!.trim().isNotEmpty)
+                      Text(
+                        product.description!.trim(),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
       },
     );
   }

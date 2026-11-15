@@ -165,7 +165,7 @@ class SDUICouponGridComponent extends StatelessWidget {
                                   context.read<CheckoutCubit>().applyPromoCode(code);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Kupon kodi nusxalandi: $code'),
+                                      content: Text('promotions.coupon_copied'.tr(namedArgs: {'code': code})),
                                       backgroundColor: AppColors.primary,
                                       behavior: SnackBarBehavior.floating,
                                       duration: const Duration(seconds: 2),
@@ -249,7 +249,7 @@ class SDUICouponGridComponent extends StatelessWidget {
                                 }
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('Kupon faollashtirildi: $code'),
+                                    content: Text('promotions.coupon_applied'.tr(namedArgs: {'code': code})),
                                     backgroundColor: AppColors.primary,
                                     behavior: SnackBarBehavior.floating,
                                     duration: const Duration(seconds: 2),
