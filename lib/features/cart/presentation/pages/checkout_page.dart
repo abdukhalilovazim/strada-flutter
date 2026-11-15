@@ -377,13 +377,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
           ],
 
           const SizedBox(height: 8),
-          // 6. Yetkazib berish narxi
+          // 6. Yetkazib berish narxi / Olib ketish
           _buildInfoRow(
             label: '${'cart.delivery'.tr()}:',
             valueWidget: Text(
-              !isDelivery || deliveryPrice == 0
-                  ? 'checkout.free'.tr()
-                  : '${NumberFormatter.formatSum(deliveryPrice)} ${'common.currency'.tr()}',
+              !isDelivery
+                  ? 'checkout.pickup'.tr()
+                  : (deliveryPrice == 0
+                      ? 'checkout.free'.tr()
+                      : '${NumberFormatter.formatSum(deliveryPrice)} ${'common.currency'.tr()}'),
               textAlign: TextAlign.end,
               style: AppTextStyles.labelSmall.copyWith(
                 color: (!isDelivery || deliveryPrice == 0)
@@ -452,6 +454,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
+  void _handleBackNavigation() {
+    HapticFeedback.lightImpact();
+    if (_currentStep == 1) {
+      setState(() => _currentStep = 0);
+    } else {
+      context.go('/cart');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -460,31 +471,30 @@ class _CheckoutPageState extends State<CheckoutPage> {
       builder: (context, checkoutState) {
         return BlocBuilder<CartCubit, CartState>(
           builder: (context, cartState) {
-            return Scaffold(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              appBar: AppBar(
-                title: Text(
-                  'checkout.title'.tr(),
-                  style: AppTextStyles.h2.copyWith(
-                    color: Theme.of(context).textTheme.headlineMedium?.color,
+            return PopScope(
+              canPop: false,
+              onPopInvokedWithResult: (didPop, _) {
+                if (didPop) return;
+                _handleBackNavigation();
+              },
+              child: Scaffold(
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                appBar: AppBar(
+                  title: Text(
+                    'checkout.title'.tr(),
+                    style: AppTextStyles.h2.copyWith(
+                      color: Theme.of(context).textTheme.headlineMedium?.color,
+                    ),
                   ),
+                  backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+                  elevation: 0,
+                  centerTitle: true,
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+                    onPressed: _handleBackNavigation,
+                  ),
+                  bottom: _buildStepIndicator(isDark),
                 ),
-                backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-                elevation: 0,
-                centerTitle: true,
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-                  onPressed: () {
-                    if (_currentStep == 1) {
-                      HapticFeedback.selectionClick();
-                      setState(() => _currentStep = 0);
-                    } else {
-                      context.pop();
-                    }
-                  },
-                ),
-                bottom: _buildStepIndicator(isDark),
-              ),
               body: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
                 child: _currentStep == 0
@@ -587,6 +597,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       ),
                     )
                   : null,
+              ),
             );
           },
         );

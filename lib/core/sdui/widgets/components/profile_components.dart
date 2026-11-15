@@ -12,6 +12,7 @@ import '../../../theme/app_text_styles.dart';
 import '../../../theme/theme_cubit.dart';
 import '../../../utils/device_info_helper.dart';
 import '../../../utils/number_formatter.dart';
+import '../../models/action_model.dart';
 import '../../models/section_model.dart';
 import '../../registry/action_dispatcher.dart';
 
@@ -85,6 +86,7 @@ class _SDUIProfileHeaderComponentState extends State<SDUIProfileHeaderComponent>
           await context.push('/auth/login');
         }
         _loadUser();
+        widget.onAction(const SDUIAction(type: 'refresh_auth'));
       },
       borderRadius: BorderRadius.circular(22),
       child: Container(
@@ -635,58 +637,6 @@ class SDUIAppSettingsComponent extends StatelessWidget {
               );
             },
           ),
-          Divider(height: 1, indent: 56, color: isDark ? AppColors.darkBorder : AppColors.neutral200),
-          // Maxfiylik siyosati (Store Compliance)
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.privacy_tip_outlined, color: AppColors.primary, size: 20),
-            ),
-            title: Text(
-              'profile.privacy_policy'.tr(),
-              style: AppTextStyles.labelMedium.copyWith(
-                fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : AppColors.neutral900,
-              ),
-            ),
-            trailing: Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 14,
-              color: isDark ? AppColors.neutral500 : AppColors.neutral400,
-            ),
-            onTap: () => context.push('/privacy-policy'),
-          ),
-          Divider(height: 1, indent: 56, color: isDark ? AppColors.darkBorder : AppColors.neutral200),
-          // Ommaviy oferta (Store Compliance)
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.description_outlined, color: AppColors.primary, size: 20),
-            ),
-            title: Text(
-              'profile.public_offer'.tr(),
-              style: AppTextStyles.labelMedium.copyWith(
-                fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : AppColors.neutral900,
-              ),
-            ),
-            trailing: Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 14,
-              color: isDark ? AppColors.neutral500 : AppColors.neutral400,
-            ),
-            onTap: () => context.push('/public-offer'),
-          ),
         ],
       ),
     ),
@@ -927,7 +877,7 @@ class SDUISupportContactsComponent extends StatelessWidget {
 }
 
 /// 🚪 Profil: Hisobdan chiqish va Hisobni o'chirish (Store Compliance WebView)
-class SDUILogoutDeleteComponent extends StatelessWidget {
+class SDUILogoutDeleteComponent extends StatefulWidget {
   final SDUISectionModel section;
   final SDUIActionHandler onAction;
 
@@ -936,6 +886,29 @@ class SDUILogoutDeleteComponent extends StatelessWidget {
     required this.section,
     required this.onAction,
   });
+
+  @override
+  State<SDUILogoutDeleteComponent> createState() => _SDUILogoutDeleteComponentState();
+}
+
+class _SDUILogoutDeleteComponentState extends State<SDUILogoutDeleteComponent> {
+  bool _isLoggedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    final token = await SecureStorage.getToken();
+    final hasAuth = token != null && token.isNotEmpty;
+    if (mounted && _isLoggedIn != hasAuth) {
+      setState(() {
+        _isLoggedIn = hasAuth;
+      });
+    }
+  }
 
   void _showLogoutDialog(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -980,6 +953,10 @@ class SDUILogoutDeleteComponent extends StatelessWidget {
               Navigator.of(ctx).pop();
               await SecureStorage.deleteToken();
               await SecureStorage.deleteUserInfo();
+              if (mounted) {
+                setState(() => _isLoggedIn = false);
+              }
+              widget.onAction(const SDUIAction(type: 'refresh_auth'));
               if (context.mounted) {
                 context.go('/auth/login');
               }
@@ -996,6 +973,10 @@ class SDUILogoutDeleteComponent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isLoggedIn) {
+      return const SizedBox.shrink();
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
@@ -1080,8 +1061,8 @@ class _SDUIAppVersionComponentState extends State<SDUIAppVersionComponent> {
   @override
   Widget build(BuildContext context) {
     final display = _versionText.isNotEmpty
-        ? 'Pizza Strada Uzbekistan • $_versionText'
-        : 'Pizza Strada Uzbekistan';
+        ? 'Pizza Strada • $_versionText'
+        : 'Pizza Strada';
 
     return Container(
       padding: const EdgeInsets.only(bottom: 30, top: 8),

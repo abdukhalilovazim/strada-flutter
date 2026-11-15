@@ -62,15 +62,6 @@ class _CheckoutPromoCodeWidgetState extends State<CheckoutPromoCodeWidget> {
             ),
           );
           context.read<CheckoutCubit>().clearPromo();
-        } else if (checkoutState.appliedPromoCode != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${'cart.promo_activated'.tr()}: ${checkoutState.appliedPromoCode}'),
-              backgroundColor: AppColors.success,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          );
         }
       },
       builder: (context, checkoutState) {

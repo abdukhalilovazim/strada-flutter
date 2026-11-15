@@ -8,6 +8,7 @@ import 'package:pizza_strada/core/storage/secure_storage.dart';
 import 'package:pizza_strada/core/theme/app_colors.dart';
 import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
+import 'package:shimmer/shimmer.dart';
 
 /// 👤 Edit Profile & Manage Locations Page
 class EditProfilePage extends StatefulWidget {
@@ -40,18 +41,41 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _loadInitialData() async {
-    setState(() => _isLoading = true);
-
-    // 1. Shaxsiy ma'lumotlarni yuklash (Keshdan va API dan)
+    // 1. Shaxsiy ma'lumotlar va manzillarni dastlab keshdan bir zumda yuklash (0ms kechikish)
     final cachedName = await SecureStorage.getUserName();
     final cachedPhone = await SecureStorage.getUserPhone();
+    final localList = await SecureStorage.getSavedAddresses();
+
+    final hasCachedInfo = (cachedName != null && cachedName.isNotEmpty) ||
+        (cachedPhone != null && cachedPhone.isNotEmpty);
+
     if (cachedName != null && cachedName.isNotEmpty) {
       _fullNameController.text = cachedName;
     }
     if (cachedPhone != null && cachedPhone.isNotEmpty) {
       _phoneController.text = NumberFormatter.formatPhone(cachedPhone);
     }
+    if (localList.isNotEmpty) {
+      _addresses = localList;
+    }
 
+    // Agar keshda ma'lumotlar mavjud bo'lsa, ekranni darhol ochamiz (foydalanuvchi kutmaydi)
+    if (mounted && (hasCachedInfo || localList.isNotEmpty)) {
+      setState(() => _isLoading = false);
+    }
+
+    // 2. Ikkala API ('me' va 'addresses') ni ketma-ket kutmasdan PARALLEL (Future.wait) orqali chaqiramiz
+    await Future.wait([
+      _fetchProfile(),
+      _loadAddresses(),
+    ]);
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _fetchProfile() async {
     try {
       final token = await SecureStorage.getToken();
       if (token != null && token.isNotEmpty) {
@@ -79,13 +103,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
         }
       }
     } catch (_) {}
-
-    // 2. Saqlangan manzillarni yuklash
-    await _loadAddresses();
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
   }
 
   Future<void> _loadAddresses() async {
@@ -96,7 +113,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (key.isNotEmpty) addressMap[key] = a;
     }
 
-    // 2. Foydalanuvchining backenddagi saqlangan manzillarini olish (/api/v1/addresses)
+    // Foydalanuvchining backenddagi saqlangan manzillarini olish (/api/v1/addresses)
     try {
       final token = await SecureStorage.getToken();
       if (token != null && token.isNotEmpty) {
@@ -375,7 +392,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? _buildShimmerSkeleton(context, isDark)
           : ListView(
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
@@ -787,6 +804,142 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _buildShimmerSkeleton(BuildContext context, bool isDark) {
+    final baseColor = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE8ECEF);
+    final highlightColor = isDark ? const Color(0xFF3D3D3D) : const Color(0xFFF8F9FA);
+
+    return Shimmer.fromColors(
+      baseColor: baseColor,
+      highlightColor: highlightColor,
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+        children: [
+          // 1. Avatar Placeholder
+          Center(
+            child: Container(
+              width: 90,
+              height: 90,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: baseColor,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // 2. Shaxsiy ma'lumotlar bloki skeleton
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkCard : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 140,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: baseColor,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: baseColor,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: baseColor,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: baseColor,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // 3. Manzillar bloki skeleton
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkCard : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      width: 150,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: baseColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    Container(
+                      width: 80,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: baseColor,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: baseColor,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: baseColor,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // 4. Saqlash tugmasi skeleton
+          Container(
+            height: 54,
+            decoration: BoxDecoration(
+              color: baseColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

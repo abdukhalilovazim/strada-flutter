@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,6 +24,8 @@ class _LoginPageState extends State<LoginPage> {
   final _nameController = TextEditingController();
   final _phoneFocus = FocusNode();
   final _nameFocus = FocusNode();
+  late final TapGestureRecognizer _privacyRecognizer;
+  late final TapGestureRecognizer _termsRecognizer;
 
   @override
   void initState() {
@@ -30,6 +33,16 @@ class _LoginPageState extends State<LoginPage> {
     _authCubit = getIt<AuthCubit>();
     _phoneController.addListener(_onFieldChanged);
     _nameController.addListener(_onFieldChanged);
+    _privacyRecognizer = TapGestureRecognizer()
+      ..onTap = () {
+        HapticFeedback.lightImpact();
+        context.push('/privacy-policy');
+      };
+    _termsRecognizer = TapGestureRecognizer()
+      ..onTap = () {
+        HapticFeedback.lightImpact();
+        context.push('/public-offer');
+      };
   }
 
   void _onFieldChanged() {
@@ -40,6 +53,8 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _phoneController.removeListener(_onFieldChanged);
     _nameController.removeListener(_onFieldChanged);
+    _privacyRecognizer.dispose();
+    _termsRecognizer.dispose();
     _authCubit.close();
     _phoneController.dispose();
     _nameController.dispose();
@@ -296,20 +311,43 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 24),
                     // Maxfiylik siyosati va Ommaviy oferta kelishuvi (Store Review Guideline 5.1.1)
-                    GestureDetector(
-                      onTap: () => context.push('/public-offer'),
-                      behavior: HitTestBehavior.opaque,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'auth.terms_agreement'.tr(),
-                          textAlign: TextAlign.center,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text.rich(
+                        TextSpan(
                           style: AppTextStyles.bodySmall.copyWith(
-                            color: isDark ? AppColors.neutral500 : AppColors.neutral400,
-                            fontSize: 11.5,
-                            height: 1.4,
+                            color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                            fontSize: 12,
+                            height: 1.5,
                           ),
+                          children: [
+                            TextSpan(text: 'auth.terms_prefix'.tr()),
+                            TextSpan(
+                              text: 'auth.terms_privacy_policy'.tr(),
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700,
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppColors.primary.withValues(alpha: 0.6),
+                              ),
+                              recognizer: _privacyRecognizer,
+                            ),
+                            TextSpan(text: 'auth.terms_and'.tr()),
+                            TextSpan(
+                              text: 'auth.terms_public_offer'.tr(),
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700,
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppColors.primary.withValues(alpha: 0.6),
+                              ),
+                              recognizer: _termsRecognizer,
+                            ),
+                            if ('auth.terms_suffix'.tr().isNotEmpty)
+                              TextSpan(text: 'auth.terms_suffix'.tr()),
+                          ],
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ],

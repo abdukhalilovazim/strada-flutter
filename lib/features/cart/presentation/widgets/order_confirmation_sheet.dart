@@ -295,7 +295,16 @@ class OrderConfirmationSheet extends StatelessWidget {
                             const SizedBox(height: 8),
                             _buildPriceRow(
                               label: 'cart.delivery'.tr(),
-                              value: '${NumberFormatter.formatSum(deliveryFee.toInt())} ${'common.currency'.tr()}',
+                              value: deliveryFee == 0
+                                  ? 'checkout.free'.tr()
+                                  : '${NumberFormatter.formatSum(deliveryFee.toInt())} ${'common.currency'.tr()}',
+                              isDark: isDark,
+                            ),
+                          ] else ...[
+                            const SizedBox(height: 8),
+                            _buildPriceRow(
+                              label: 'cart.delivery'.tr(),
+                              value: 'checkout.pickup'.tr(),
                               isDark: isDark,
                             ),
                           ],

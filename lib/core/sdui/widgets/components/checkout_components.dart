@@ -1674,9 +1674,11 @@ class SDUICheckoutSummaryComponent extends StatelessWidget {
                     children: [
                       Text('${'cart.delivery'.tr()}:', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
                       Text(
-                        !checkoutState.isDelivery || deliveryPrice == 0
-                            ? 'checkout.free'.tr()
-                            : '${NumberFormatter.formatSum(deliveryPrice)} ${'common.currency'.tr()}',
+                        !checkoutState.isDelivery
+                            ? 'checkout.pickup'.tr()
+                            : (deliveryPrice == 0
+                                ? 'checkout.free'.tr()
+                                : '${NumberFormatter.formatSum(deliveryPrice)} ${'common.currency'.tr()}'),
                         style: AppTextStyles.labelMedium.copyWith(
                           color: (!checkoutState.isDelivery || deliveryPrice == 0) ? AppColors.success : null,
                           fontWeight: FontWeight.w700,
