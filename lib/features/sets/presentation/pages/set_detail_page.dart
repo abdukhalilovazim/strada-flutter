@@ -27,8 +27,43 @@ class SetDetailPage extends StatelessWidget {
   }
 }
 
-class _SetDetailView extends StatelessWidget {
+class _SetDetailView extends StatefulWidget {
   const _SetDetailView();
+
+  @override
+  State<_SetDetailView> createState() => _SetDetailViewState();
+}
+
+class _SetDetailViewState extends State<_SetDetailView> {
+  final ScrollController _scrollController = ScrollController();
+  final Map<int, GlobalKey> _groupKeys = {};
+  bool _hasAttemptedAdd = false;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToFirstUncompleted(SetDetailModel set, SetDetailLoaded state) {
+    final uncompletedGroups = set.groups.where((g) {
+      final count = (state.selections[g.id] ?? []).length;
+      return count < g.minSelections;
+    }).toList();
+
+    if (uncompletedGroups.isNotEmpty) {
+      final firstGroup = uncompletedGroups.first;
+      final key = _groupKeys[firstGroup.id];
+      if (key?.currentContext != null) {
+        Scrollable.ensureVisible(
+          key!.currentContext!,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOutCubic,
+          alignment: 0.08,
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -130,14 +165,17 @@ class _SetDetailView extends StatelessWidget {
             ),
           ),
           body: SingleChildScrollView(
+            controller: _scrollController,
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 130),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Rasm yoki Maxsus Hero Banner (agar rasm bo'lmasa)
-                _buildSetHero(set, isDark),
-                const SizedBox(height: 18),
+                // 1. Rasm (faqat haqiqiy fotosurat mavjud bo'lganda chiqadi, keraksiz bo'sh card mutlaqo yo'q)
+                if (set.hasRealImage) ...[
+                  _buildSetHero(set, isDark),
+                  const SizedBox(height: 18),
+                ],
 
                 // 2. Set Sarlavhasi va Narxi
                 Row(
@@ -195,8 +233,10 @@ class _SetDetailView extends StatelessWidget {
                 ...set.groups.asMap().entries.map((entry) {
                   final groupIndex = entry.key;
                   final group = entry.value;
+                  final groupKey = _groupKeys.putIfAbsent(group.id, () => GlobalKey());
                   final selectedInGroup = state.selections[group.id] ?? [];
                   final isGroupCompleted = selectedInGroup.length >= group.minSelections;
+                  final isHighlightedError = _hasAttemptedAdd && !isGroupCompleted;
 
                   final ruleText = group.selectionType == 'FIXED'
                       ? 'Komboga kiritilgan'
@@ -204,8 +244,23 @@ class _SetDetailView extends StatelessWidget {
                           ? '1 ta taom tanlang'
                           : '${group.minSelections} - ${group.maxSelections} ta tanlang');
 
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 22),
+                  return AnimatedContainer(
+                    key: groupKey,
+                    duration: const Duration(milliseconds: 250),
+                    margin: const EdgeInsets.only(bottom: 22),
+                    padding: isHighlightedError
+                        ? const EdgeInsets.all(12)
+                        : EdgeInsets.zero,
+                    decoration: isHighlightedError
+                        ? BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: isDark ? 0.12 : 0.05),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.8),
+                              width: 1.5,
+                            ),
+                          )
+                        : null,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -216,27 +271,34 @@ class _SetDetailView extends StatelessWidget {
                               width: 28,
                               height: 28,
                               decoration: BoxDecoration(
-                                color: isGroupCompleted ? AppColors.success : AppColors.primary,
+                                color: isGroupCompleted
+                                    ? AppColors.success
+                                    : (isHighlightedError
+                                        ? AppColors.primary
+                                        : (isDark ? AppColors.neutral700 : AppColors.neutral400)),
                                 shape: BoxShape.circle,
                                 boxShadow: [
-                                  BoxShadow(
-                                    color: (isGroupCompleted ? AppColors.success : AppColors.primary).withValues(alpha: 0.3),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
+                                  if (isGroupCompleted || isHighlightedError)
+                                    BoxShadow(
+                                      color: (isGroupCompleted ? AppColors.success : AppColors.primary).withValues(alpha: 0.35),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
                                 ],
                               ),
                               child: Center(
                                 child: isGroupCompleted
                                     ? const Icon(Icons.check_rounded, color: Colors.white, size: 16)
-                                    : Text(
-                                        '${groupIndex + 1}',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 13,
-                                        ),
-                                      ),
+                                    : (isHighlightedError
+                                        ? const Icon(Icons.priority_high_rounded, color: Colors.white, size: 16)
+                                        : Text(
+                                            '${groupIndex + 1}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 13,
+                                            ),
+                                          )),
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -249,14 +311,19 @@ class _SetDetailView extends StatelessWidget {
                                     style: AppTextStyles.h4.copyWith(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 16,
-                                      color: isDark ? Colors.white : AppColors.neutral900,
+                                      color: isHighlightedError
+                                          ? AppColors.primary
+                                          : (isDark ? Colors.white : AppColors.neutral900),
                                     ),
                                   ),
                                   Text(
                                     ruleText,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: isDark ? AppColors.neutral400 : AppColors.neutral500,
+                                      color: isHighlightedError
+                                          ? AppColors.primary.withValues(alpha: 0.85)
+                                          : (isDark ? AppColors.neutral400 : AppColors.neutral500),
+                                      fontWeight: isHighlightedError ? FontWeight.w600 : FontWeight.normal,
                                     ),
                                   ),
                                 ],
@@ -267,22 +334,33 @@ class _SetDetailView extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: isGroupCompleted
                                     ? AppColors.success.withValues(alpha: 0.14)
-                                    : AppColors.primary.withValues(alpha: 0.12),
+                                    : (isHighlightedError
+                                        ? AppColors.primary.withValues(alpha: 0.18)
+                                        : AppColors.neutral500.withValues(alpha: 0.12)),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
                                   color: isGroupCompleted
                                       ? AppColors.success.withValues(alpha: 0.3)
-                                      : AppColors.primary.withValues(alpha: 0.25),
+                                      : (isHighlightedError
+                                          ? AppColors.primary
+                                          : AppColors.neutral500.withValues(alpha: 0.25)),
+                                  width: isHighlightedError ? 1.5 : 1,
                                 ),
                               ),
                               child: Text(
                                 isGroupCompleted
                                     ? '✓ (${selectedInGroup.length}/${group.minSelections})'
-                                    : '${selectedInGroup.length}/${group.minSelections}',
+                                    : (isHighlightedError
+                                        ? 'Majburiy (${selectedInGroup.length}/${group.minSelections})'
+                                        : '${selectedInGroup.length}/${group.minSelections}'),
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w800,
-                                  color: isGroupCompleted ? AppColors.success : AppColors.primary,
+                                  color: isGroupCompleted
+                                      ? AppColors.success
+                                      : (isHighlightedError
+                                          ? AppColors.primary
+                                          : (isDark ? AppColors.neutral300 : AppColors.neutral700)),
                                 ),
                               ),
                             ),
@@ -290,115 +368,164 @@ class _SetDetailView extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
 
-                        // Guruhdagi mahsulotlar ro'yxati
-                        Container(
-                          decoration: BoxDecoration(
-                            color: isDark ? AppColors.darkCard : Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isDark ? AppColors.darkBorder : AppColors.neutral200,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: ListView.separated(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            padding: EdgeInsets.zero,
-                            itemCount: group.items.length,
-                            separatorBuilder: (_, __) => Divider(
-                              height: 1,
-                              thickness: 1,
-                              color: isDark ? AppColors.darkBorder : AppColors.neutral100,
-                            ),
-                            itemBuilder: (context, index) {
-                              final item = group.items[index];
-                              final isSelected = selectedInGroup.any((i) => i.id == item.id);
+                        // Guruhdagi mahsulotlar ro'yxati (2 ustunli GridView, qurilma ekraniga moslashuvchan)
+                        Builder(
+                          builder: (context) {
+                            final screenWidth = MediaQuery.sizeOf(context).width;
+                            final cardWidth = (screenWidth - 32.0 - 10.0) / 2.0;
+                            final itemAspectRatio = (cardWidth / 166.0).clamp(0.96, 1.25);
 
-                              return InkWell(
-                                onTap: () {
-                                  HapticFeedback.selectionClick();
-                                  context.read<SetDetailCubit>().toggleItem(group, item);
-                                },
-                                borderRadius: index == 0
-                                    ? const BorderRadius.vertical(top: Radius.circular(16))
-                                    : (index == group.items.length - 1
-                                        ? const BorderRadius.vertical(bottom: Radius.circular(16))
-                                        : BorderRadius.zero),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 180),
-                                  color: isSelected
-                                      ? AppColors.primary.withValues(alpha: isDark ? 0.12 : 0.05)
-                                      : Colors.transparent,
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                  child: Row(
-                                    children: [
-                                      // Mahsulot rasmi yoki chiroyli fallback icon
-                                      _buildItemThumbnail(item, isDark),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              item.productTitle,
-                                              style: AppTextStyles.labelMedium.copyWith(
-                                                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                                                fontSize: 14,
-                                                color: isDark ? Colors.white : AppColors.neutral900,
+                            return GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              padding: EdgeInsets.zero,
+                              itemCount: group.items.length,
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                mainAxisSpacing: 10,
+                                crossAxisSpacing: 10,
+                                childAspectRatio: itemAspectRatio,
+                              ),
+                              itemBuilder: (context, index) {
+                                final item = group.items[index];
+                                final isSelected = selectedInGroup.any((i) => i.isSame(item));
+                                final hasVariant = item.variantTitle.isNotEmpty &&
+                                    item.variantTitle.toLowerCase().trim() != 'size' &&
+                                    item.variantTitle.toLowerCase().trim() != 'null';
+
+                                return Material(
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: InkWell(
+                                    onTap: () {
+                                      HapticFeedback.selectionClick();
+                                      context.read<SetDetailCubit>().toggleItem(group, item);
+                                    },
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 180),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? AppColors.primary.withValues(alpha: isDark ? 0.14 : 0.06)
+                                            : (isDark ? AppColors.darkCard : Colors.white),
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(
+                                          color: isSelected
+                                              ? AppColors.primary
+                                              : (isDark ? AppColors.darkBorder : AppColors.neutral200),
+                                          width: isSelected ? 1.5 : 1.0,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: isSelected
+                                                ? AppColors.primary.withValues(alpha: isDark ? 0.18 : 0.08)
+                                                : Colors.black.withValues(alpha: isDark ? 0.15 : 0.02),
+                                            blurRadius: isSelected ? 6 : 4,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          // Rasm va tepasida tanlov belgisi
+                                          Stack(
+                                            children: [
+                                              ClipRRect(
+                                                borderRadius: const BorderRadius.vertical(top: Radius.circular(13)),
+                                                child: SizedBox(
+                                                  width: double.infinity,
+                                                  height: 96,
+                                                  child: _buildItemGridThumbnail(item, isDark),
+                                                ),
                                               ),
-                                            ),
-                                            if (item.variantTitle.isNotEmpty) ...[
-                                              const SizedBox(height: 2),
-                                              Text(
-                                                item.variantTitle,
-                                                style: AppTextStyles.bodySmall.copyWith(
-                                                  color: isSelected
-                                                      ? AppColors.primary
-                                                      : (isDark ? AppColors.neutral400 : AppColors.neutral500),
-                                                  fontWeight: FontWeight.w500,
+                                              Positioned(
+                                                top: 7,
+                                                right: 7,
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(3),
+                                                  decoration: BoxDecoration(
+                                                    color: isDark
+                                                        ? AppColors.darkSurface.withValues(alpha: 0.9)
+                                                        : Colors.white.withValues(alpha: 0.92),
+                                                    shape: BoxShape.circle,
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.black.withValues(alpha: 0.14),
+                                                        blurRadius: 4,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  child: group.selectionType == 'FIXED'
+                                                      ? const Icon(
+                                                          Icons.check_circle_rounded,
+                                                          color: AppColors.success,
+                                                          size: 18,
+                                                        )
+                                                      : (group.selectionType == 'SINGLE_CHOICE'
+                                                          ? Icon(
+                                                              isSelected
+                                                                  ? Icons.radio_button_checked_rounded
+                                                                  : Icons.radio_button_unchecked_rounded,
+                                                              color: isSelected ? AppColors.primary : AppColors.neutral400,
+                                                              size: 18,
+                                                            )
+                                                          : Icon(
+                                                              isSelected
+                                                                  ? Icons.check_box_rounded
+                                                                  : Icons.check_box_outline_blank_rounded,
+                                                              color: isSelected ? AppColors.primary : AppColors.neutral400,
+                                                              size: 18,
+                                                            )),
                                                 ),
                                               ),
                                             ],
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
+                                          ),
 
-                                      // Tanlov belgisi
-                                      if (group.selectionType == 'FIXED')
-                                        const Icon(
-                                          Icons.check_circle_rounded,
-                                          color: AppColors.success,
-                                          size: 22,
-                                        )
-                                      else if (group.selectionType == 'SINGLE_CHOICE')
-                                        Icon(
-                                          isSelected
-                                              ? Icons.radio_button_checked_rounded
-                                              : Icons.radio_button_unchecked_rounded,
-                                          color: isSelected ? AppColors.primary : AppColors.neutral400,
-                                          size: 22,
-                                        )
-                                      else
-                                        Icon(
-                                          isSelected
-                                              ? Icons.check_box_rounded
-                                              : Icons.check_box_outline_blank_rounded,
-                                          color: isSelected ? AppColors.primary : AppColors.neutral400,
-                                          size: 22,
-                                        ),
-                                    ],
+                                          // Matnlar qismi
+                                          Padding(
+                                            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  item.productTitle,
+                                                  style: AppTextStyles.labelMedium.copyWith(
+                                                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                                    fontSize: 13.5,
+                                                    color: isDark ? Colors.white : AppColors.neutral900,
+                                                    height: 1.2,
+                                                  ),
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                                if (hasVariant) ...[
+                                                  const SizedBox(height: 3),
+                                                  Text(
+                                                    item.variantTitle,
+                                                    style: AppTextStyles.bodySmall.copyWith(
+                                                      color: isSelected
+                                                          ? AppColors.primary
+                                                          : (isDark ? AppColors.neutral400 : AppColors.neutral500),
+                                                      fontWeight: FontWeight.w600,
+                                                      fontSize: 12,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
-                          ),
+                                );
+                              },
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -509,39 +636,35 @@ class _SetDetailView extends StatelessWidget {
                                         quantity: state.quantity,
                                       );
 
-                                  final messenger = ScaffoldMessenger.of(context);
-                                  messenger.clearSnackBars();
-                                  messenger.showSnackBar(
-                                    SnackBar(
-                                      content: Text('${set.title} ${'cart.added'.tr()}'),
-                                      backgroundColor: AppColors.primary,
-                                      duration: const Duration(seconds: 2),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      action: SnackBarAction(
-                                        label: 'cart.title'.tr(),
-                                        textColor: Colors.white,
-                                        onPressed: () {
-                                          messenger.clearSnackBars();
-                                          context.go('/cart');
-                                        },
-                                      ),
-                                    ),
-                                  );
-
                                   context.pop();
                                 }
                               : () {
                                   HapticFeedback.heavyImpact();
+                                  setState(() {
+                                    _hasAttemptedAdd = true;
+                                  });
+                                  _scrollToFirstUncompleted(set, state);
+
                                   final messenger = ScaffoldMessenger.of(context);
                                   messenger.clearSnackBars();
                                   messenger.showSnackBar(
                                     SnackBar(
-                                      content: Text('Iltimos, avval tanlang: ${uncompleted.join(", ")}'),
+                                      content: Row(
+                                        children: [
+                                          const Icon(Icons.info_outline_rounded, color: Colors.white, size: 20),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Text(
+                                              'Iltimos, avval tanlang: ${uncompleted.join(", ")}',
+                                              style: const TextStyle(fontWeight: FontWeight.w700),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                       backgroundColor: AppColors.primary,
                                       behavior: SnackBarBehavior.floating,
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      duration: const Duration(seconds: 2),
+                                      duration: const Duration(seconds: 3),
                                     ),
                                   );
                                 },
@@ -558,15 +681,10 @@ class _SetDetailView extends StatelessWidget {
     );
   }
 
-  /// Set rasmi yoki rasm bo'lmaganda chiroyli Hero Banner
+  /// Set fotosurati (faqat haqiqiy rasm yuklangan bo'lsa chiqadi, bo'sh card yo'qotildi)
   Widget _buildSetHero(SetDetailModel set, bool isDark) {
-    final hasRealImage = set.imageUrl.isNotEmpty &&
-        !set.imageUrl.contains('logo.png') &&
-        !set.imageUrl.contains('placeholder') &&
-        !set.imageUrl.contains('no-image');
-
-    if (!hasRealImage) {
-      return _buildNoImageHero(set, isDark);
+    if (!set.hasRealImage) {
+      return const SizedBox.shrink();
     }
 
     return ClipRRect(
@@ -580,142 +698,56 @@ class _SetDetailView extends StatelessWidget {
             width: double.infinity,
             height: double.infinity,
           ),
-          errorWidget: (_, __, ___) => _buildNoImageHero(set, isDark),
+          errorWidget: (_, __, ___) => const SizedBox.shrink(),
         ),
       ),
     );
   }
 
-  /// Rasm bo'lmaganda ko'rsatiladigan zamonaviy va chiroyli Banner
-  Widget _buildNoImageHero(SetDetailModel set, bool isDark) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 26),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? [const Color(0xFF2B1D1D), const Color(0xFF1F1717)]
-              : [const Color(0xFFFFF7ED), const Color(0xFFFEF2F2)],
-        ),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: isDark ? 0.35 : 0.25),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkCard : Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.local_pizza_rounded,
-                size: 38,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.12),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.3),
-              ),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.local_fire_department_rounded,
-                  size: 14,
-                  color: AppColors.primary,
-                ),
-                SizedBox(width: 4),
-                Text(
-                  'PIZZA STRADA COMBO',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 11,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Guruh ichidagi har bir taom uchun rasm yoki chiroyli fallback icon
-  Widget _buildItemThumbnail(SetGroupItemModel item, bool isDark) {
+  /// 2 ustunli Grid uchun har bir taom rasmi
+  Widget _buildItemGridThumbnail(SetGroupItemModel item, bool isDark) {
     final hasRealImage = item.imageUrl.isNotEmpty &&
         !item.imageUrl.contains('logo.png') &&
         !item.imageUrl.contains('placeholder') &&
         !item.imageUrl.contains('no-image');
 
     if (!hasRealImage) {
-      return _buildItemPlaceholder(isDark);
+      return Container(
+        color: isDark ? AppColors.darkSurface : const Color(0xFFFFF7F5),
+        child: Center(
+          child: Icon(
+            Icons.restaurant_rounded,
+            size: 32,
+            color: AppColors.primary.withValues(alpha: 0.5),
+          ),
+        ),
+      );
     }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: SizedBox(
-        width: 44,
-        height: 44,
-        child: CachedNetworkImage(
-          imageUrl: item.imageUrl,
-          fit: BoxFit.cover,
-          placeholder: (_, __) => _buildItemPlaceholder(isDark),
-          errorWidget: (_, __, ___) => _buildItemPlaceholder(isDark),
+    return CachedNetworkImage(
+      imageUrl: item.imageUrl,
+      fit: BoxFit.cover,
+      placeholder: (_, __) => Container(
+        color: isDark ? AppColors.darkSurface : const Color(0xFFF3F4F6),
+        child: const Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.primary,
+            ),
+          ),
         ),
       ),
-    );
-  }
-
-  /// Taom uchun fallback icon placeholder
-  Widget _buildItemPlaceholder(bool isDark) {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : const Color(0xFFFFF5F5),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: isDark ? 0.25 : 0.2),
-        ),
-      ),
-      child: const Center(
-        child: Icon(
-          Icons.restaurant_rounded,
-          size: 20,
-          color: AppColors.primary,
+      errorWidget: (_, __, ___) => Container(
+        color: isDark ? AppColors.darkSurface : const Color(0xFFFFF7F5),
+        child: Center(
+          child: Icon(
+            Icons.restaurant_rounded,
+            size: 32,
+            color: AppColors.primary.withValues(alpha: 0.5),
+          ),
         ),
       ),
     );

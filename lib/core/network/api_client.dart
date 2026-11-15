@@ -34,7 +34,7 @@ class ApiClient {
     final token = await SecureStorage.getToken();
     final context = AppConstants.navigatorKey.currentContext;
     final lang = (context != null && context.mounted)
-        ? (EasyLocalization.of(context)?.locale.languageCode ?? 'uz')
+        ? (EasyLocalization.of(context)?.locale.languageCode ?? 'ru')
         : 'uz';
     final isDark = SharedPrefs.getThemeMode() == ThemeMode.dark;
 

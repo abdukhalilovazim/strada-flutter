@@ -19,6 +19,20 @@ class SetGroupItemModel extends Equatable {
     this.isFixed = false,
   });
 
+  /// Check whether two items represent the exact same selectable item
+  bool isSame(SetGroupItemModel other) {
+    if (productVariantId != null &&
+        other.productVariantId != null &&
+        productVariantId != 0 &&
+        other.productVariantId != 0) {
+      return productVariantId == other.productVariantId;
+    }
+    if (productId != 0 && other.productId != 0) {
+      return productId == other.productId;
+    }
+    return id == other.id;
+  }
+
   factory SetGroupItemModel.fromJson(Map<String, dynamic> json) {
     return SetGroupItemModel(
       id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
@@ -123,6 +137,21 @@ class SetDetailModel extends Equatable {
     this.imageUrl = '',
     this.groups = const [],
   });
+
+  /// Setning haqiqiy fotosurati bormi yoki yo'qligini tekshirish
+  bool get hasRealImage {
+    if (imageUrl.isEmpty) return false;
+    final lower = imageUrl.toLowerCase();
+    if (lower.contains('logo.png') ||
+        lower.contains('placeholder') ||
+        lower.contains('no-image') ||
+        lower.contains('no_image') ||
+        lower.contains('default.png') ||
+        lower.contains('images/logo')) {
+      return false;
+    }
+    return true;
+  }
 
   factory SetDetailModel.fromJson(Map<String, dynamic> json) {
     final rawGroups = json['groups'] as List<dynamic>? ?? [];

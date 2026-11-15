@@ -31,7 +31,7 @@ class _BranchesPageState extends State<BranchesPage> {
   }
 
   void _initController() {
-    final lang = EasyLocalization.of(context)?.locale.languageCode ?? 'uz';
+    final lang = EasyLocalization.of(context)?.locale.languageCode ?? 'ru';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final controller = WebViewController()

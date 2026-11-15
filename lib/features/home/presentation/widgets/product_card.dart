@@ -116,9 +116,9 @@ class ProductCard extends StatelessWidget {
                                 placeholder: (_, __) => Stack(
                                   fit: StackFit.expand,
                                   children: [
-                                    const Opacity(
+                                    Opacity(
                                       opacity: 0.25,
-                                      child: PizzaImagePlaceholder(fit: BoxFit.cover),
+                                      child: _buildPlaceholder(isDark),
                                     ),
                                     Shimmer.fromColors(
                                       baseColor: isDark
@@ -131,11 +131,9 @@ class ProductCard extends StatelessWidget {
                                     ),
                                   ],
                                 ),
-                                errorWidget: (_, __, ___) => const PizzaImagePlaceholder(
-                                  fit: BoxFit.cover,
-                                ),
+                                errorWidget: (_, __, ___) => _buildPlaceholder(isDark),
                               )
-                            : const PizzaImagePlaceholder(fit: BoxFit.cover),
+                            : _buildPlaceholder(isDark),
                       ),
                     ),
 
@@ -366,5 +364,51 @@ class ProductCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildPlaceholder(bool isDark) {
+    if (product.isSet) {
+      return Container(
+        color: isDark ? const Color(0xFF1E222D) : const Color(0xFFFFF7ED),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.fastfood_rounded,
+                  color: AppColors.primary,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'SET COMBO',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.6,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return const PizzaImagePlaceholder(fit: BoxFit.cover);
   }
 }

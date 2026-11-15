@@ -116,20 +116,22 @@ class _LoginPageState extends State<LoginPage> {
 
                     const SizedBox(height: 48),
 
-                    // Logo
+                    // Rasmiy brend logotipi (Dark modeda oq, Light modeda qizil brend rangi)
                     Image.asset(
-                      'assets/icons/logo.png',
-                      width: 100,
-                      height: 100,
+                      isDark
+                          ? 'assets/icons/strada_logo_white.png'
+                          : 'assets/icons/strada_logo.png',
+                      height: 52,
+                      fit: BoxFit.contain,
                       errorBuilder: (_, __, ___) => Container(
-                        width: 80,
-                        height: 80,
+                        width: 60,
+                        height: 60,
                         decoration: BoxDecoration(
                           color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Icon(Icons.local_pizza,
-                            color: Colors.white, size: 40),
+                        child: const Icon(Icons.local_pizza_rounded,
+                            color: Colors.white, size: 32),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -214,7 +216,7 @@ class _LoginPageState extends State<LoginPage> {
                             : Text('auth.send_sms'.tr()),
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 20),
 
                     // Loginsiz davom etish tugmasi (Secondary Action)
                     SizedBox(

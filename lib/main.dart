@@ -68,10 +68,10 @@ void main() async {
         BlocProvider(create: (context) => getIt<NotificationsCubit>()..loadNotifications()),
       ],
       child: EasyLocalization(
-        supportedLocales: const [Locale('uz'), Locale('ru'), Locale('en')],
+        supportedLocales: const [Locale('ru'), Locale('uz'), Locale('en')],
         path: 'lib/l10n',
-        fallbackLocale: const Locale('uz'),
-        startLocale: const Locale('uz'),
+        fallbackLocale: const Locale('ru'),
+        startLocale: const Locale('ru'),
         child: BlocBuilder<ThemeCubit, ThemeMode>(
           builder: (context, themeMode) => MyApp(themeMode: themeMode),
         ),

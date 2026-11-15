@@ -203,7 +203,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
   }
 
   void _initController() {
-    final lang = EasyLocalization.of(context)?.locale.languageCode ?? 'uz';
+    final lang = EasyLocalization.of(context)?.locale.languageCode ?? 'ru';
 
     final controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)

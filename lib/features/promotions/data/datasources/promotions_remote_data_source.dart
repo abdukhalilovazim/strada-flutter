@@ -30,7 +30,7 @@ class PromotionsRemoteDataSourceImpl implements PromotionsRemoteDataSource {
   String _getCacheKey() {
     final context = AppConstants.navigatorKey.currentContext;
     final lang = (context != null && context.mounted)
-        ? (EasyLocalization.of(context)?.locale.languageCode ?? 'uz')
+        ? (EasyLocalization.of(context)?.locale.languageCode ?? 'ru')
         : 'uz';
     return 'cached_promotions_$lang';
   }
