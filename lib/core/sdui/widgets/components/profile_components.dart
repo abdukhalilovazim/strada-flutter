@@ -979,38 +979,18 @@ class _SDUILogoutDeleteComponentState extends State<SDUILogoutDeleteComponent> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        children: [
-          // Hisobdan chiqish
-          Center(
-            child: TextButton.icon(
-              onPressed: () => _showLogoutDialog(context),
-              icon: const Icon(Icons.logout_rounded, color: AppColors.error, size: 18),
-              label: Text(
-                'profile.logout'.tr(),
-                style: AppTextStyles.labelMedium.copyWith(
-                  color: AppColors.error,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+      child: Center(
+        child: TextButton.icon(
+          onPressed: () => _showLogoutDialog(context),
+          icon: const Icon(Icons.logout_rounded, color: AppColors.error, size: 18),
+          label: Text(
+            'profile.logout'.tr(),
+            style: AppTextStyles.labelMedium.copyWith(
+              color: AppColors.error,
+              fontWeight: FontWeight.w800,
             ),
           ),
-          // Hisobni o'chirish (Apple Review Guideline 5.1.1(v) & Google Play Account Deletion WebView)
-          Center(
-            child: TextButton(
-              onPressed: () => context.push('/delete-account'),
-              child: Text(
-                'profile.delete_account'.tr(),
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.neutral400,
-                  fontSize: 12,
-                  decoration: TextDecoration.underline,
-                  decorationColor: AppColors.neutral400,
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

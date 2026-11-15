@@ -802,6 +802,28 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 28),
+
+                // 4. Hisobni o'chirish (Apple Review Guideline 5.1.1(v) & Google Play Account Deletion)
+                Center(
+                  child: TextButton(
+                    onPressed: () => context.push('/delete-account'),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
+                    child: Text(
+                      'profile.delete_account'.tr(),
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.error.withValues(alpha: 0.8),
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline,
+                        decorationColor: AppColors.error.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
               ],
             ),
     );
