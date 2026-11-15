@@ -68,6 +68,8 @@
   "cart.add": "Добавить",
   "cart.added": "добавлен в корзину",
   "cart.checkout": "Оформить заказ",
+  "cart.set_menu": "Сет-меню",
+  "cart.coupon_bundle": "Набор купонов",
   "checkout.title": "Оформление заказа",
   "checkout.delivery": "Доставка",
   "checkout.pickup": "Самовывоз",

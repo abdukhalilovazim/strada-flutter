@@ -86,9 +86,14 @@ class ProductModel extends ProductEntity {
     final cleanThumb = _cleanImageUrl(rawThumb);
     final cleanPhoto = _cleanImageUrl(rawPhoto);
 
+    final rawSlug = json['slug'] as String?;
+    final cleanSlug = (rawSlug != null && rawSlug.trim().isNotEmpty)
+        ? rawSlug.trim()
+        : (parsedId != 0 ? parsedId.toString() : 'item');
+
     return ProductModel(
       id: parsedId,
-      slug: json['slug'] as String? ?? (parsedId != 0 ? parsedId.toString() : ''),
+      slug: cleanSlug,
       title: json['title'] as String? ?? '',
       description: json['description'] as String?,
       thumbnail: cleanThumb,

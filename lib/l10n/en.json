@@ -68,6 +68,8 @@
   "cart.add": "Add",
   "cart.added": "added to cart",
   "cart.checkout": "Checkout",
+  "cart.set_menu": "Set menu",
+  "cart.coupon_bundle": "Coupon bundle",
   "checkout.title": "Checkout",
   "checkout.delivery": "Delivery",
   "checkout.pickup": "Pickup",

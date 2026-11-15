@@ -10,7 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 /// 📜 Policy & Terms WebView Page
-class PolicyWebViewPage extends StatefulWidget {
+class PolicyWebViewPage extends StatelessWidget {
   final String title;
   final String urlPath;
 
@@ -20,11 +20,146 @@ class PolicyWebViewPage extends StatefulWidget {
     required this.urlPath,
   });
 
+  /// 📜 80% ekran balandligi bilan Bottom Sheet shaklida ochish
+  static Future<void> showAsBottomSheet(
+    BuildContext context, {
+    required String title,
+    required String urlPath,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      enableDrag: true,
+      useSafeArea: true,
+      builder: (ctx) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: Container(
+            height: screenHeight * 0.80,
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                // Drag Handle
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4.5,
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.neutral700 : AppColors.neutral300,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                // Header (Sarlavha va Yopish tugmasi)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 36),
+                      Expanded(
+                        child: Text(
+                          title,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.h3.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16.5,
+                            color: isDark ? Colors.white : AppColors.neutral900,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.close_rounded,
+                          color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                          size: 22,
+                        ),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                      ),
+                    ],
+                  ),
+                ),
+                Divider(
+                  height: 1,
+                  color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+                ),
+                // WebView kontenti
+                Expanded(
+                  child: PolicyWebViewContent(
+                    title: title,
+                    urlPath: urlPath,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
-  State<PolicyWebViewPage> createState() => _PolicyWebViewPageState();
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF121217) : const Color(0xFFF9FAFB),
+      appBar: AppBar(
+        title: Text(
+          title,
+          style: AppTextStyles.h3.copyWith(
+            fontWeight: FontWeight.w700,
+            color: isDark ? Colors.white : AppColors.neutral900,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: isDark ? Colors.white : AppColors.neutral900,
+            size: 20,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: PolicyWebViewContent(
+        title: title,
+        urlPath: urlPath,
+      ),
+    );
+  }
 }
 
-class _PolicyWebViewPageState extends State<PolicyWebViewPage> {
+/// 🌐 Policy/Terms WebView kontenti
+class PolicyWebViewContent extends StatefulWidget {
+  final String title;
+  final String urlPath;
+
+  const PolicyWebViewContent({
+    super.key,
+    required this.title,
+    required this.urlPath,
+  });
+
+  @override
+  State<PolicyWebViewContent> createState() => _PolicyWebViewContentState();
+}
+
+class _PolicyWebViewContentState extends State<PolicyWebViewContent> {
   WebViewController? _controller;
   bool _isLoading = true;
   bool _isInitialized = false;
@@ -64,7 +199,11 @@ class _PolicyWebViewPageState extends State<PolicyWebViewPage> {
                 return NavigationDecision.prevent;
               }
               final scheme = uri.scheme.toLowerCase();
-              if (scheme == 'tel' || scheme == 'mailto' || scheme == 'sms' || request.url.contains('maps') || request.url.contains('yandex')) {
+              if (scheme == 'tel' ||
+                  scheme == 'mailto' ||
+                  scheme == 'sms' ||
+                  request.url.contains('maps') ||
+                  request.url.contains('yandex')) {
                 try {
                   if (await canLaunchUrl(uri)) {
                     await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -90,7 +229,8 @@ class _PolicyWebViewPageState extends State<PolicyWebViewPage> {
         ),
       );
 
-    final cleanPath = widget.urlPath.startsWith('/') ? widget.urlPath.substring(1) : widget.urlPath;
+    final cleanPath =
+        widget.urlPath.startsWith('/') ? widget.urlPath.substring(1) : widget.urlPath;
     var urlStr = cleanPath.startsWith('http')
         ? cleanPath
         : '${ApiConstants.webviewBaseUrl}/$cleanPath';
@@ -139,40 +279,14 @@ class _PolicyWebViewPageState extends State<PolicyWebViewPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121217) : const Color(0xFFF9FAFB),
-      appBar: AppBar(
-        title: Text(
-          widget.title,
-          style: AppTextStyles.h3.copyWith(
-            fontWeight: FontWeight.w700,
-            color: isDark ? Colors.white : AppColors.neutral900,
+    return Stack(
+      children: [
+        if (_controller != null) WebViewWidget(controller: _controller!),
+        if (_isLoading)
+          const Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
           ),
-        ),
-        centerTitle: true,
-        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: isDark ? Colors.white : AppColors.neutral900,
-            size: 20,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: Stack(
-        children: [
-          if (_controller != null)
-            WebViewWidget(controller: _controller!),
-          if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            ),
-        ],
-      ),
+      ],
     );
   }
 }

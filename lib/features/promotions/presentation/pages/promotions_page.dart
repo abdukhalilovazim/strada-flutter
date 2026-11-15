@@ -259,11 +259,12 @@ class _PromotionsView extends StatelessWidget {
                                 product: product,
                                 quantityInCart: quantity,
                                 onTap: () {
+                                  final targetSlug = product.slug.trim().isNotEmpty ? product.slug.trim() : product.id.toString();
                                   final hasMultiple = product.variants.where((v) => VariantLocalizationHelper.localize(v.title).isNotEmpty).length > 1;
                                   if (hasMultiple) {
                                     ProductDetailModal.show(context, product);
                                   } else {
-                                    context.push('/product/${product.slug}', extra: product);
+                                    context.push('/product/$targetSlug', extra: product);
                                   }
                                 },
                                 onAdd: () {

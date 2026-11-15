@@ -434,20 +434,22 @@ class _HomePageState extends State<HomePage> {
             product: product,
             quantityInCart: quantity,
             onTap: () {
+              final targetSlug = product.slug.trim().isNotEmpty ? product.slug.trim() : product.id.toString();
               if (product.isSet) {
-                context.push('/set/${product.slug}', extra: product);
+                context.push('/set/$targetSlug', extra: product);
                 return;
               }
               final hasMultiple = product.variants.where((v) => VariantLocalizationHelper.localize(v.title).isNotEmpty).length > 1;
               if (hasMultiple) {
                 ProductDetailModal.show(context, product);
               } else {
-                context.push('/product/${product.slug}', extra: product);
+                context.push('/product/$targetSlug', extra: product);
               }
             },
             onAdd: () {
               if (product.isSet) {
-                context.push('/set/${product.slug}', extra: product);
+                final targetSlug = product.slug.trim().isNotEmpty ? product.slug.trim() : product.id.toString();
+                context.push('/set/$targetSlug', extra: product);
                 return;
               }
               final hasMultiple = product.variants.where((v) => VariantLocalizationHelper.localize(v.title).isNotEmpty).length > 1;

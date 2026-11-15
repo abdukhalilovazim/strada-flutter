@@ -72,8 +72,15 @@ void main() async {
         path: 'lib/l10n',
         fallbackLocale: const Locale('ru'),
         startLocale: const Locale('ru'),
-        child: BlocBuilder<ThemeCubit, ThemeMode>(
-          builder: (context, themeMode) => MyApp(themeMode: themeMode),
+        child: BlocListener<HomeCubit, HomeState>(
+          listener: (context, state) {
+            if (state is HomeLoaded) {
+              context.read<CartCubit>().syncWithProducts(state.fullProducts);
+            }
+          },
+          child: BlocBuilder<ThemeCubit, ThemeMode>(
+            builder: (context, themeMode) => MyApp(themeMode: themeMode),
+          ),
         ),
       ),
     ),

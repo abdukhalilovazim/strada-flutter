@@ -128,6 +128,50 @@ class CartCubit extends Cubit<CartState> {
     emit(CartState(items: items));
   }
 
+  void syncWithProducts(List<ProductEntity> freshProducts) {
+    if (state.items.isEmpty || freshProducts.isEmpty) return;
+
+    final productMap = <int, ProductEntity>{};
+    final slugMap = <String, ProductEntity>{};
+    for (final p in freshProducts) {
+      if (p.id != 0) productMap[p.id] = p;
+      if (p.slug.isNotEmpty) slugMap[p.slug] = p;
+    }
+
+    bool changed = false;
+    final updatedItems = state.items.map((item) {
+      if (item.isCoupon) return item;
+
+      final fresh = productMap[item.product.id] ?? slugMap[item.product.slug];
+      if (fresh == null) return item;
+
+      VariantEntity? freshVariant = item.variant;
+      if (item.variant != null && fresh.variants.isNotEmpty) {
+        for (final v in fresh.variants) {
+          if (v.id == item.variant!.id) {
+            freshVariant = v;
+            break;
+          }
+        }
+      }
+
+      if (item.product.title != fresh.title ||
+          item.product.description != fresh.description ||
+          (freshVariant != null && freshVariant.title != item.variant?.title)) {
+        changed = true;
+        return item.copyWith(
+          product: fresh,
+          variant: freshVariant,
+        );
+      }
+      return item;
+    }).toList();
+
+    if (changed) {
+      emit(CartState(items: updatedItems));
+    }
+  }
+
   void clear() {
     SmartRecommendationEngine.clear();
     emit(const CartState(items: []));

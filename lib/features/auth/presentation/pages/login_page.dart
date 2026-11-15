@@ -9,6 +9,7 @@ import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/phone_number_formatter.dart';
 import 'package:pizza_strada/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:pizza_strada/core/di/injection.dart';
+import 'package:pizza_strada/features/profile/presentation/pages/policy_web_view_page.dart';
 
 class LoginPage extends StatefulWidget {
   final String? redirect;
@@ -36,12 +37,20 @@ class _LoginPageState extends State<LoginPage> {
     _privacyRecognizer = TapGestureRecognizer()
       ..onTap = () {
         HapticFeedback.lightImpact();
-        context.push('/privacy-policy');
+        PolicyWebViewPage.showAsBottomSheet(
+          context,
+          title: 'profile.privacy_policy'.tr(),
+          urlPath: 'privacy-policy',
+        );
       };
     _termsRecognizer = TapGestureRecognizer()
       ..onTap = () {
         HapticFeedback.lightImpact();
-        context.push('/public-offer');
+        PolicyWebViewPage.showAsBottomSheet(
+          context,
+          title: 'profile.public_offer'.tr(),
+          urlPath: 'public-offer',
+        );
       };
   }
 
@@ -116,12 +125,20 @@ class _LoginPageState extends State<LoginPage> {
           },
           builder: (ctx, state) {
             return SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 16),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: IntrinsicHeight(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const SizedBox(height: 16),
 
                     // Yuqori panel: Orqaga qaytish va Til tanlash paneli
                     Row(
@@ -309,10 +326,12 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    // ⬇️ SPACER: pushes the privacy/terms text to the very bottom of the page
+                    const Spacer(),
+                    const SizedBox(height: 16),
                     // Maxfiylik siyosati va Ommaviy oferta kelishuvi (Store Review Guideline 5.1.1)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                       child: Text.rich(
                         TextSpan(
                           style: AppTextStyles.bodySmall.copyWith(
@@ -353,7 +372,11 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
               ),
-            );
+            ),
+          );
+        },
+      ),
+    );
           },
         ),
       ),

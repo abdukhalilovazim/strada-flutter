@@ -351,7 +351,7 @@ class _CartPageState extends State<CartPage> {
                             const Icon(Icons.takeout_dining_rounded, size: 12, color: AppColors.primary),
                             const SizedBox(width: 4),
                             Text(
-                              'Set menyu',
+                              'cart.set_menu'.tr(),
                               style: AppTextStyles.bodySmall.copyWith(
                                 color: AppColors.primary,
                                 fontSize: 11.5,
@@ -381,7 +381,7 @@ class _CartPageState extends State<CartPage> {
                             const Icon(Icons.confirmation_number_outlined, size: 12, color: AppColors.primary),
                             const SizedBox(width: 4),
                             Text(
-                              'Kupon to\'plami',
+                              'cart.coupon_bundle'.tr(),
                               style: AppTextStyles.bodySmall.copyWith(
                                 color: AppColors.primary,
                                 fontSize: 11.5,

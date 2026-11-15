@@ -486,6 +486,44 @@ final appRouter = GoRouter(
   navigatorKey: AppConstants.navigatorKey,
   initialLocation: '/splash',
   observers: [AppAnalyticsObserver()],
+  errorBuilder: (context, state) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.explore_off_rounded, size: 54, color: AppColors.primary),
+              const SizedBox(height: 16),
+              Text(
+                'error.not_found'.tr(),
+                style: AppTextStyles.h2,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                state.error?.toString() ?? 'Sahifa topilmadi',
+                style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => context.go('/home'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                child: const Text('Bosh sahifaga qaytish'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  },
   redirect: (context, state) async {
     final token = await SecureStorage.getToken();
     final onAuth = state.matchedLocation.startsWith('/auth');
@@ -498,6 +536,9 @@ final appRouter = GoRouter(
     return null;
   },
   routes: [
+    GoRoute(path: '/', redirect: (_, __) => '/home'),
+    GoRoute(path: '/product', redirect: (_, __) => '/home'),
+    GoRoute(path: '/set', redirect: (_, __) => '/home'),
     GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
     GoRoute(
       path: '/auth/login',
