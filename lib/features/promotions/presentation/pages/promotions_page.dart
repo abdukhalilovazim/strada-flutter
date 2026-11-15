@@ -493,32 +493,6 @@ class _CouponDealCard extends StatelessWidget {
                             HapticFeedback.lightImpact();
                             if (deal.price > 0) {
                               context.read<CartCubit>().addCouponToCart(deal);
-                              final router = GoRouter.of(context);
-                              final messenger = ScaffoldMessenger.of(context);
-                              messenger.clearSnackBars();
-
-                              final displayCode = deal.code.isNotEmpty ? deal.code : deal.title;
-
-                              messenger.showSnackBar(
-                                SnackBar(
-                                  content: Text('$displayCode ${'cart.added'.tr()}'),
-                                  backgroundColor: AppColors.primary,
-                                  duration: const Duration(seconds: 2),
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  action: SnackBarAction(
-                                    label: 'cart.title'.tr(),
-                                    textColor: Colors.white,
-                                    onPressed: () {
-                                      messenger.clearSnackBars();
-                                      router.go('/cart');
-                                    },
-                                  ),
-                                ),
-                              );
-                              Future.delayed(const Duration(seconds: 2), () {
-                                messenger.clearSnackBars();
-                              });
                             } else if (deal.code.isNotEmpty) {
                               final token = await SecureStorage.getToken();
                               if (token == null || token.isEmpty) {

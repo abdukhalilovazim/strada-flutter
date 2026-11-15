@@ -404,30 +404,6 @@ class CouponDetailPage extends StatelessWidget {
                     onPressed: () {
                       HapticFeedback.mediumImpact();
                       context.read<CartCubit>().addCouponToCart(deal);
-                      final messenger = ScaffoldMessenger.of(context);
-                      messenger.clearSnackBars();
-                      final displayCode = deal.code.isNotEmpty ? deal.code : deal.title;
-
-                      messenger.showSnackBar(
-                        SnackBar(
-                          content: Text('$displayCode ${'cart.added'.tr()}'),
-                          backgroundColor: AppColors.primary,
-                          duration: const Duration(seconds: 2),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          action: SnackBarAction(
-                            label: 'cart.title'.tr(),
-                            textColor: Colors.white,
-                            onPressed: () {
-                              messenger.clearSnackBars();
-                              context.go('/cart');
-                            },
-                          ),
-                        ),
-                      );
-                      Future.delayed(const Duration(seconds: 2), () {
-                        messenger.clearSnackBars();
-                      });
                       context.pop();
                     },
                     icon: const Icon(Icons.shopping_bag_outlined, size: 20),

@@ -10,7 +10,8 @@ import 'package:pizza_strada/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:pizza_strada/core/di/injection.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  final String? redirect;
+  const LoginPage({super.key, this.redirect});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -76,10 +77,18 @@ class _LoginPageState extends State<LoginPage> {
         body: BlocConsumer<AuthCubit, AuthState>(
           listener: (ctx, state) {
             if (state is AuthOtpSent) {
-              ctx.push('/auth/otp', extra: {
-                'phone': state.phone,
-                'fullName': _nameController.text.trim(),
-              });
+              final target = widget.redirect;
+              ctx.push(
+                Uri(
+                  path: '/auth/otp',
+                  queryParameters: target != null && target.isNotEmpty ? {'redirect': target} : null,
+                ).toString(),
+                extra: {
+                  'phone': state.phone,
+                  'fullName': _nameController.text.trim(),
+                  'redirect': target,
+                },
+              );
             } else if (state is AuthFailure) {
               ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
                 content: Text(state.message),
@@ -99,18 +108,38 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     const SizedBox(height: 16),
 
-                    // Til tanlash paneli
+                    // Yuqori panel: Orqaga qaytish va Til tanlash paneli
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _langButton(context, 'UZ',
-                            context.locale.languageCode == 'uz', isDark),
-                        const SizedBox(width: 8),
-                        _langButton(context, 'RU',
-                            context.locale.languageCode == 'ru', isDark),
-                        const SizedBox(width: 8),
-                        _langButton(context, 'EN',
-                            context.locale.languageCode == 'en', isDark),
+                        if (context.canPop())
+                          IconButton(
+                            icon: Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              size: 20,
+                              color: isDark ? Colors.white : AppColors.neutral800,
+                            ),
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              context.pop();
+                            },
+                          )
+                        else
+                          const SizedBox(width: 40),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _langButton(context, 'UZ',
+                                context.locale.languageCode == 'uz', isDark),
+                            const SizedBox(width: 8),
+                            _langButton(context, 'RU',
+                                context.locale.languageCode == 'ru', isDark),
+                            const SizedBox(width: 8),
+                            _langButton(context, 'EN',
+                                context.locale.languageCode == 'en', isDark),
+                          ],
+                        ),
+                        const SizedBox(width: 40),
                       ],
                     ),
 
@@ -225,7 +254,13 @@ class _LoginPageState extends State<LoginPage> {
                       child: OutlinedButton(
                         onPressed: () {
                           HapticFeedback.lightImpact();
-                          context.go('/home');
+                          if (context.canPop()) {
+                            context.pop();
+                          } else if (widget.redirect != null && widget.redirect!.isNotEmpty) {
+                            context.go(widget.redirect!);
+                          } else {
+                            context.go('/home');
+                          }
                         },
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(
@@ -256,6 +291,24 @@ class _LoginPageState extends State<LoginPage> {
                               color: isDark ? AppColors.neutral400 : AppColors.neutral600,
                             ),
                           ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Maxfiylik siyosati va Ommaviy oferta kelishuvi (Store Review Guideline 5.1.1)
+                    GestureDetector(
+                      onTap: () => context.push('/public-offer'),
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'auth.terms_agreement'.tr(),
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark ? AppColors.neutral500 : AppColors.neutral400,
+                            fontSize: 11.5,
+                            height: 1.4,
+                          ),
                         ),
                       ),
                     ),

@@ -635,6 +635,58 @@ class SDUIAppSettingsComponent extends StatelessWidget {
               );
             },
           ),
+          Divider(height: 1, indent: 56, color: isDark ? AppColors.darkBorder : AppColors.neutral200),
+          // Maxfiylik siyosati (Store Compliance)
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.privacy_tip_outlined, color: AppColors.primary, size: 20),
+            ),
+            title: Text(
+              'profile.privacy_policy'.tr(),
+              style: AppTextStyles.labelMedium.copyWith(
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : AppColors.neutral900,
+              ),
+            ),
+            trailing: Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: isDark ? AppColors.neutral500 : AppColors.neutral400,
+            ),
+            onTap: () => context.push('/privacy-policy'),
+          ),
+          Divider(height: 1, indent: 56, color: isDark ? AppColors.darkBorder : AppColors.neutral200),
+          // Ommaviy oferta (Store Compliance)
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.description_outlined, color: AppColors.primary, size: 20),
+            ),
+            title: Text(
+              'profile.public_offer'.tr(),
+              style: AppTextStyles.labelMedium.copyWith(
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : AppColors.neutral900,
+              ),
+            ),
+            trailing: Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: isDark ? AppColors.neutral500 : AppColors.neutral400,
+            ),
+            onTap: () => context.push('/public-offer'),
+          ),
         ],
       ),
     ),
@@ -874,7 +926,7 @@ class SDUISupportContactsComponent extends StatelessWidget {
   }
 }
 
-/// 🚪 Profil: Hisobdan chiqish
+/// 🚪 Profil: Hisobdan chiqish va Hisobni o'chirish (Store Compliance WebView)
 class SDUILogoutDeleteComponent extends StatelessWidget {
   final SDUISectionModel section;
   final SDUIActionHandler onAction;
@@ -885,31 +937,99 @@ class SDUILogoutDeleteComponent extends StatelessWidget {
     required this.onAction,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    final props = section.properties;
-    final logoutText = props['logout_text']?.toString() ?? 'Hisobdan chiqish';
+  void _showLogoutDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Center(
-        child: TextButton.icon(
-          onPressed: () async {
-            await SecureStorage.deleteToken();
-            await SecureStorage.deleteUserInfo();
-            if (context.mounted) {
-              context.go('/auth/login');
-            }
-          },
-          icon: const Icon(Icons.logout_rounded, color: AppColors.error, size: 18),
-          label: Text(
-            logoutText,
-            style: AppTextStyles.labelMedium.copyWith(
-              color: AppColors.error,
-              fontWeight: FontWeight.w800,
-            ),
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? AppColors.darkCard : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'profile.logout'.tr(),
+          style: AppTextStyles.h4.copyWith(
+            color: isDark ? Colors.white : AppColors.neutral900,
+            fontWeight: FontWeight.w800,
           ),
         ),
+        content: Text(
+          'profile.logout_confirm'.tr(),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: isDark ? AppColors.neutral300 : AppColors.neutral700,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              'common.cancel'.tr(),
+              style: TextStyle(
+                color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await SecureStorage.deleteToken();
+              await SecureStorage.deleteUserInfo();
+              if (context.mounted) {
+                context.go('/auth/login');
+              }
+            },
+            child: Text(
+              'profile.logout'.tr(),
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        children: [
+          // Hisobdan chiqish
+          Center(
+            child: TextButton.icon(
+              onPressed: () => _showLogoutDialog(context),
+              icon: const Icon(Icons.logout_rounded, color: AppColors.error, size: 18),
+              label: Text(
+                'profile.logout'.tr(),
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+          // Hisobni o'chirish (Apple Review Guideline 5.1.1(v) & Google Play Account Deletion WebView)
+          Center(
+            child: TextButton(
+              onPressed: () => context.push('/delete-account'),
+              child: Text(
+                'profile.delete_account'.tr(),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.neutral400,
+                  fontSize: 12,
+                  decoration: TextDecoration.underline,
+                  decorationColor: AppColors.neutral400,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

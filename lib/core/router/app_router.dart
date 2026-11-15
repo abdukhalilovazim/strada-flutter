@@ -29,6 +29,7 @@ import 'package:pizza_strada/features/notifications/presentation/pages/notificat
 import 'package:pizza_strada/features/profile/presentation/pages/profile_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/branches_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:pizza_strada/features/profile/presentation/pages/policy_web_view_page.dart';
 import 'package:pizza_strada/features/profile/presentation/pages/saved_addresses_page.dart';
 import 'package:pizza_strada/features/promotions/domain/entities/promotion_deal_entity.dart';
 import 'package:pizza_strada/features/promotions/presentation/pages/coupon_detail_page.dart';
@@ -488,23 +489,43 @@ final appRouter = GoRouter(
   redirect: (context, state) async {
     final token = await SecureStorage.getToken();
     final onAuth = state.matchedLocation.startsWith('/auth');
-    if (token != null && onAuth) return '/home';
+    if (token != null && onAuth) {
+      final redirect = state.uri.queryParameters['redirect'] ??
+          (state.extra is Map ? (state.extra as Map)['redirect'] as String? : null);
+      if (redirect != null && redirect.isNotEmpty) return redirect;
+      return '/home';
+    }
     return null;
   },
   routes: [
     GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
-    GoRoute(path: '/auth/login', builder: (_, __) => const LoginPage()),
+    GoRoute(
+      path: '/auth/login',
+      builder: (_, state) {
+        final redirect = state.uri.queryParameters['redirect'] ??
+            (state.extra is Map ? (state.extra as Map)['redirect'] as String? : null);
+        return LoginPage(redirect: redirect);
+      },
+    ),
     GoRoute(
       path: '/auth/otp',
       builder: (_, state) {
+        String phone = '';
+        String fullName = '';
+        String? redirect = state.uri.queryParameters['redirect'];
         if (state.extra is Map<String, dynamic>) {
           final data = state.extra as Map<String, dynamic>;
-          return OtpPage(
-            phone: data['phone'] as String? ?? '',
-            fullName: data['fullName'] as String? ?? '',
-          );
+          phone = data['phone'] as String? ?? '';
+          fullName = data['fullName'] as String? ?? '';
+          redirect = data['redirect'] as String? ?? redirect;
+        } else if (state.extra is String) {
+          phone = state.extra as String;
         }
-        return OtpPage(phone: state.extra is String ? state.extra as String : '');
+        return OtpPage(
+          phone: phone,
+          fullName: fullName,
+          redirect: redirect,
+        );
       },
     ),
     ShellRoute(
@@ -570,6 +591,27 @@ final appRouter = GoRouter(
       builder: (_, __) => const CheckoutPage(),
     ),
     GoRoute(path: '/branches', builder: (_, __) => const BranchesPage()),
+    GoRoute(
+      path: '/privacy-policy',
+      builder: (_, __) => PolicyWebViewPage(
+        title: 'profile.privacy_policy'.tr(),
+        urlPath: 'privacy-policy',
+      ),
+    ),
+    GoRoute(
+      path: '/public-offer',
+      builder: (_, __) => PolicyWebViewPage(
+        title: 'profile.public_offer'.tr(),
+        urlPath: 'public-offer',
+      ),
+    ),
+    GoRoute(
+      path: '/delete-account',
+      builder: (_, __) => PolicyWebViewPage(
+        title: 'profile.delete_account'.tr(),
+        urlPath: 'delete-account',
+      ),
+    ),
     GoRoute(path: '/profile/edit', builder: (_, __) => const EditProfilePage()),
     GoRoute(path: '/saved-addresses', builder: (_, __) => const SavedAddressesPage()),
     GoRoute(path: '/locations', builder: (_, __) => const SavedAddressesPage()),

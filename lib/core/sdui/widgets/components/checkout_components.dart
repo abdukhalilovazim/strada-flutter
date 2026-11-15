@@ -1731,7 +1731,10 @@ class SDUISubmitOrderCtaComponent extends StatelessWidget {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
-        context.push('/auth/login');
+        context.push(
+          Uri(path: '/auth/login', queryParameters: const {'redirect': '/checkout'}).toString(),
+          extra: const {'redirect': '/checkout'},
+        );
       }
       return;
     }

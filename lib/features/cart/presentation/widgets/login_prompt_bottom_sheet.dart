@@ -17,6 +17,7 @@ class LoginPromptBottomSheet extends StatelessWidget {
     String? title,
     String? description,
     IconData? icon,
+    String? redirect = '/checkout',
   }) {
     HapticFeedback.lightImpact();
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -110,7 +111,11 @@ class LoginPromptBottomSheet extends StatelessWidget {
                     onPressed: () {
                       HapticFeedback.mediumImpact();
                       Navigator.of(ctx).pop(true);
-                      context.push('/auth/login');
+                      final target = redirect ?? '/checkout';
+                      context.push(
+                        Uri(path: '/auth/login', queryParameters: {'redirect': target}).toString(),
+                        extra: {'redirect': target},
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,

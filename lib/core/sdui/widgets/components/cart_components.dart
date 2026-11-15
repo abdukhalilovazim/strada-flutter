@@ -631,8 +631,8 @@ class _SDUIPromoCodeComponentState extends State<SDUIPromoCodeComponent> {
                               onTap: () async {
                                 final token = await SecureStorage.getToken();
                                 if (token == null || token.isEmpty) {
-                                  FocusScope.of(context).unfocus();
                                   if (context.mounted) {
+                                    FocusScope.of(context).unfocus();
                                     await LoginPromptBottomSheet.show(
                                       context,
                                       title: 'checkout.login_prompt_promo_title'.tr(),
@@ -647,8 +647,8 @@ class _SDUIPromoCodeComponentState extends State<SDUIPromoCodeComponent> {
                                 if (code.trim().isNotEmpty) {
                                   final token = await SecureStorage.getToken();
                                   if (token == null || token.isEmpty) {
-                                    FocusScope.of(context).unfocus();
                                     if (context.mounted) {
+                                      FocusScope.of(context).unfocus();
                                       await LoginPromptBottomSheet.show(
                                         context,
                                         title: 'checkout.login_prompt_promo_title'.tr(),

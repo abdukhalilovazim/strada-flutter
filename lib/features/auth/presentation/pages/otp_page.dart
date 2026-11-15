@@ -14,7 +14,13 @@ import 'package:pizza_strada/core/di/injection.dart';
 class OtpPage extends StatefulWidget {
   final String phone;
   final String fullName;
-  const OtpPage({super.key, required this.phone, this.fullName = ''});
+  final String? redirect;
+  const OtpPage({
+    super.key,
+    required this.phone,
+    this.fullName = '',
+    this.redirect,
+  });
 
   @override
   State<OtpPage> createState() => _OtpPageState();
@@ -146,7 +152,13 @@ class _OtpPageState extends State<OtpPage> {
         ),
         body: BlocConsumer<AuthCubit, AuthState>(
           listener: (ctx, state) {
-            if (state is AuthSuccess) ctx.go('/home');
+            if (state is AuthSuccess) {
+              if (widget.redirect != null && widget.redirect!.isNotEmpty) {
+                ctx.go(widget.redirect!);
+              } else {
+                ctx.go('/home');
+              }
+            }
             if (state is AuthFailure) {
               ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
                 content: Text(state.message),
