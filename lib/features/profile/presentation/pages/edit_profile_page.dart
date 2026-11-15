@@ -353,6 +353,68 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
+  Future<void> _showLogoutDialog() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? AppColors.darkCard : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'profile.logout'.tr(),
+          style: AppTextStyles.h4.copyWith(
+            color: isDark ? Colors.white : AppColors.neutral900,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        content: Text(
+          'profile.logout_confirm'.tr(),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: isDark ? AppColors.neutral300 : AppColors.neutral700,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'common.cancel'.tr(),
+              style: TextStyle(
+                color: isDark ? AppColors.neutral400 : AppColors.neutral600,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(
+              'profile.logout'.tr(),
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await SecureStorage.deleteToken();
+      await SecureStorage.deleteUserInfo();
+      if (mounted) {
+        if (context.canPop()) {
+          context.pop(true);
+        } else {
+          context.go('/profile');
+        }
+      }
+    }
+  }
+
   String get _initials {
     final name = _fullNameController.text.trim();
     if (name.isEmpty || name == 'Mijoz') return 'S';
@@ -383,6 +445,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => context.pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: AppColors.error, size: 22),
+            tooltip: 'profile.logout'.tr(),
+            onPressed: _showLogoutDialog,
+          ),
+          const SizedBox(width: 4),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(

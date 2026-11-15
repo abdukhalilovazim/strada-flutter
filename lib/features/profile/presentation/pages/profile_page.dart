@@ -69,11 +69,6 @@ class _ProfilePageState extends State<ProfilePage> {
           SDUILoyaltyComponent(section: dummySection, onAction: (_) {}),
           SDUIProfileMenuGroupComponent(section: dummySection, onAction: (_) {}),
           SDUIAppSettingsComponent(section: dummySection, onAction: (_) {}),
-          if (_isLoggedIn)
-            SDUILogoutDeleteComponent(
-              section: dummySection,
-              onAction: (_) => _checkAuth(),
-            ),
           SDUIAppVersionComponent(section: dummySection, onAction: (_) {}),
         ],
       ),
