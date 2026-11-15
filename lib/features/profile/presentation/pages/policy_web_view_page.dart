@@ -64,7 +64,7 @@ class _PolicyWebViewPageState extends State<PolicyWebViewPage> {
                 return NavigationDecision.prevent;
               }
               final scheme = uri.scheme.toLowerCase();
-              if (scheme == 'tel' || scheme == 'mailto' || scheme == 'sms') {
+              if (scheme == 'tel' || scheme == 'mailto' || scheme == 'sms' || request.url.contains('maps') || request.url.contains('yandex')) {
                 try {
                   if (await canLaunchUrl(uri)) {
                     await launchUrl(uri, mode: LaunchMode.externalApplication);
