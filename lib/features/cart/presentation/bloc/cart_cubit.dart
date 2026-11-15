@@ -142,6 +142,23 @@ class CartCubit extends Cubit<CartState> {
     final updatedItems = state.items.map((item) {
       if (item.isCoupon) return item;
 
+      if (item.isSet) {
+        final fresh = productMap[item.product.id] ?? slugMap[item.product.slug];
+        if (fresh != null &&
+            (item.product.title != fresh.title || item.product.description != fresh.description)) {
+          changed = true;
+          return item.copyWith(
+            product: item.product.copyWith(
+              title: fresh.title,
+              description: fresh.description,
+              thumbnail: fresh.thumbnail.isNotEmpty ? fresh.thumbnail : item.product.thumbnail,
+              photo: fresh.photo.isNotEmpty ? fresh.photo : item.product.photo,
+            ),
+          );
+        }
+        return item;
+      }
+
       final fresh = productMap[item.product.id] ?? slugMap[item.product.slug];
       if (fresh == null) return item;
 

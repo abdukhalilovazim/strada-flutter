@@ -138,6 +138,35 @@ class _CheckoutOtpSheetState extends State<CheckoutOtpSheet> {
     }
   }
 
+  void _onOtpChanged(int index, String val) {
+    // 1. Agar SMS orqali kelgan to'liq kod (masalan "1234") yoki paste qilingan bo'lsa
+    if (val.length > 1) {
+      final digits = val.replaceAll(RegExp(r'\D'), '');
+      for (int i = 0; i < 4 && i < digits.length; i++) {
+        _controllers[i].text = digits[i];
+      }
+      if (digits.length >= 4) {
+        _focusNodes[3].requestFocus();
+        _confirmOtp();
+      } else {
+        _focusNodes[digits.length.clamp(0, 3)].requestFocus();
+      }
+      return;
+    }
+
+    // 2. Oddiy bitta raqam kiritilganda
+    if (val.isNotEmpty && index < 3) {
+      _focusNodes[index + 1].requestFocus();
+    } else if (val.isEmpty && index > 0) {
+      _focusNodes[index - 1].requestFocus();
+    }
+
+    // 3. Agar barcha 4 ta katakcha to'lgan bo'lsa, avtomatik tasdiqlash
+    if (_controllers.every((c) => c.text.isNotEmpty)) {
+      _confirmOtp();
+    }
+  }
+
   Future<void> _confirmOtp() async {
     final code = _controllers.map((c) => c.text).join();
     if (code.length != 4) return;
@@ -304,56 +333,64 @@ class _CheckoutOtpSheetState extends State<CheckoutOtpSheet> {
 
             const SizedBox(height: 12),
 
-            // 4-digit PIN Inputs
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: List.generate(4, (index) {
-                return SizedBox(
-                  width: 62,
-                  height: 62,
-                  child: TextField(
-                    controller: _controllers[index],
-                    focusNode: _focusNodes[index],
-                    autofocus: index == 0,
-                    autocorrect: false,
-                    enableSuggestions: false,
-                    spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
-                    textAlign: TextAlign.center,
-                    keyboardType: TextInputType.number,
-                    autofillHints: const [AutofillHints.oneTimeCode],
-                    maxLength: 1,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    onChanged: (val) {
-                      if (val.isNotEmpty && index < 3) {
-                        _focusNodes[index + 1].requestFocus();
-                      } else if (val.isEmpty && index > 0) {
-                        _focusNodes[index - 1].requestFocus();
-                      }
-                      if (_controllers.every((c) => c.text.isNotEmpty)) {
-                        _confirmOtp();
-                      }
-                    },
-                    style: AppTextStyles.h1.copyWith(
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                    ),
-                    decoration: InputDecoration(
-                      counterText: '',
-                      filled: true,
-                      fillColor: isDark ? AppColors.darkCard : AppColors.neutral50,
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+            // 4-digit PIN Inputs with AutofillGroup for SMS Auto-Fill
+            AutofillGroup(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: List.generate(4, (index) {
+                  return SizedBox(
+                    width: 62,
+                    height: 62,
+                    child: Focus(
+                      onKeyEvent: (node, event) {
+                        if (event is KeyDownEvent &&
+                            event.logicalKey == LogicalKeyboardKey.backspace &&
+                            _controllers[index].text.isEmpty &&
+                            index > 0) {
+                          _controllers[index - 1].clear();
+                          _focusNodes[index - 1].requestFocus();
+                          return KeyEventResult.handled;
+                        }
+                        return KeyEventResult.ignored;
+                      },
+                      child: TextField(
+                        controller: _controllers[index],
+                        focusNode: _focusNodes[index],
+                        autofocus: index == 0,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
+                        textAlign: TextAlign.center,
+                        keyboardType: TextInputType.number,
+                        autofillHints: const [AutofillHints.oneTimeCode],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(4),
+                        ],
+                        onChanged: (val) => _onOtpChanged(index, val),
+                        style: AppTextStyles.h1.copyWith(
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                        ),
+                        decoration: InputDecoration(
+                          counterText: '',
+                          filled: true,
+                          fillColor: isDark ? AppColors.darkCard : AppColors.neutral50,
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(
+                              color: isDark ? AppColors.darkBorder : AppColors.neutral200,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                          ),
                         ),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                      ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }),
+              ),
             ),
             const SizedBox(height: 24),
 

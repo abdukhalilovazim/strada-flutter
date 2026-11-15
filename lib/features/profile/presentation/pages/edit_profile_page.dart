@@ -177,8 +177,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profil ma\'lumotlari muvaffaqiyatli saqlandi ✨'),
+          SnackBar(
+            content: Text('profile.saved_success'.tr()),
             backgroundColor: AppColors.success,
           ),
         );
@@ -188,8 +188,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       await SecureStorage.saveUserName(newName);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ma\'lumotlar qurilmada saqlandi'),
+          SnackBar(
+            content: Text('profile.cached_success'.tr()),
             backgroundColor: AppColors.primary,
           ),
         );
@@ -272,8 +272,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Yangi manzil muvaffaqiyatli qo\'shildi 📍'),
+            SnackBar(
+              content: Text('profile.address_added_success'.tr()),
               backgroundColor: AppColors.success,
             ),
           );

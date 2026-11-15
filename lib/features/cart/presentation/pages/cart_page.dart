@@ -11,6 +11,7 @@ import 'package:pizza_strada/core/theme/app_text_styles.dart';
 import 'package:pizza_strada/core/utils/number_formatter.dart';
 import 'package:pizza_strada/core/utils/variant_localization_helper.dart';
 import 'package:pizza_strada/core/widgets/pizza_image_placeholder.dart';
+import 'package:pizza_strada/features/cart/domain/entities/cart_item_entity.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/cart_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_cubit.dart';
 import 'package:pizza_strada/features/cart/presentation/bloc/checkout/checkout_state.dart';
@@ -319,14 +320,7 @@ class _CartPageState extends State<CartPage> {
                   child: SizedBox(
                     width: 68,
                     height: 68,
-                    child: product.validImageUrl.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: product.validImageUrl,
-                            fit: BoxFit.cover,
-                            placeholder: (_, __) => const PizzaImagePlaceholder(width: 68, height: 68),
-                            errorWidget: (_, __, ___) => const PizzaImagePlaceholder(width: 68, height: 68),
-                          )
-                        : const PizzaImagePlaceholder(width: 68, height: 68),
+                    child: _buildItemThumbnail(item, isDark),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -490,6 +484,85 @@ class _CartPageState extends State<CartPage> {
         );
       },
     );
+  }
+
+  Widget _buildItemThumbnail(CartItemEntity item, bool isDark) {
+    final product = item.product;
+
+    if (product.validImageUrl.isNotEmpty) {
+      return CachedNetworkImage(
+        imageUrl: product.validImageUrl,
+        fit: BoxFit.cover,
+        placeholder: (_, __) => _buildItemPlaceholder(item, isDark),
+        errorWidget: (_, __, ___) => _buildItemPlaceholder(item, isDark),
+      );
+    }
+
+    return _buildItemPlaceholder(item, isDark);
+  }
+
+  Widget _buildItemPlaceholder(CartItemEntity item, bool isDark) {
+    if (item.isSet) {
+      return Container(
+        width: 68,
+        height: 68,
+        color: isDark ? const Color(0xFF1E222D) : const Color(0xFFFFF7ED),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.fastfood_rounded,
+                  color: AppColors.primary,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'SET',
+                  style: TextStyle(
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (item.isCoupon) {
+      return Container(
+        width: 68,
+        height: 68,
+        color: isDark ? const Color(0xFF1E222D) : const Color(0xFFFFF7ED),
+        child: const Center(
+          child: Icon(
+            Icons.confirmation_number_outlined,
+            color: AppColors.primary,
+            size: 26,
+          ),
+        ),
+      );
+    }
+
+    return const PizzaImagePlaceholder(width: 68, height: 68);
   }
 
   Widget _buildUpsellSlider(BuildContext context, CartState cartState, bool isDark) {

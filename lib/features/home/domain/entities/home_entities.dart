@@ -119,6 +119,40 @@ class ProductEntity extends Equatable {
   /// Clean valid image URL or empty string.
   String get validImageUrl => hasValidImage ? (thumbnail.isNotEmpty ? thumbnail : photo) : '';
 
+  ProductEntity copyWith({
+    int? id,
+    String? slug,
+    String? title,
+    String? description,
+    String? thumbnail,
+    String? photo,
+    double? price,
+    double? oldPrice,
+    CategoryEntity? category,
+    List<VariantEntity>? variants,
+    List<KeyValueEntity>? values,
+    List<ProductBadgeEntity>? badges,
+    String? searchKeywords,
+    bool? isSet,
+  }) {
+    return ProductEntity(
+      id: id ?? this.id,
+      slug: slug ?? this.slug,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      thumbnail: thumbnail ?? this.thumbnail,
+      photo: photo ?? this.photo,
+      price: price ?? this.price,
+      oldPrice: oldPrice ?? this.oldPrice,
+      category: category ?? this.category,
+      variants: variants ?? this.variants,
+      values: values ?? this.values,
+      badges: badges ?? this.badges,
+      searchKeywords: searchKeywords ?? this.searchKeywords,
+      isSet: isSet ?? this.isSet,
+    );
+  }
+
   @override
   List<Object?> get props => [id, slug, title, description, thumbnail, photo, price, oldPrice, category, variants, values, badges, searchKeywords, isSet];
 }

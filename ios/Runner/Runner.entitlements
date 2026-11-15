@@ -7,6 +7,8 @@
 		<string>applinks:app.pizzastrada.uz</string>
 		<string>applinks:pizzastrada.uz</string>
 	</array>
+	<key>aps-environment</key>
+	<string>development</string>
 </dict>
 </plist>
 
