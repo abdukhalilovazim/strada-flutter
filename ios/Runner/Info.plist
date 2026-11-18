@@ -46,6 +46,10 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Pizza Strada uses your location to accurately set your delivery address on the map and display the nearest branch.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Pizza Strada uses your location to accurately set your delivery address on the map and display the nearest branch.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Pizza Strada uses your location to accurately set your delivery address on the map and display the nearest branch.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
