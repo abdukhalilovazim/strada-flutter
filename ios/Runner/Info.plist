@@ -38,12 +38,14 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>FlutterDeepLinkingEnabled</key>
 	<true/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Pizza Strada ilovasi buyurtmani yetkazib berish manzilini xaritada aniq belgilash va eng yaqin filialni ko'rsatish uchun joylashuvingizdan foydalanadi.</string>
+	<string>Pizza Strada uses your location to accurately set your delivery address on the map and display the nearest branch.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
